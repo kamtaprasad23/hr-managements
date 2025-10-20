@@ -1,40 +1,45 @@
-import { useState } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Outlet } from "react-router-dom";
 import EmpNavbar from "../components/EmpNavbar";
 import EmpSidebar from "../components/sidebar/EmpSidebar";
+import EmpMobileBar from "../components/sidebar/EmpMobilebar";
 
 export default function EmployeeLayout() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const location = useLocation();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true); // Default to open on desktop
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
-  // Close sidebar on navigation for mobile
-  useState(() => {
-    if (isSidebarOpen) {
-      setIsSidebarOpen(false);
-    }
-  }, [location]);
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) {
+        setIsSidebarOpen(false); // Keep it closed on mobile by default
+      } else {
+        setIsSidebarOpen(true); // Keep it open on desktop
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    handleResize(); // Initial check
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   return (
-    <div className="bg-gray-100 min-h-screen flex">
-      {/* Sidebar */}
-      <div
-        className={`
-          fixed inset-y-0 left-0 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
-          md:relative md:translate-x-0 md:flex md:flex-shrink-0
-          transition-transform duration-300 ease-in-out z-50
-        `}
-      >
-        <EmpSidebar />
+    <div className="bg-gray-100 dark:bg-gray-900 min-h-screen flex flex-col">
+      <EmpNavbar onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
+
+      {/* --- Sidebar --- */}
+      <div className={`fixed top-0 left-0 h-full z-40 transition-transform duration-300 ease-in-out ${isMobile ? (isSidebarOpen ? 'translate-x-0' : '-translate-x-full') : ''}`}>
+        <EmpSidebar isOpen={isSidebarOpen} />
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        {/* Navbar */}
-        <EmpNavbar onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
-        {/* Scrollable Main Content */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          <Outlet />
-        </main>
+      {/* --- Main Content --- */}
+      <main className={`flex-1 overflow-y-auto p-4 md:p-6 mt-[64px] pb-[60px] md:pb-0 transition-all duration-300 ${!isMobile ? (isSidebarOpen ? "md:ml-64" : "md:ml-20") : ""}`}>
+        <Outlet />
+      </main>
+
+      {/* --- Mobile Bottom Bar --- */}
+      <div className="md:hidden fixed bottom-0 left-0 w-full z-50">
+        <EmpMobileBar />
       </div>
     </div>
   );

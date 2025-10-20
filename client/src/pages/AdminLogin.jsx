@@ -31,7 +31,8 @@ function AdminLogin() {
       );
 
       localStorage.setItem("token", token);
-      localStorage.setItem("role", role); // Add this line
+      localStorage.setItem("role", role);
+
       setSuccess(res.data.message);
       setError("");
 
@@ -43,12 +44,12 @@ function AdminLogin() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-500 via-pink-500 to-red-500 animate-gradient-x">
       <form
         onSubmit={handleLogin}
-        className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md"
+        className="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md transform hover:scale-105 transition-transform duration-300"
       >
-        <h2 className="text-2xl font-bold mb-6 text-center text-blue-600">
+        <h2 className="text-3xl font-bold mb-8 text-center text-blue-600 drop-shadow-lg">
           Admin Login
         </h2>
 
@@ -71,9 +72,10 @@ function AdminLogin() {
             value={form.email}
             onChange={handleChange}
             required
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
+
         <div className="mb-6">
           <input
             type="password"
@@ -82,13 +84,13 @@ function AdminLogin() {
             value={form.password}
             onChange={handleChange}
             required
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200"
+          className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 rounded-xl shadow-lg hover:from-blue-600 hover:to-indigo-700 transition-all mb-5"
         >
           Login
         </button>

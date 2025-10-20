@@ -73,7 +73,7 @@ const Notification = () => {
   }, []);
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen"><Toaster />
+    <div className="p-4 sm:p-6 bg-gray-50 min-h-[calc(100vh-120px)] sm:min-h-screen max-w-full sm:max-w-3xl mx-auto rounded-lg shadow-lg"><Toaster />
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-semibold text-gray-800 flex items-center gap-2">

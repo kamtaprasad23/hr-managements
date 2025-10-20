@@ -10,77 +10,59 @@ import {
 
 export default function EmployeeSettings() {
   const dispatch = useDispatch();
-  const { isDarkMode, emailNotifications, profilePublic } = useSelector(
+  const { isDarkMode, notificationsEnabled, profilePublic } = useSelector(
     (state) => state.settings
   );
 
-  const handleDarkMode = () => {
-    dispatch(toggleDarkMode());
-    toast.success(!isDarkMode ? "Dark mode enabled" : "Light mode enabled");
-  };
-
-  const handleNotifications = () => {
-    dispatch(toggleEmailNotifications());
-    toast.success(
-      `${!emailNotifications ? "Notifications enabled" : "Notifications disabled"}`
-    );
-  };
-
-  const handleProfile = () => {
-    dispatch(toggleProfileVisibility());
-    toast.success(`Profile is now ${!profilePublic ? "Public" : "Private"}`);
-  };
-
   return (
-    <div
-      className={`p-6 max-w-2xl mx-auto ${
-        isDarkMode ? "bg-gray-800 text-white" : "bg-gray-50 text-gray-800"
-      } rounded-2xl  space-y-6`}
-    >
+    <div className="p-6 max-w-2xl mx-auto bg-gray-50 dark:bg-gray-800 dark:text-white rounded-2xl space-y-6">
       <h1 className="text-2xl font-bold">Employee Settings</h1>
 
-      <div
-        className="flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-700 rounded-xl cursor-pointer hover:shadow-md transition"
-        onClick={handleDarkMode}
+      {/* Dark Mode */}
+      <button
+        onClick={() => {
+          dispatch(toggleDarkMode());
+          toast.success(!isDarkMode ? "Dark mode enabled" : "Light mode enabled");
+        }}
+        className="w-full flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-700 rounded-xl hover:shadow-md transition text-left"
       >
         <div className="flex items-center gap-3">
-          {isDarkMode ? (
-            <Moon className="text-yellow-400" />
-          ) : (
-            <Sun className="text-yellow-400" />
-          )}
+          {isDarkMode ? <Moon className="text-yellow-400" /> : <Sun className="text-yellow-400" />}
           <span className="font-medium">Dark Mode</span>
         </div>
         <span className="font-semibold">{isDarkMode ? "On" : "Off"}</span>
-      </div>
+      </button>
 
-      <div
-        className="flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-700 rounded-xl cursor-pointer hover:shadow-md transition"
-        onClick={handleNotifications}
+      {/* Notifications */}
+      <button
+        onClick={() => {
+          dispatch(toggleEmailNotifications());
+          toast.success(`${!notificationsEnabled ? "Notifications enabled" : "Notifications disabled"}`);
+        }}
+        className="w-full flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-700 rounded-xl hover:shadow-md transition text-left"
       >
         <div className="flex items-center gap-3">
-          {emailNotifications ? (
-            <Bell className="text-blue-500" />
-          ) : (
-            <BellOff className="text-red-500" />
-          )}
-          <span className="font-medium">Email Notifications</span>
+          {notificationsEnabled ? <Bell className="text-blue-500" /> : <BellOff className="text-red-500" />}
+          <span className="font-medium">Notifications</span>
         </div>
-        <span className="font-semibold">
-          {emailNotifications ? "On" : "Off"}
-        </span>
-      </div>
+        <span className="font-semibold">{notificationsEnabled ? "On" : "Off"}</span>
+      </button>
 
-      <div
-        className="flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-700 rounded-xl cursor-pointer hover:shadow-md transition"
-        onClick={handleProfile}
+      {/* Profile Visibility */}
+      <button
+        onClick={() => {
+          dispatch(toggleProfileVisibility());
+          toast.success(`Profile is now ${!profilePublic ? "Public" : "Private"}`);
+        }}
+        className="w-full flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-700 rounded-xl hover:shadow-md transition text-left"
       >
         <div className="flex items-center gap-3">
           <User className="text-green-500" />
-          <span className="font-medium">Profile Public</span>
+          <span className="font-medium">Profile Visibility</span>
         </div>
-        <span className="font-semibold">{profilePublic ? "Yes" : "No"}</span>
-      </div>
+        <span className="font-semibold">{profilePublic ? "Public" : "Private"}</span>
+      </button>
     </div>
   );
 }
+``

@@ -29,7 +29,7 @@ import {
   registerAdmin,
   loginAdmin,
   createEmployee,
-  getAdminDashboardData,
+  getAdminDashboardData as getAdminDashboard, // Rename import
   getTotalEmployees,
   getBirthdays,
   sendBirthdayWish,
@@ -53,7 +53,7 @@ router.post("/employee", verifyToken, adminOnly, createEmployee);
 router.get("/employee/:id", verifyToken, adminOnly, getEmployeeById);
 router.put("/employee/:id", verifyToken, adminOnly, updateEmployee);
 router.delete("/employee/:id", verifyToken, adminOnly, deleteEmployee);
-router.get("/dashboard", verifyToken, adminOnly, getAdminDashboardData);
+router.get("/dashboard", verifyToken, adminOnly, getAdminDashboard); // Use the new alias
 router.get("/employees", verifyToken, adminOnly, getTotalEmployees);
 router.get("/birthdays", verifyToken, adminOnly, getBirthdays);
 router.post("/birthday-wish/:employeeId", verifyToken, adminOnly, sendBirthdayWish);

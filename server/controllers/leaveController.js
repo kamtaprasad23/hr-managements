@@ -57,16 +57,18 @@ export const updateLeave = async (req, res) => {
     });
     await employeeNotif.save();
 
-    // Send notification to admin
-    const admin = await Admin.findOne(); // first admin
-    if (admin) {
-      const adminNotif = new Notification({
+    // Send notification to all admins
+    const admins = await Admin.find({}, "_id");
+    if (admins.length > 0) {
+      const adminNotifications = admins.map(admin => ({
         title: "Leave Status Updated",
         message: `Leave of ${leave.employeeId.name} for ${formattedDate} is now ${status}.`,
         type: "system",
         userId: admin._id,
-      });
-      await adminNotif.save();
+        userModel: "Admin",
+        link: "/admin/dashboard/leave",
+      }));
+      await Notification.insertMany(adminNotifications);
     }
 
     res.status(200).json(leave);
@@ -111,16 +113,18 @@ export const createLeave = async (req, res) => {
 
     await newLeave.save();
 
-    // Send notification to admin
-    const admin = await Admin.findOne(); // first admin
-    if (admin) {
-      const adminNotif = new Notification({
+    // Send notification to all admins
+    const admins = await Admin.find({}, "_id");
+    if (admins.length > 0) {
+      const adminNotifications = admins.map(admin => ({
         title: "New Leave Request",
         message: `${employee.name} has requested leave for ${newLeave.date.toISOString().split("T")[0]}.`,
-        type: "system",
+        type: "alert",
         userId: admin._id,
-      });
-      await adminNotif.save();
+        userModel: "Admin",
+        link: "/admin/dashboard/leave",
+      }));
+      await Notification.insertMany(adminNotifications);
     }
 
     res.status(201).json({ message: "Leave requested successfully", leave: newLeave });

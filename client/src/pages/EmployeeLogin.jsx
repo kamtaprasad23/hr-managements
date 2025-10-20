@@ -36,7 +36,7 @@ function EmployeeLogin() {
       );
 
       localStorage.setItem("token", token);
-      localStorage.setItem("role", "employee"); // Add this line
+      localStorage.setItem("role", "employee");
       setSuccess("Login successful");
 
       setTimeout(() => {
@@ -51,12 +51,12 @@ function EmployeeLogin() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-500 via-pink-500 to-indigo-600 animate-gradient-x">
       <form
         onSubmit={handleLogin}
-        className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md"
+        className="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md transform hover:scale-105 transition-transform duration-300"
       >
-        <h2 className="text-2xl font-bold mb-6 text-center text-blue-600">
+        <h2 className="text-3xl font-bold mb-8 text-center text-blue-600 drop-shadow-lg">
           Employee Login
         </h2>
 
@@ -79,8 +79,8 @@ function EmployeeLogin() {
             value={form.email}
             onChange={handleChange}
             required
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={loading}
+            className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div className="mb-6">
@@ -91,24 +91,24 @@ function EmployeeLogin() {
             value={form.password}
             onChange={handleChange}
             required
-            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={loading}
+            className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <button
           type="submit"
           disabled={loading}
-          className={`w-full py-3 rounded-lg text-white transition-colors duration-200 ${
-            loading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
+          className={`w-full py-3 rounded-xl text-white shadow-lg transition-all duration-200 ${
+            loading ? "bg-gray-400 cursor-not-allowed" : "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
           }`}
         >
           {loading ? "Logging in..." : "Login"}
         </button>
 
-        <p className="mt-4 text-center text-gray-600">
+        <p className="mt-4 text-center text-black">
           Back to{" "}
-          <Link to="/" className="text-blue-600 hover:underline">
+          <Link to="/" className="text-yellow-500 hover:underline">
             Login Selection
           </Link>
         </p>

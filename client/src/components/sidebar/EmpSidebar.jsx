@@ -1,12 +1,12 @@
 import { NavLink } from "react-router-dom";
 import {
-  Briefcase,
   Home as HomeIcon,
-  User,
-  Settings,
-  BedSingle,
-  IndianRupee,
+  Briefcase,
   FileText,
+  BedSingle,
+  User,
+  IndianRupee,
+  Settings,
 } from "lucide-react";
 
 export default function EmpSidebar() {
@@ -21,31 +21,28 @@ export default function EmpSidebar() {
   ];
 
   return (
-    <div className="bg-white shadow-lg h-full flex flex-col gap-4 w-64 p-4">
-      <div className="flex items-center text-[#007fff] text-lg font-semibold border-b pb-2 px-4 mt-5">
-        <Briefcase size={22} className="min-w-[24px]" />
-        <span className="opacity-0 group-hover:opacity-100 transition-all duration-300 ml-2 whitespace-nowrap">
-          My Dashboard
-        </span>
+    <div className="bg-white dark:bg-gray-900 shadow-lg h-full flex flex-col gap-6 w-64 p-4">
+      {/* Header */}
+      <div className="text-[#007fff] dark:text-[#3B82F6] text-xl font-bold border-b border-gray-200 dark:border-gray-700 pb-3 px-2">
+        Employee Panel
       </div>
 
-      <div className="flex flex-col mt-2 gap-3">
+      {/* Menu Items */}
+      <div className="flex flex-col mt-4 gap-2">
         {menuItems.map((item) => (
           <NavLink
             key={item.name}
             to={item.path}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-2 rounded-lg transition ${
+              `flex items-center gap-3 px-4 py-2 rounded-lg transition-colors duration-200 font-medium ${
                 isActive
-                  ? "bg-[#007fff] text-white"
-                  : "text-gray-700 hover:text-[#007fff]"
+                  ? "bg-[#007fff] text-white dark:bg-blue-600"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-[#007fff] dark:hover:text-white"
               }`
             }
           >
-            <div className="min-w-[24px] flex justify-center">{item.icon}</div>
-            <span className="whitespace-nowrap">
-              {item.name}
-            </span>
+            {item.icon}
+            <span>{item.name}</span>
           </NavLink>
         ))}
       </div>

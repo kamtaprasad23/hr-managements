@@ -1,7 +1,9 @@
 import Admin from "../models/adminModel.js";
 import Employee from "../models/employeeModel.js";
-import Task from "../models/taskModel.js"; // Changed from Notification to Task
+import Task from "../models/taskModel.js";
+import Notification from "../models/notificationModel.js"; // Import Notification model
 import Attendance from "../models/attendanceModel.js";
+import Leave from "../models/leaveModel.js"; // Import Leave model
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { jwtSecret } from "../config/config.js";
@@ -113,7 +115,12 @@ export const getAdminDashboardData = async (req, res) => {
     const today = dayjs().startOf("day").toDate();
     const tomorrow = dayjs(today).add(1, "day").toDate();
     const todayAttendance = await Attendance.find({ date: { $gte: today, $lt: tomorrow } });
-
+    
+    // --- Leave Data ---
+    const pendingLeaves = await Leave.countDocuments({ status: "Pending" });
+    const approvedLeaves = await Leave.countDocuments({ status: "Approved" });
+    const rejectedLeaves = await Leave.countDocuments({ status: "Rejected" });
+    
     const onTime = todayAttendance.filter((a) => a.status === "Present").length; // Adjusted to match enum
     const late = todayAttendance.filter((a) => a.status === "Late").length;
     const absent = totalEmployees - todayAttendance.length;
@@ -122,6 +129,12 @@ export const getAdminDashboardData = async (req, res) => {
       totalEmployees,
       jobApplicants,
       attendance: { total: totalEmployees, onTime, late, absent },
+      // Add leave data to the response
+      leaves: {
+        pending: pendingLeaves,
+        approved: approvedLeaves,
+        rejected: rejectedLeaves,
+      },
     });
   } catch (error) {
     res.status(500).json({ message: "Failed to load dashboard data" });
@@ -143,11 +156,24 @@ export const getTotalEmployees = async (req, res) => {
 
 export const getBirthdays = async (req, res) => {
   try {
-    const employees = await Employee.find({ birthday: { $ne: null } }).select("name birthday image");
-    const birthdays = employees.map(emp => ({
+    // Get today's month and day (1-based for month, 1-based for day)
+    const todayMonth = dayjs().month() + 1;
+    const todayDate = dayjs().date();
+
+    // Find employees whose birthday matches today's month and day
+    const employeesWithBirthdayToday = await Employee.find({
+      $expr: {
+        $and: [
+          { $eq: [{ $month: "$birthday" }, todayMonth] },
+          { $eq: [{ $dayOfMonth: "$birthday" }, todayDate] },
+        ],
+      },
+    }).select("name birthday image");
+
+    const birthdays = employeesWithBirthdayToday.map(emp => ({
       _id: emp._id,
       name: emp.name,
-      date: emp.birthday.toLocaleDateString(),
+      date: dayjs(emp.birthday).format("MMMM D"), // Format date for display
       message: "Happy Birthday!",
       image: emp.image ? `http://localhost:5000${emp.image}` : "https://i.pravatar.cc/150",
     }));
@@ -166,18 +192,6 @@ export const sendBirthdayWish = async (req, res) => {
       return res.status(404).json({ message: "Employee not found" });
     }
 
-    // Create a task that will act as a notification
-    const wishTask = new Task({
-      title: "Happy Birthday! 🎉",
-      description: `Happy birthday, ${employee.name}! We wish you all the best on your special day.`,
-      assignedTo: employeeId,
-      assignedBy: req.user.id, // Add the admin's ID as the assigner
-      priority: "Medium",
-      dueDate: new Date(), // Set due date to today
-    });
-    await wishTask.save();
-
-    // Also create a notification for the employee
     const notification = new Notification({
       title: "Happy Birthday! 🎉",
       message: `The team wishes you a very happy birthday, ${employee.name}!`,
@@ -189,6 +203,7 @@ export const sendBirthdayWish = async (req, res) => {
 
     res.status(200).json({ message: `Birthday wish sent to ${employee.name}` });
   } catch (error) {
+    console.error("Error sending birthday wish:", error); // Added for better logging
     res.status(500).json({ message: "Failed to send birthday wish", error: error.message });
   }
 };

@@ -2,16 +2,20 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import API from "../utils/api";
 import { Gift, Cake, CalendarDays } from "lucide-react";
-import { useSelector } from "react-redux";import toast from "react-hot-toast";
+import { useSelector } from "react-redux";
+import toast from "react-hot-toast";
+import dayjs from "dayjs";
 
 export default function AdminHome() {
   const [dashboard, setDashboard] = useState({
     totalEmployees: 0,
     leaveReports: 0,
     attendance: { total: 0, onTime: 0, absent: 0, late: 0 },
+    leaves: { pending: 0, approved: 0, rejected: 0 },
   });
   const [birthdays, setBirthdays] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [wishesLoading, setWishesLoading] = useState({});
   const [error, setError] = useState("");
   const user = useSelector((state) => state.auth.user); // From Redux
 
@@ -22,14 +26,12 @@ export default function AdminHome() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [empRes, attRes] = await Promise.all([
-          API.get("/admin/employees"),
-          API.get("/attendance/summary"),
-        ]);
+        const { data } = await API.get("/admin/dashboard");
         setDashboard({
-          totalEmployees: empRes.data.employees.length || 0,
-          leaveReports: empRes.data.leaveReports || 0,
-          attendance: attRes.data || { total: 0, onTime: 0, absent: 0, late: 0 },
+          totalEmployees: data.totalEmployees || 0,
+          attendance: data.attendance || { total: 0, onTime: 0, absent: 0, late: 0 },
+          leaves: data.leaves || { pending: 0, approved: 0, rejected: 0 },
+          leaveReports: data.leaves?.pending || 0, // Set leaveReports to pending count
         });
         setError("");
       } catch (err) {
@@ -49,7 +51,7 @@ export default function AdminHome() {
     const fetchBirthdays = async () => {
       try {
         const res = await API.get("/admin/birthdays");
-        setBirthdays(res.data);
+        setBirthdays(res.data); // The server now sends only today's birthdays
       } catch (err) {
         console.error("Error fetching birthday data:", err);
       }
@@ -66,12 +68,17 @@ export default function AdminHome() {
       : "Good Evening";
 
   const handleSendWishes = async (employeeId, employeeName) => {
+    setWishesLoading(prev => ({ ...prev, [employeeId]: true }));
     try {
       await API.post(`/admin/birthday-wish/${employeeId}`);
       toast.success(`Birthday wish sent to ${employeeName}!`);
     } catch (err) {
-      console.error("Error sending birthday wish:", err);
-      toast.error("Failed to send birthday wish.");
+      // Provide more specific feedback to the user.
+      const errorMessage = err.response?.data?.message || "Failed to send birthday wish.";
+      console.error("Error sending birthday wish:", err.response?.data || err.message);
+      toast.error(errorMessage);
+    } finally {
+      setWishesLoading(prev => ({ ...prev, [employeeId]: false }));
     }
   };
 
@@ -188,9 +195,11 @@ export default function AdminHome() {
 
                     <button
                       onClick={() => handleSendWishes(person._id, person.name)}
+                      disabled={wishesLoading[person._id]}
                       className="mt-6 bg-pink-500 text-white px-5 py-2 rounded-full flex items-center gap-2 mx-auto hover:bg-pink-600 transition-all duration-200 shadow-md"
                     >
-                      <Gift className="w-4 h-4" /> Send Wishes
+                      <Gift className="w-4 h-4" /> 
+                      {wishesLoading[person._id] ? "Sending..." : "Send Wishes"}
                     </button>
                   </div>
                 ))}

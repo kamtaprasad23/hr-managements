@@ -2,19 +2,22 @@ import { Link } from "react-router-dom";
 
 function LoginSelection() {
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-r from-blue-500 to-indigo-600">
-      <h1 className="text-4xl font-bold text-white mb-8">
-        Attendance Management System
+    <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-purple-500 via-pink-500 to-red-500 animate-gradient-x">
+      <h1 className="text-4xl font-bold text-white mb-10 drop-shadow-lg">
+        HR - Management System
       </h1>
-      <div className="bg-white p-8 rounded-2xl shadow-lg w-80 text-center">
+
+      <div className="bg-white p-10 rounded-3xl shadow-2xl w-80 text-center transform hover:scale-105 transition-transform duration-300">
         <h2 className="text-2xl mb-6 font-semibold text-gray-700">Login As</h2>
+
         <Link to="/employee-login">
-          <button className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 mb-4">
+          <button className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 rounded-xl hover:from-blue-600 hover:to-indigo-700 shadow-lg transition-all mb-5">
             Employee Login
           </button>
         </Link>
+
         <Link to="/admin-login">
-          <button className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700">
+          <button className="w-full bg-gradient-to-r from-green-400 to-teal-500 text-white py-3 rounded-xl hover:from-green-500 hover:to-teal-600 shadow-lg transition-all">
             Admin Login
           </button>
         </Link>
@@ -22,4 +25,5 @@ function LoginSelection() {
     </div>
   );
 }
+
 export default LoginSelection;
