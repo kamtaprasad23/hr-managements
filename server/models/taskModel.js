@@ -1,0 +1,36 @@
+import mongoose from "mongoose";
+
+const taskSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  description: { type: String, required: true },
+  assignedTo: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: "Employee", 
+    required: true 
+  },
+  assignedBy: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: "Admin", 
+    required: true 
+  },
+  status: { 
+    type: String, 
+    enum: ["Pending", "In Progress", "Completed", "Rejected"], 
+    default: "Pending" 
+  },
+  dueDate: { type: Date, required: true },
+  priority: { 
+    type: String, 
+    enum: ["Low", "Medium", "High", "Urgent"], 
+    default: "Medium" 
+  },
+  completionDate: { type: Date },
+  notes: { type: String },
+  attachments: [{ type: String }],
+}, { timestamps: true });
+
+taskSchema.index({ assignedTo: 1, status: 1 });
+taskSchema.index({ dueDate: 1 });
+taskSchema.index({ assignedBy: 1 });
+
+export default mongoose.model("Task", taskSchema);
