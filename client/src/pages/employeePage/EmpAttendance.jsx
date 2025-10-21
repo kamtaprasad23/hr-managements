@@ -165,22 +165,22 @@ export default function EmpAttendance() {
   if (!user && !token) return null;
 
   return (
-    <div className="min-h-screen flex justify-center items-start px-4 py-8 bg-gray-50">
+    <div className="flex justify-center items-start w-full">
       <Toaster />
-      <div className="w-full max-w-md sm:max-w-lg md:max-w-3xl bg-gray-50 rounded-2xl border-gray-200 p-6">
+      <div className="w-full max-w-md sm:max-w-lg md:max-w-3xl bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex flex-col items-center mb-6">
           <UserStar className="text-green-500 w-12 h-12 mb-2" />
-          <h1 className="text-3xl font-bold text-gray-800 text-center">Attendance Tracker</h1>
-          <p className="text-gray-500 text-sm text-center mt-1">Mark your login & checkout time every day.</p>
+          <h1 className="text-3xl font-bold text-center">Attendance Tracker</h1>
+          <p className="text-gray-600 dark:text-gray-300 text-sm text-center mt-1">Mark your login & checkout time every day.</p>
         </div>
 
         <div className="mb-6">
-          <label className="flex items-center gap-2 font-medium mb-2 text-gray-700">
+          <label className="flex items-center gap-2 font-medium mb-2 ">
             <Calendar className="text-[#007fff]" size={20} /> Select Date (View Only)
           </label>
           <input
             type="date"
-            className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#007fff] focus:outline-none"
+            className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#007fff] focus:outline-none"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
             max={getLocalDate()}
@@ -191,24 +191,24 @@ export default function EmpAttendance() {
           <button
             onClick={handleLogin}
             disabled={!!loginTime}
-            className={`flex-1 flex items-center justify-center gap-2 px-5 py-2 rounded-lg font-semibold text-white transition ${loginTime ? "bg-green-300 cursor-not-allowed" : "bg-green-500 hover:bg-green-600"}`}
+            className={`flex-1 flex items-center justify-center gap-2 px-5 py-2 rounded-lg font-semibold text-white transition ${loginTime ? "bg-green-400 dark:bg-green-700 cursor-not-allowed" : "bg-green-500 hover:bg-green-600"}`}
           >
             <LogIn size={20} /> {loginTime ? "Logged In" : "Login"}
           </button>
           <button
             onClick={handleCheckout}
             disabled={!loginTime || !!checkoutTime}
-            className={`flex-1 flex items-center justify-center gap-2 px-5 py-2 rounded-lg font-semibold text-white transition ${!loginTime || checkoutTime ? "bg-red-300 cursor-not-allowed" : "bg-red-500 hover:bg-red-600"}`}
+            className={`flex-1 flex items-center justify-center gap-2 px-5 py-2 rounded-lg font-semibold text-white transition ${!loginTime || checkoutTime ? "bg-red-400 dark:bg-red-800 cursor-not-allowed" : "bg-red-500 hover:bg-red-600"}`}
           >
             <LogOut size={20} /> {checkoutTime ? "Checked Out" : "Checkout"}
           </button>
         </div>
 
-        <div className="bg-gray-50 rounded-xl p-4 mb-6">
-          <h2 className="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
+        <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 mb-6">
+          <h2 className="text-lg font-semibold  mb-3 flex items-center gap-2">
             <Check className="text-green-600" /> Today’s Summary
           </h2>
-          <div className="space-y-2 text-gray-700">
+          <div className="space-y-2 ">
             <p><span className="font-semibold">Date:</span> {selectedDate}</p>
             <p><span className="font-semibold">Login Time:</span> <span className={loginTime ? "text-green-600 font-medium" : ""}>{loginTime || "-"}</span></p>
             <p><span className="font-semibold">Checkout Time:</span> <span className={checkoutTime ? "text-red-600 font-medium" : ""}>{checkoutTime || "-"}</span></p>
@@ -218,19 +218,19 @@ export default function EmpAttendance() {
         <div className="flex justify-center mb-6">
           <button
             onClick={() => setIsSummaryOpen(true)}
-            className="flex items-center justify-center gap-2 px-5 py-2 rounded-lg font-semibold bg-[#007fff] hover:bg-[#007fff] text-white w-full sm:w-auto"
+            className="flex items-center justify-center gap-2 px-5 py-2 rounded-lg font-semibold bg-[#007fff] hover:bg-blue-700 text-white w-full sm:w-auto"
           >
             <Check size={20} /> View Last 10 Days
           </button>
         </div>
 
         {isSummaryOpen && (
-          <div className="fixed inset-0 flex items-start justify-center bg-black/50 z-50 pt-20 px-4 overflow-auto">
-            <div className="bg-white w-full max-w-md sm:max-w-lg rounded-xl shadow-xl p-6 relative">
-              <h2 className="text-2xl font-bold text-gray-800 mb-2">Attendance Summary</h2>
-              <p className="text-gray-500 mb-4">Last 10 Days Overview</p>
+          <div className="fixed inset-0 flex items-start justify-center bg-black bg-opacity-50 z-50 pt-20 px-4 overflow-auto">
+            <div className="bg-white dark:bg-gray-800 w-full max-w-md sm:max-w-lg rounded-xl shadow-xl p-6 relative">
+              <h2 className="text-2xl font-bold mb-2">Attendance Summary</h2>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">Last 10 Days Overview</p>
               {history.length === 0 ? (
-                <p className="text-center text-gray-500">No records yet</p>
+                <p className="text-center ">No records yet</p>
               ) : (
                 <div className="space-y-2 overflow-x-auto">
                   {history.slice(0, 10).map((r, i) => {
@@ -248,9 +248,9 @@ export default function EmpAttendance() {
                     return (
                       <div
                         key={i}
-                        className="flex justify-between items-center border-b py-2 px-3 rounded-lg hover:bg-gray-50 transition text-sm sm:text-base"
+                        className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 py-2 px-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition text-sm sm:text-base"
                       >
-                        <span className="font-medium text-gray-700 w-1/3">{toLocalDateStr(r.date)}</span>
+                        <span className="font-medium  w-1/3">{toLocalDateStr(r.date)}</span>
                         <span className="text-green-600 font-semibold w-1/4">{r.login || "-"}</span>
                         <span className="text-red-600 font-semibold w-1/4">{r.logout || "-"}</span>
                         <span className={`font-semibold w-1/3 ${color}`}>{remark}</span>

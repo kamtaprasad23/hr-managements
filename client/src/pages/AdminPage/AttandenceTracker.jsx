@@ -85,27 +85,27 @@ const AttendanceTracker = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen  p-6">
       <Toaster />
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">📅 Attendance Tracker</h1>
+        <h1 className="text-3xl font-bold ">📅 Attendance Tracker</h1>
         <div>
-          <label className="text-sm font-medium text-gray-700 mr-2">Select Date:</label>
+          <label className="text-sm font-medium  mr-2">Select Date:</label>
           <input
             type="date"
             value={selectedDate.toISOString().split("T")[0]}
             onChange={handleDateChange}
-            className="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="p-2 border  rounded-lg focus:ring-2 focus:ring-blue-500"
           />
         </div>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-          <p className="text-red-600 font-medium">{error}</p>
+        <div className=" border border-red-200 rounded-lg p-4 mb-4">
+          <p className=" font-medium">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-2 bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600"
+            className="mt-2  px-4 py-1 rounded hover:bg-red-600"
           >
             Retry
           </button>
@@ -114,7 +114,7 @@ const AttendanceTracker = () => {
 
       {loading ? (
         <div className="text-center py-8">
-          <p className="text-gray-600">Loading attendance data...</p>
+          <p className="">Loading attendance data...</p>
         </div>
       ) : (
         <>
@@ -123,61 +123,61 @@ const AttendanceTracker = () => {
             {attendanceSummary.map((summary, index) => (
               <div
                 key={index}
-                className="bg-white shadow rounded-lg p-4 flex items-center gap-4"
+                className=" shadow rounded-lg p-4 flex items-center gap-4"
               >
                 <div>{summary.icon}</div>
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500">{summary.title}</h3>
-                  <p className="text-2xl font-semibold text-gray-900">{summary.value}</p>
+                  <h3 className="text-sm font-medium ">{summary.title}</h3>
+                  <p className="text-2xl font-semibold">{summary.value}</p>
                 </div>
               </div>
             ))}
           </div>
 
           {/* Attendance Table */}
-          <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+          <div className=" shadow-lg rounded-lg overflow-hidden">
             <div className="p-6 border-b border-gray-200">
-              <h3 className="text-xl font-semibold text-gray-800">Employee Attendance</h3>
-              <p className="text-gray-600 mt-1">Total: {employees.length} employees</p>
+              <h3 className="text-xl font-semibold">Employee Attendance</h3>
+              <p className=" mt-1">Total: {employees.length} employees</p>
             </div>
             {employees.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
-                <CalendarMonth className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <div className="p-8 text-center">
+                <CalendarMonth className="mx-auto h-12 w-12 mb-4" />
                 <p>No attendance data for this date</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50">
+                  <thead className="">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                         Employee
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                         Department
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium  uppercase tracking-wider">
                         Check-In
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                         Check-Out
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className=" divide-y divide-gray-200">
                     {employees.map((employee) => (
-                      <tr key={employee.id} className="hover:bg-gray-50">
+                      <tr key={employee.id} className="hover:bg-gray-400">
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{employee.name}</div>
-                          <div className="text-sm text-gray-500">{employee.role}</div>
+                          <div className="text-sm font-medium ">{employee.name}</div>
+                          <div className="text-sm ">{employee.role}</div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm ">
                           {employee.Department}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -189,16 +189,16 @@ const AttendanceTracker = () => {
                             {employee.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
                           {employee.avgCheckIn}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm ">
                           {employee.avgCheckOut}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <button
                             onClick={() => setSelectedEmployee(employee)}
-                            className="text-blue-600 hover:text-blue-900"
+                            className=" text-blue-600 hover:text-blue-900"
                           >
                             <Visibility fontSize="small" />
                           </button>
@@ -215,13 +215,13 @@ const AttendanceTracker = () => {
 
       {/* Employee Details Modal */}
       {selectedEmployee && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+        <div className="fixed inset-0 bg-opacity-50 flex bg-gradient-to-r from-fuchsia-500 to-cyan-500 items-center justify-center z-50 p-4">
+          <div className=" rounded-lg p-6 max-w-md w-full bg-white text-black">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Employee Details</h2>
               <button
                 onClick={() => setSelectedEmployee(null)}
-                className="text-gray-500 hover:text-gray-700"
+                className=" hover:text-gray-700"
               >
                 <Close fontSize="small" />
               </button>
@@ -264,7 +264,7 @@ const AttendanceTracker = () => {
             <div className="mt-6 flex justify-end">
               <button
                 onClick={() => setSelectedEmployee(null)}
-                className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+                className=" px-4 py-2 rounded-lg hover:bg-gray-600"
               >
                 Close
               </button>

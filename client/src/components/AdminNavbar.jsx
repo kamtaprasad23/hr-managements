@@ -1,11 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Bell, Menu, ArrowRight } from "lucide-react";
+import { Bell, Menu, ArrowRight, Moon, Sun } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { toggleDarkMode } from "../features/auth/settingsSlice"; // ✅ using your existing slice
 import API from "../utils/api";
 import toast from "react-hot-toast";
 
 export default function AdminNavbar({ toggleSidebar }) {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const isDarkMode = useSelector((state) => state.settings.isDarkMode);
+
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [user, setUser] = useState(null);
@@ -55,8 +60,6 @@ export default function AdminNavbar({ toggleSidebar }) {
   const handleNotificationClick = async (event, notification) => {
     event.preventDefault();
     event.stopPropagation();
-
-    // Optimistically remove from UI and close dropdown
     setNotifications((prev) => prev.filter((n) => n._id !== notification._id));
     setShowNotifications(false);
 
@@ -67,12 +70,21 @@ export default function AdminNavbar({ toggleSidebar }) {
       }
     } catch (err) {
       toast.error("Failed to clear notification.");
-      fetchNotifications(); // Re-fetch on error
+      fetchNotifications();
     }
   };
 
+  const handleDarkToggle = () => {
+    dispatch(toggleDarkMode());
+    toast.success(isDarkMode ? "Light mode enabled" : "Dark mode enabled");
+  };
+
   return (
-    <header className="fixed top-0 left-0 right-0 bg-blue-600 text-white p-4 shadow-md flex justify-between items-center z-50">
+    <header
+      className={`fixed top-0 left-0 right-0 ${
+        isDarkMode ? "bg-blue-600 text-white" : "bg-blue-600 text-white"
+      } p-4 shadow-md flex justify-between items-center z-50 transition-all`}
+    >
       {/* Left section */}
       <div className="flex items-center gap-3">
         <button
@@ -86,7 +98,16 @@ export default function AdminNavbar({ toggleSidebar }) {
 
       {/* Right section */}
       <div className="flex items-center gap-4">
-        {user && <p className="hidden sm:block font-medium">Welcome To, {user.name}</p>}
+        {user && <p className="hidden sm:block font-medium">Welcome, {user.name}</p>}
+
+        {/* Dark Mode Toggle */}
+        <button
+          onClick={handleDarkToggle}
+          className="p-2 rounded-full hover:bg-gray-700 transition"
+          title="Toggle Dark Mode"
+        >
+          {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+        </button>
 
         {/* Notification Bell */}
         <div className="relative" ref={notificationRef}>
@@ -104,8 +125,12 @@ export default function AdminNavbar({ toggleSidebar }) {
 
           {/* Notification Dropdown */}
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 bg-white text-gray-800 rounded-lg shadow-xl border z-50 max-h-96 overflow-y-auto">
-              <div className="p-3 border-b flex justify-between items-center">
+            <div
+              className={`absolute right-0 mt-2 w-80 ${
+                isDarkMode ? "bg-gray-800 text-gray-200" : "bg-white text-gray-800"
+              } rounded-lg shadow-xl border dark:border-gray-700 z-50 max-h-96 overflow-y-auto`}
+            >
+              <div className="p-3 border-b dark:border-gray-700 flex justify-between items-center">
                 <h3 className="font-semibold">Notifications</h3>
                 <Link
                   to="/admin/dashboard/notification"
@@ -116,17 +141,23 @@ export default function AdminNavbar({ toggleSidebar }) {
                 </Link>
               </div>
               {notifications.length === 0 ? (
-                <p className="p-4 text-center text-gray-500">No new notifications</p>
+                <p className="p-4 text-center text-gray-500 dark:text-gray-400">
+                  No new notifications
+                </p>
               ) : (
                 notifications.map((n) => (
                   <a
                     key={n._id}
                     href={n.link || "#"}
                     onClick={(e) => handleNotificationClick(e, n)}
-                    className="block p-3 border-b text-sm hover:bg-gray-50 cursor-pointer"
+                    className={`block p-3 border-b ${
+                      isDarkMode
+                        ? "border-gray-700 hover:bg-gray-700"
+                        : "hover:bg-gray-50"
+                    } text-sm cursor-pointer`}
                   >
-                    <p className="font-medium text-gray-800">{n.title}</p>
-                    <p className="text-gray-600 mt-1">{n.message}</p>
+                    <p className="font-medium">{n.title}</p>
+                    <p className="text-gray-500 mt-1">{n.message}</p>
                     <p className="text-xs text-gray-400 mt-2">
                       {new Date(n.createdAt).toLocaleString()}
                     </p>

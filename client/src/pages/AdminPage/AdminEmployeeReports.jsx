@@ -172,31 +172,31 @@ export default function AdminEmpReports() {
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">📊 Reports</h1>
-      <p className="text-gray-600 mb-6">
+      <p className=" mb-6">
         Filter and download reports for attendance, employees, or salaries.
       </p>
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+        <div className=" border border-red-200 rounded-lg p-4 mb-4">
           <p className="text-red-600 font-medium">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-2 bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600"
+            className="mt-2 bg-red-500  px-4 py-1 rounded hover:bg-red-600"
           >
             Retry
           </button>
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row gap-4 mb-6 bg-gray-50 p-4 rounded-lg shadow">
+      <div className="flex flex-col md:flex-row gap-4 mb-6  p-4 rounded-lg shadow ">
         <select
           name="reportType"
           value={filters.reportType}
           onChange={handleFilterChange}
           className="border p-2 rounded w-full md:w-1/4"
         >
-          <option value="attendance">Attendance</option>
-          <option value="employee">Employee</option>
-          <option value="salary">Salary</option>
+          <option value="attendance" className="bg-gray-400">Attendance</option>
+          <option value="employee" className="bg-gray-400">Employee</option>
+          <option value="salary" className="bg-gray-400">Salary</option>
         </select>
 
         <select
@@ -205,8 +205,8 @@ export default function AdminEmpReports() {
           onChange={handleFilterChange}
           className="border p-2 rounded w-full md:w-1/4"
         >
-          <option value="month">Month</option>
-          <option value="range">Custom Range</option>
+          <option value="month"className="bg-gray-400">Month</option>
+          <option value="range"className="bg-gray-400">Custom Range</option>
         </select>
 
         {filters.dateType === "month" ? (
@@ -275,7 +275,7 @@ export default function AdminEmpReports() {
       </div>
 
       <table className="w-full border border-gray-300 rounded-lg">
-        <thead className="bg-gray-200">
+        <thead className="bg-gray-300 text-black">
           <tr>
             <th className="p-2 text-left">Name</th>
             <th className="p-2 text-left">Email</th>
@@ -307,7 +307,7 @@ export default function AdminEmpReports() {
           {filtered.length > 0 ? (
             filtered.map((r, i) => (
               <tr key={i} className="border-b">
-                <td className="p-2">{r.user?.name || r.name}</td>
+                <td className="p-2 ">{r.user?.name || r.name}</td>
                 <td className="p-2">{r.user?.email || r.email}</td>
                 {filters.reportType === "attendance" && (
                   <>

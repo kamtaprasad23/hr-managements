@@ -64,9 +64,9 @@ const MobileSidebarRow = () => {
   ];
 
   return (
-    <div className="bg-[#007fff] text-white md:hidden ">
+    <div className="bg-blue-600 dark:bg-gray-800 text-white md:hidden ">
       {/* Icons Row */}
-      <div className="flex justify-around py-2 border-b border-blue-300 ">
+      <div className="flex justify-around py-2 border-b border-blue-500 dark:border-gray-700 ">
         {menuItems.map((item) => (
           <Link
             key={item.name}

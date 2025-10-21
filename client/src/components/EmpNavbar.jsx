@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Bell, Menu } from "lucide-react";
+import { Bell, Menu, Sun, Moon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import API from "../utils/api";
 import toast from "react-hot-toast";
+import { toggleDarkMode } from "../features/auth/settingsSlice";
 
 export default function EmpNavbar({ toggleSidebar }) {
   const [user, setUser] = useState(null);
@@ -10,6 +12,9 @@ export default function EmpNavbar({ toggleSidebar }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const notificationRef = useRef(null);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const isDarkMode = useSelector((state) => state.settings.isDarkMode);
 
   useEffect(() => {
     fetchUser();
@@ -53,7 +58,9 @@ export default function EmpNavbar({ toggleSidebar }) {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 bg-blue-600 text-white p-4 shadow-md flex justify-between items-center z-50">
+    <header
+      className="fixed top-0 left-0 right-0 p-4 shadow-md flex justify-between items-center z-50 transition-colors duration-300 bg-blue-600 text-white dark:bg-gray-900 dark:text-white"
+    >
       <div className="flex items-center gap-3">
         <button
           onClick={toggleSidebar}
@@ -65,7 +72,20 @@ export default function EmpNavbar({ toggleSidebar }) {
       </div>
 
       <div className="flex items-center gap-4">
-        {user && <p className="hidden sm:block font-medium">👋 {user.name}</p>}
+        {user && (
+          <p className="hidden sm:block font-medium">
+            Welcome, {user.name}
+          </p>
+        )}
+
+        {/* --- Dark Mode Toggle --- */}
+        <button
+          onClick={() => dispatch(toggleDarkMode())}
+          className="p-2 rounded-full hover:bg-blue-700 dark:hover:bg-gray-700 transition"
+          title="Toggle Dark Mode"
+        >
+          {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+        </button>
 
         {/* --- Notifications --- */}
         <div className="relative" ref={notificationRef}>
@@ -82,20 +102,36 @@ export default function EmpNavbar({ toggleSidebar }) {
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-80 bg-white text-gray-800 rounded-lg shadow-lg border z-50 max-h-96 overflow-y-auto">
-              <div className="p-4 border-b">
-                <h3 className="font-semibold text-gray-900">Notifications</h3>
+            <div
+              className={`absolute right-0 mt-2 w-80 rounded-lg shadow-lg border z-50 max-h-96 overflow-y-auto transition-all duration-300 ${
+                isDarkMode
+                  ? "bg-gray-800 text-gray-200 border-gray-700"
+                  : "bg-white text-gray-800 border-gray-200"
+              }`}
+            >
+              <div className="p-4 border-b dark:border-gray-700">
+                <h3 className="font-semibold">Notifications</h3>
               </div>
               {notifications.length === 0 ? (
-                <p className="p-4 text-gray-500">No notifications</p>
+                <p className="p-4 text-gray-500 dark:text-gray-400">
+                  No notifications
+                </p>
               ) : (
                 notifications.map((notification) => (
                   <div
                     key={notification._id}
-                    className="p-3 border-b hover:bg-gray-50 cursor-pointer"
+                    className={`p-3 border-b cursor-pointer transition ${
+                      isDarkMode
+                        ? "border-gray-700 hover:bg-gray-700"
+                        : "border-gray-200 hover:bg-gray-100"
+                    }`}
                   >
-                    <p className="font-medium text-blue-600">{notification.title}</p>
-                    <p className="text-sm text-gray-600">{notification.message}</p>
+                    <p className="font-medium text-blue-600 dark:text-blue-400">
+                      {notification.title}
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">
+                      {notification.message}
+                    </p>
                     <p className="text-xs text-gray-400 mt-1">
                       {new Date(notification.createdAt).toLocaleString()}
                     </p>

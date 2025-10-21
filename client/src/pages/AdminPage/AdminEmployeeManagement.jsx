@@ -144,11 +144,11 @@ export default function AdminEmpManagement() {
       <Toaster />
       <h1 className="text-2xl font-bold mb-6">👨‍💼 Employee Management</h1>
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+        <div className=" border border-red-200 rounded-lg p-4 mb-4">
           <p className="text-red-600 font-medium">{error}</p>
           <button
             onClick={fetchEmployees}
-            className="mt-2 bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600"
+            className="mt-2 bg-red-500  px-4 py-1 rounded hover:bg-red-600"
           >
             Retry
           </button>
@@ -157,7 +157,7 @@ export default function AdminEmpManagement() {
 
       <form
         onSubmit={handleSubmit}
-        className="mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg shadow"
+        className="mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4  p-4 rounded-lg shadow"
       >
         <input
           type="text"
@@ -234,35 +234,35 @@ export default function AdminEmpManagement() {
      
       </form>
 
-      <div className="overflow-x-auto bg-white rounded-lg shadow">
+      <div className="overflow-x-auto rounded-lg shadow">
         <table className="w-full border-collapse">
-          <thead className="bg-gray-200">
+          <thead className="bg-gray-300  ">
             <tr>
-              <th className="p-3 text-left text-sm font-semibold text-gray-600 whitespace-nowrap">Name</th>
-              <th className="p-3 text-left text-sm font-semibold text-gray-600 whitespace-nowrap">Email</th>
-              <th className="p-3 text-left text-sm font-semibold text-gray-600 whitespace-nowrap">Phone</th>
-              <th className="p-3 text-left text-sm font-semibold text-gray-600 whitespace-nowrap">Position</th>
-              <th className="p-3 text-left text-sm font-semibold text-gray-600 whitespace-nowrap">Salary</th>
-              <th className="p-3 text-center text-sm font-semibold text-gray-600 whitespace-nowrap">Actions</th>
+              <th className="p-3 text-left text-sm font-semibold text-black whitespace-nowrap">Name</th>
+              <th className="p-3 text-left text-sm font-semibold text-black whitespace-nowrap">Email</th>
+              <th className="p-3 text-left text-sm font-semibold text-black whitespace-nowrap">Phone</th>
+              <th className="p-3 text-left text-sm font-semibold text-black whitespace-nowrap">Position</th>
+              <th className="p-3 text-left text-sm font-semibold text-black whitespace-nowrap">Salary</th>
+              <th className="p-3 text-center text-sm font-semibold text-black whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody>
             {employees.length > 0 ? (
               employees.map((emp) => (
-                <tr key={emp._id} className="border-b border-gray-200 hover:bg-gray-50">
-                  <td className="p-3 whitespace-nowrap">
+                <tr key={emp._id} className="border-b hover:text-black border-gray-200 hover:bg-gray-300">
+                  <td className="p-3 whitespace-nowrap ">
                     <Link to={`/admin/dashboard/employee/${emp._id}`} className="text-blue-600 hover:underline font-medium">
                       {emp.name}
                     </Link>
                   </td>
-                  <td className="p-3 whitespace-nowrap text-gray-700">{emp.email}</td>
-                  <td className="p-3 whitespace-nowrap text-gray-700">{emp.phone}</td>
-                  <td className="p-3 whitespace-nowrap text-gray-700">{emp.position}</td>
-                  <td className="p-3 whitespace-nowrap text-gray-700">{emp.salary || "-"}</td>
+                  <td className="p-3 whitespace-nowrap text-gray-700 hover:text-black">{emp.email}</td>
+                  <td className="p-3 whitespace-nowrap text-gray-500 hover:text-black">{emp.phone}</td>
+                  <td className="p-3 whitespace-nowrap text-gray-500 hover:text-black">{emp.position}</td>
+                  <td className="p-3 whitespace-nowrap text-gray-500 hover:text-black">{emp.salary || "-"}</td>
                   <td className="p-3 text-center relative">
                     <button
                       onClick={() => toggleDropdown(emp._id)}
-                      className="px-2 py-1 text-gray-600 rounded hover:bg-gray-300"
+                      className="px-2 py-1 rounded hover:bg-gray-300"
                     >
                       <BsThreeDotsVertical />
                     </button>

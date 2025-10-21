@@ -77,10 +77,10 @@ export default function AdminTask() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen  p-6">
       <Toaster position="top-right" />
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">📝 Task Management</h1>
+        <h1 className="text-3xl font-bold ">📝 Task Management</h1>
         <button
           onClick={() => setShowForm(!showForm)}
           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
@@ -91,17 +91,17 @@ export default function AdminTask() {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+        <div className=" border border-red-200 rounded-lg p-4 mb-4">
           <p className="text-red-600 font-medium">{error}</p>
         </div>
       )}
 
       {showForm && (
-        <div className="bg-white shadow-lg rounded-lg p-6 mb-6">
+        <div className=" shadow-lg rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Assign New Task</h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Task Title *</label>
+              <label className="block text-sm font-medium  mb-2">Task Title *</label>
               <input
                 type="text"
                 name="title"
@@ -112,7 +112,7 @@ export default function AdminTask() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+              <label className="block text-sm font-medium  mb-2">Priority</label>
               <select
                 name="priority"
                 value={form.priority}
@@ -126,7 +126,7 @@ export default function AdminTask() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Assign To *</label>
+              <label className="block text-sm font-medium  mb-2">Assign To *</label>
               <select
                 name="assignedTo"
                 value={form.assignedTo}
@@ -143,7 +143,7 @@ export default function AdminTask() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Due Date *</label>
+              <label className="block text-sm font-medium  mb-2">Due Date *</label>
               <input
                 type="date"
                 name="dueDate"
@@ -154,7 +154,7 @@ export default function AdminTask() {
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+              <label className="block text-sm font-medium  mb-2">Description *</label>
               <textarea
                 name="description"
                 value={form.description}
@@ -180,14 +180,14 @@ export default function AdminTask() {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-blue-600  py-3 px-6 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? "Assigning..." : "Assign Task"}
               </button>
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="bg-gray-500 text-white py-3 px-6 rounded-lg hover:bg-gray-600"
+                className=" py-3 px-6 rounded-lg hover:bg-gray-600"
               >
                 Cancel
               </button>
@@ -196,51 +196,51 @@ export default function AdminTask() {
         </div>
       )}
 
-      <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+      <div className=" shadow-lg rounded-lg overflow-hidden">
         <div className="p-6 border-b border-gray-200">
-          <h3 className="text-xl font-semibold text-gray-800">Assigned Tasks</h3>
-          <p className="text-gray-600 mt-1">Total: {tasks.length} tasks</p>
+          <h3 className="text-xl font-semibold">Assigned Tasks</h3>
+          <p className="mt-1">Total: {tasks.length} tasks</p>
         </div>
         {tasks.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            <Clock className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+          <div className="p-8 text-center ">
+            <Clock className="mx-auto h-12 w-12  mb-4" />
             <p>No tasks assigned yet</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                     Task
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                     Employee
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                     Priority
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                     Due Date
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium  uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className=" divide-y divide-gray-200">
                 {tasks.map((task) => (
-                  <tr key={task._id} className="hover:bg-gray-50">
+                  <tr key={task._id} className="hover:bg-gray-500">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
+                          <div className="text-sm font-medium">
                             {task.title}
                           </div>
-                          <div className="text-sm text-gray-500 truncate max-w-xs">
+                          <div className="text-sm truncate max-w-xs">
                             {task.description.length > 50
                               ? `${task.description.substring(0, 50)}...`
                               : task.description
@@ -249,9 +249,9 @@ export default function AdminTask() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm ">
                       {task.assignedTo?.name || "N/A"}
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs ">
                         {task.assignedTo?.position || "-"}
                       </div>
                     </td>
@@ -260,7 +260,7 @@ export default function AdminTask() {
                         {task.priority}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm ">
                       {new Date(task.dueDate).toLocaleDateString()}
                       {task.isOverdue && (
                         <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">

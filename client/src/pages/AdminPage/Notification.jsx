@@ -73,10 +73,10 @@ const Notification = () => {
   }, []);
 
   return (
-    <div className="p-4 sm:p-6 bg-gray-50 min-h-[calc(100vh-120px)] sm:min-h-screen max-w-full sm:max-w-3xl mx-auto rounded-lg shadow-lg"><Toaster />
+    <div className="p-4 sm:p-6 bg-white dark:bg-gray-800 min-h-[calc(100vh-120px)] sm:min-h-screen max-w-full sm:max-w-3xl mx-auto rounded-lg shadow-lg"><Toaster />
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold text-gray-800 flex items-center gap-2">
+        <h1 className="text-2xl font-semibold text-gray-800 dark:text-white flex items-center gap-2">
           <NotificationsNoneIcon className="text-blue-600" />
           Notifications
         </h1>
@@ -91,7 +91,7 @@ const Notification = () => {
       {/* Notification List */}
       <div className="space-y-4">
         {loading ? (
-          <p className="text-gray-500 text-center mt-10">Loading...</p>
+          <p className="text-gray-500 dark:text-gray-400 text-center mt-10">Loading...</p>
         ) : notifications.length > 0 ? (
           notifications.map((note) => (
             <Link
@@ -100,15 +100,15 @@ const Notification = () => {
               onClick={(e) => handleNotificationClick(e, note)}
             >
               <div
-                className={`bg-white rounded-lg shadow-sm p-4 border border-gray-100 hover:shadow-md transition flex gap-3 items-start ${
-                  note.read ? "opacity-60 bg-gray-50" : ""
+                className={`bg-white dark:bg-gray-700 rounded-lg shadow-sm p-4 border border-gray-100 dark:border-gray-600 hover:shadow-md transition flex gap-3 items-start ${
+                  note.read ? "opacity-60 bg-gray-50 dark:bg-gray-700/50" : ""
                 }`}
               >
                 <div className="mt-1">{getIcon(note.type)}</div>
                 <div>
-                  <h2 className="text-lg font-medium text-gray-800">{note.title}</h2>
-                  <p className="text-sm text-gray-600">{note.message}</p>
-                  <p className="text-xs text-gray-400 mt-1">
+                  <h2 className="text-lg font-medium text-gray-800 dark:text-gray-100">{note.title}</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">{note.message}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                     {new Date(note.createdAt).toLocaleString()}
                   </p>
                 </div>
@@ -116,7 +116,7 @@ const Notification = () => {
             </Link>
           ))
         ) : (
-          <div className="text-center py-10 text-gray-500">
+          <div className="text-center py-10 text-gray-500 dark:text-gray-400">
             🎉 You’re all caught up! No new notifications.
           </div>
         )}

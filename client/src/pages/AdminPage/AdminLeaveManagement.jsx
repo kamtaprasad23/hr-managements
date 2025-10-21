@@ -145,22 +145,22 @@ export default function AdminLeaveManagement() {
   };
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen rounded-2xl shadow-2xl">
+    <div className="p-6">
       <Toaster />
       <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
         <FileText /> Leave Management
       </h1>
-      <p className="text-gray-600 mb-6">Approve or reject employee leave requests</p>
+      <p className="mb-6">Approve or reject employee leave requests</p>
 
       {/* Leave Summary */}
-      <div className="flex gap-4 mb-6">
-        <div className="bg-green-100 text-green-800 px-4 py-2 rounded shadow">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div className="px-4 py-2 text-green-800 bg-green-100 rounded shadow dark:bg-gray-700 dark:text-green-300">
           Approved: {summary.Approved}
         </div>
-        <div className="bg-red-100 text-red-800 px-4 py-2 rounded shadow">
+        <div className="px-4 py-2 text-red-800 bg-red-100 rounded shadow dark:bg-gray-700 dark:text-red-300">
           Rejected: {summary.Rejected}
         </div>
-        <div className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded shadow">
+        <div className="px-4 py-2 text-yellow-800 bg-yellow-100 rounded shadow dark:bg-gray-700 dark:text-yellow-300">
           Pending: {summary.Pending}
         </div>
       </div>
@@ -168,9 +168,9 @@ export default function AdminLeaveManagement() {
       {/* Leave List */}
       <div className="space-y-4">
         {leaves.length === 0 ? (
-          <p className="text-center text-gray-500">No leave requests for this month</p>
+          <p className="text-center ">No leave requests for this month</p>
         ) : leaves.map((leave) => (
-          <div key={leave._id} className="bg-white rounded-xl shadow p-4 flex justify-between items-center">
+          <div key={leave._id} className="flex items-center justify-between p-4 bg-white rounded-xl shadow dark:bg-gray-800">
             <div>
               <p className="font-semibold">{leave.employeeName}</p>
               <p>Date: {new Date(leave.date).toLocaleDateString()}</p>
@@ -183,13 +183,13 @@ export default function AdminLeaveManagement() {
               <div className="flex gap-2">
                 <button
                   onClick={() => handleUpdateStatus(leave._id, "Approved")}
-                  className="bg-green-500 text-white px-3 py-1 rounded flex items-center"
+                  className="flex items-center px-3 py-1 text-white bg-green-500 rounded"
                 >
                   <Check size={16} />
                 </button>
                 <button
                   onClick={() => handleUpdateStatus(leave._id, "Rejected")}
-                  className="bg-red-500 text-white px-3 py-1 rounded flex items-center"
+                  className="flex items-center px-3 py-1 text-white bg-red-500 rounded"
                 >
                   <X size={16} />
                 </button>

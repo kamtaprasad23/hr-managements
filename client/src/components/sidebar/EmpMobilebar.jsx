@@ -24,14 +24,14 @@ export default function EmpMobileBar() {
   ];
 
   return (
-    <div className="bg-white border-t border-gray-300 shadow-md">
+    <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-md">
       {/* Icon Row */}
       <div className="flex justify-around items-center py-2">
         {menuItems.map((item) => (
           <button
             key={item.name}
             onClick={() => navigate(item.path)}
-            className="flex flex-col items-center text-gray-600 hover:text-blue-600 transition-all"
+            className="flex flex-col items-center text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-white transition-all"
           >
             {item.icon}
             <span className="text-[11px] mt-1">{item.name}</span>

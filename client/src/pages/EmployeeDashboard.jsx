@@ -1,13 +1,19 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import API from "../utils/api";
-import { User, CalendarCheck, ClipboardList, FileText, Calendar } from "lucide-react";
+import {
+  User,
+  CalendarCheck,
+  ClipboardList,
+  FileText,
+  Calendar,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function EmployeeDashboard() {
   const [user, setUser] = useState(null);
   const [records, setRecords] = useState([]);
-  const reduxUser = useSelector((state) => state.auth.user);
+  const { user: reduxUser } = useSelector((state) => state.auth);
 
   useEffect(() => {
     fetchUser();
@@ -41,26 +47,61 @@ export default function EmployeeDashboard() {
       : "Good Evening";
 
   return (
-    <div className="w-full p-4 md:p-6">
+    <div>
       {/* Greeting Card */}
-      <div className="bg-blue-600 text-white rounded-xl p-6 shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
+      <div
+        className="rounded-xl p-6 shadow-lg flex flex-col md:flex-row items-center justify-between gap-4 transition-all duration-300 bg-blue-600 text-white dark:bg-gray-800 dark:text-white"
+      >
         <div className="text-center md:text-left">
           <h2 className="text-xl md:text-2xl font-bold">
             {greeting}, {reduxUser?.name || user?.name || "Employee"} 👋
           </h2>
-          <p className="text-sm md:text-base mt-2 text-blue-100">
-            Welcome to your dashboard! Manage your profile, attendance, and tasks here.
+          <p
+            className="text-sm md:text-base mt-2 text-blue-100 dark:text-gray-300"
+          >
+            Welcome to your dashboard! Manage your profile, attendance, and
+            tasks here.
           </p>
         </div>
       </div>
 
       {/* Dashboard Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-6">
-        <Card icon={<User />} color="blue" title="Profile" text="View your profile info" path="/employee/profile" />
-        <Card icon={<CalendarCheck />} color="green" title="Attendance" text="Check your attendance" path="/employee/attendance" />
-        <Card icon={<ClipboardList />} color="red" title="Tasks" text="View and manage your tasks" path="/employee/tasks" />
-        <Card icon={<Calendar />} color="purple" title="Leave" text="Apply or view leaves" path="/employee/leave" />
-        <Card icon={<FileText />} color="yellow" title="Salary Slips" text="View salary details" path="/employee/salary-slip" />
+        <Card
+          icon={<User />}
+          color="blue"
+          title="Profile"
+          text="View your profile info"
+          path="/employee/profile"
+        />
+        <Card
+          icon={<CalendarCheck />}
+          color="green"
+          title="Attendance"
+          text="Check your attendance"
+          path="/employee/attendance"
+        />
+        <Card
+          icon={<ClipboardList />}
+          color="red"
+          title="Tasks"
+          text="View and manage your tasks"
+          path="/employee/tasks"
+        />
+        <Card
+          icon={<Calendar />}
+          color="purple"
+          title="Leave"
+          text="Apply or view leaves"
+          path="/employee/leave"
+        />
+        <Card
+          icon={<FileText />}
+          color="yellow"
+          title="Salary Slips"
+          text="View salary details"
+          path="/employee/salary-slip"
+        />
       </div>
     </div>
   );
@@ -79,18 +120,18 @@ function Card({ icon, color, title, text, path }) {
   return (
     <Link to={path} className="w-full">
       <div
-        className={`
-          bg-white rounded-xl shadow-md p-5 flex items-center gap-4 border-l-4
-          ${colorMap[color].split(" ")[0]} 
-          cursor-pointer hover:shadow-xl hover:scale-105 transition-all duration-300
-        `}
+        className={`rounded-xl shadow-md p-5 flex items-center gap-4 border-l-4 transition-all duration-300 hover:shadow-xl hover:scale-105 cursor-pointer bg-white dark:bg-gray-800 text-gray-800 dark:text-white ${colorMap[color].split(" ")[0]} dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700`}
       >
-        <div className={`p-3 bg-gray-100 rounded-full ${colorMap[color].split(" ")[1]}`}>
+        <div
+          className={`p-3 rounded-full bg-gray-100 dark:bg-gray-700 ${colorMap[color].split(" ")[1]} dark:text-white`}
+        >
           {icon}
         </div>
         <div>
-          <h3 className="font-semibold text-gray-800 text-lg">{title}</h3>
-          <p className="text-sm text-gray-500">{text}</p>
+          <h3 className="font-semibold text-lg">{title}</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-300">
+            {text}
+          </p>
         </div>
       </div>
     </Link>
