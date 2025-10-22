@@ -26,13 +26,15 @@ export default function EmployeeLayout() {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-100 dark:bg-gray-900">
+    <div
+      className={`${isDarkMode ? "dark bg-gray-900 text-white" : "bg-gray-100 text-gray-900"} min-h-screen flex flex-col`}
+    >
       <EmpNavbar onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)} />
 
       {/* --- Sidebar --- */}
       <div
-        className={`fixed top-0 left-0 h-full z-40 transition-transform duration-300 ease-in-out ${
-          isMobile ? (isSidebarOpen ? "translate-x-0" : "-translate-x-full") : ""
+        className={`fixed top-0 md:top-[64px] left-0 h-full md:h-[calc(100vh-64px)] z-40 transition-transform duration-300 ease-in-out ${
+          isMobile ? (isSidebarOpen ? "translate-x-0" : "-translate-x-full") : (isSidebarOpen ? "w-64" : "w-20")
         }`}
       >
         <EmpSidebar isOpen={isSidebarOpen} />
@@ -40,7 +42,9 @@ export default function EmployeeLayout() {
 
       {/* --- Main Content --- */}
       <main
-        className={`flex-1 overflow-y-auto p-4 md:p-6 mt-[64px] pb-[60px] md:pb-0 transition-all duration-300 ${!isMobile ? (isSidebarOpen ? "md:ml-64" : "md:ml-20") : ""}`}
+        className={`flex-1 overflow-y-auto p-4 md:p-6 mt-[64px] pb-[60px] md:pb-0 transition-all duration-300 ${
+          !isMobile ? (isSidebarOpen ? "md:ml-64" : "md:ml-20") : ""
+        }`}
       > 
         <Outlet />
       </main>

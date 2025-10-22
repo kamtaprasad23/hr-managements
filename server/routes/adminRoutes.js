@@ -1,26 +1,3 @@
-// import express from "express";
-// import {
-//   registerAdmin,
-//   loginAdmin,
-//   createEmployee,
-//   getAdminDashboardData,
-//   getTotalEmployees,
-// } from "../controllers/adminController.js";
-// import { verifyToken } from "../middleware/authMiddleware.js";
-
-
-// const router = express.Router();
-
-// router.post("/register", registerAdmin);
-// router.post("/login", loginAdmin);
-// router.post("/create-employee", verifyToken, createEmployee);
-// router.get("/dashboard", verifyToken, getAdminDashboardData);
-// router.get("/total-employees", verifyToken, getTotalEmployees); // Updated route
-
-
-
-// export default router;
-
 
 // server/routes/adminRoutes.js
 import express from "express";
@@ -33,14 +10,16 @@ import {
   getTotalEmployees,
   getBirthdays,
   sendBirthdayWish,
-  getAdminProfile
+  getAdminProfile,
+  approveEmployeeUpdate,
+  rejectEmployeeUpdate
 } from "../controllers/adminController.js";
 import {
   updateEmployee,
   deleteEmployee,
   getEmployeeById,
 } from "../controllers/employeeController.js";
-
+import { updateAdminProfile } from "../controllers/adminController.js";
 const router = express.Router();
 
 // Public routes
@@ -53,9 +32,12 @@ router.post("/employee", verifyToken, adminOnly, createEmployee);
 router.get("/employee/:id", verifyToken, adminOnly, getEmployeeById);
 router.put("/employee/:id", verifyToken, adminOnly, updateEmployee);
 router.delete("/employee/:id", verifyToken, adminOnly, deleteEmployee);
+router.put("/employee/:id/approve", verifyToken, adminOnly, approveEmployeeUpdate);
+router.put("/employee/:id/reject", verifyToken, adminOnly, rejectEmployeeUpdate);
 router.get("/dashboard", verifyToken, adminOnly, getAdminDashboard); // Use the new alias
 router.get("/employees", verifyToken, adminOnly, getTotalEmployees);
 router.get("/birthdays", verifyToken, adminOnly, getBirthdays);
 router.post("/birthday-wish/:employeeId", verifyToken, adminOnly, sendBirthdayWish);
+router.put("/profile", verifyToken, adminOnly, updateAdminProfile);
 
 export default router;

@@ -36,14 +36,18 @@ export default function EmpTask() {
     }
   };
 
-  const markAsRead = async (notificationId) => {
+  const deleteNotification = async (notificationId) => {
     try {
-      await API.put(`/task/notifications/${notificationId}/read`);
-      setNotifications(notifications.map(n => 
-        n._id === notificationId ? { ...n, read: true } : n
-      ));
+      // Optimistically remove from UI
+      setNotifications(prev => prev.filter(n => n._id !== notificationId));
+      toast.success("Notification dismissed");
+      // Make API call to delete from backend
+      await API.delete(`/task/notifications/${notificationId}`);
     } catch (err) {
-      console.error("Failed to mark notification as read:", err);
+      console.error("Failed to delete notification:", err);
+      toast.error("Could not dismiss notification");
+      // If API call fails, refresh notifications to get the real state
+      fetchNotifications();
     }
   };
 
@@ -89,19 +93,19 @@ export default function EmpTask() {
 
   const getTaskSection = (tasks, title, icon) => (
     <div className="mb-8">
-      <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2 mb-4">
+      <h3 className="text-lg font-semibold  flex items-center gap-2 mb-4">
         {icon}
         {title} ({tasks.length})
       </h3>
       {tasks.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8">
           <Clock className="mx-auto h-12 w-12 mb-4" />
           <p>No {title.toLowerCase()} tasks</p>
         </div>
       ) : (
         <div className="space-y-4">
           {tasks.map((task) => (
-            <div key={task._id} className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
+            <div key={task._id} className=" rounded-lg shadow p-6 border-l-4 border-blue-500">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
                   <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getPriorityColor(task.priority)}`}>
@@ -119,10 +123,10 @@ export default function EmpTask() {
                 </span>
               </div>
               
-              <h4 className="text-lg font-semibold text-gray-900 mb-2">{task.title}</h4>
-              <p className="text-gray-600 mb-4">{task.description}</p>
+              <h4 className="text-lg font-semibold  mb-2">{task.title}</h4>
+              <p className=" mb-4">{task.description}</p>
               
-              <div className="grid grid-cols-2 gap-4 text-sm text-gray-500 mb-4">
+              <div className="grid grid-cols-2 gap-4 text-sm  mb-4">
                 <div>
                   <span className="font-medium">From:</span> {task.assignedBy.name}
                 </div>
@@ -175,34 +179,31 @@ export default function EmpTask() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen  p-6">
       <Toaster />
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">📋 My Tasks</h1>
+        <h1 className="text-3xl font-bold  mb-8">📋 My Tasks</h1>
 
         {/* Notifications */}
         {notifications.length > 0 && (
           <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">🔔 New Notifications</h3>
+            <h3 className="text-lg font-semibold mb-4">🔔 New Notifications</h3>
             <div className="space-y-3">
               {notifications.slice(0, 3).map((notification) => (
-                <div key={notification._id} className={`p-4 rounded-lg border-l-4 ${notification.read ? 'bg-gray-50 border-gray-200' : 'bg-blue-50 border-blue-500'}`}>
+                <div 
+                  key={notification._id} 
+                  onClick={() => deleteNotification(notification._id)}
+                  className={`p-4 rounded-lg border-l-4 cursor-pointer hover:shadow-md transition-shadow ${notification.read ? ' border-gray-200' : ' border-blue-500'}`}
+                >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h4 className="font-semibold text-gray-900">{notification.title}</h4>
-                      <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
-                      <p className="text-xs text-gray-500 mt-2">
+                      <h4 className="font-semibold 0">{notification.title}</h4>
+                      <p className="text-sm  mt-1">{notification.message}</p>
+                      <p className="text-xs  mt-2">
                         {new Date(notification.createdAt).toLocaleString()}
                       </p>
                     </div>
-                    {!notification.read && (
-                      <button
-                        onClick={() => markAsRead(notification._id)}
-                        className="ml-3 text-blue-600 hover:text-blue-800"
-                      >
-                        Mark as Read
-                      </button>
-                    )}
+                    <X size={18} className="text-gray-400 hover:text-red-500" />
                   </div>
                 </div>
               ))}
@@ -239,13 +240,13 @@ export default function EmpTask() {
 
         {/* Completion Modal */}
         {showCompletionModal && activeTask && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[80vh] overflow-y-auto">
+          <div className="fixed inset-0  bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="rounded-lg p-6 bg-white text-black max-w-md w-full max-h-[80vh] overflow-y-auto">
               <h3 className="text-lg font-semibold mb-4">Complete Task</h3>
-              <p className="text-gray-600 mb-4">Task: <strong>{activeTask.title}</strong></p>
+              <p className=" mb-4">Task: <strong>{activeTask.title}</strong></p>
               
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Completion Notes</label>
+                <label className="block text-sm font-medium mb-2">Completion Notes</label>
                 <textarea
                   value={completionNotes}
                   onChange={(e) => setCompletionNotes(e.target.value)}

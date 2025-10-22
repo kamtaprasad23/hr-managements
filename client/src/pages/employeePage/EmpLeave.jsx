@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Calendar, Check, X, PlusCircle } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
+import { useSelector } from "react-redux";
 import API from "../../utils/api";
 
 export default function LeaveCalendar() {
@@ -12,6 +13,7 @@ export default function LeaveCalendar() {
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const [leaves, setLeaves] = useState([]);
+  const { isDarkMode } = useSelector((state) => state.settings);
   const [summary, setSummary] = useState({
     totalLeaves: 0,
     approved: 0,
@@ -137,14 +139,13 @@ export default function LeaveCalendar() {
         days.push(
           <div
             key={day}
-            onClick={() => handleDayClick(day)}
-            className={`border rounded-xl h-20 flex flex-col items-center justify-center cursor-pointer hover:shadow-md transition ${
-              isSunday ? "bg-gray-200" : "bg-white"
+            onClick={() => handleDayClick(day)}className={`border dark:border-gray-700 rounded-xl h-20 flex flex-col items-center justify-center cursor-pointer hover:shadow-lg dark:hover:bg-gray-800 transition ${
+              isSunday ? "" : ""
             }`}
           >
             <span className="font-semibold">{day}</span>
             {isSunday ? (
-              <span className="mt-1 text-xs text-gray-600">WEEK OFF</span>
+              <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">WEEK OFF</span>
             ) : leave ? (
               <span
                 className={`mt-1 px-2 py-1 rounded-full text-xs font-medium ${getBadgeClasses(
@@ -154,7 +155,7 @@ export default function LeaveCalendar() {
                 {leave.status.toUpperCase()}
               </span>
             ) : (
-              <span className="mt-1 text-xs text-gray-500">WORKING</span>
+              <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">WORKING</span>
             )}
           </div>
         );
@@ -164,17 +165,17 @@ export default function LeaveCalendar() {
   };
 
   return (
-    <div className="p-4 md:p-6 bg-gray-50 min-h-screen rounded-2xl">
+    <div className="p-4 md:p-6 min-h-screen rounded-2xl">
       <Toaster />
 
       {/* Header */}
       <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-2">
         <Calendar /> {monthName} {year}
       </h1>
-      <p className="text-gray-600 mb-6">Tap a date to apply or view leave</p>
+      <p className="text-gray-600 dark:text-gray-400 mb-6">Tap a date to apply or view leave</p>
 
       {/* Weekdays */}
-      <div className="grid grid-cols-7 text-center font-semibold mb-2 text-gray-700">
+      <div className="grid grid-cols-7 text-center font-semibold mb-2 ">
         <div className="hidden sm:block">Sunday</div><div className="sm:hidden">Sun</div>
         <div className="hidden sm:block">Monday</div><div className="sm:hidden">Mon</div>
         <div className="hidden sm:block">Tuesday</div><div className="sm:hidden">Tue</div>
@@ -201,7 +202,7 @@ export default function LeaveCalendar() {
 
         <button
           onClick={fetchLeaveSummary}
-          className="flex items-center gap-2 bg-black text-white rounded-xl shadow-lg px-4 py-2 cursor-pointer transition-all text-sm sm:text-base"
+          className="flex items-center gap-2 bg-gray-800 dark:bg-gray-700 text-white rounded-xl shadow-lg px-4 py-2 cursor-pointer transition-all text-sm sm:text-base"
         >
           <Check /> Leave Summary
         </button>
@@ -209,10 +210,10 @@ export default function LeaveCalendar() {
 
       {/* Apply Leave Modal */}
       {isApplyModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4 transition-all">
-          <div className="bg-white w-full max-w-md rounded-2xl p-6 relative animate-fadeIn">
+        <div className={`fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4 transition-all ${isDarkMode ? 'dark' : ''}`}>
+          <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white w-full max-w-md rounded-2xl p-6 relative animate-fadeIn">
             <button
-              className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+              className="absolute top-3 right-3 text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white"
               onClick={() => setIsApplyModalOpen(false)}
             >
               <X size={20} />
@@ -221,24 +222,24 @@ export default function LeaveCalendar() {
             <h2 className="text-2xl font-bold mb-4">Apply Leave</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <label className="flex flex-col">
-                <span className="font-medium text-gray-600">Select Date</span>
+                <span className="font-medium">Select Date</span>
                 <input
                   type="date"
                   name="date"
                   value={form.date}
                   onChange={handleChange}
-                  className="border rounded px-3 py-2 mt-1 w-full"
+                  className="border dark:border-gray-600 bg-transparent rounded px-3 py-2 mt-1 w-full"
                   min={today.toISOString().split("T")[0]}
                   required
                 />
               </label>
               <label className="flex flex-col">
-                <span className="font-medium text-gray-600">Reason</span>
+                <span className="font-medium">Reason</span>
                 <textarea
                   name="reason"
                   value={form.reason}
                   onChange={handleChange}
-                  className="border rounded px-3 py-2 mt-1 w-full"
+                  className="border dark:border-gray-600 bg-transparent rounded px-3 py-2 mt-1 w-full"
                   rows={3}
                   required
                 />
@@ -266,10 +267,10 @@ export default function LeaveCalendar() {
 
       {/* Leave Summary Modal */}
       {isSummaryModalOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4 transition-all">
-          <div className="bg-white w-full max-w-md rounded-2xl p-6 relative animate-fadeIn">
+        <div className={`fixed inset-0 flex items-center justify-center bg-black/50 z-50 p-4 transition-all ${isDarkMode ? 'dark' : ''}`}>
+          <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white w-full max-w-md rounded-2xl p-6 relative animate-fadeIn">
             <button
-              className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+              className="absolute top-3 right-3 text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white"
               onClick={() => setIsSummaryModalOpen(false)}
             >
               <X size={20} />

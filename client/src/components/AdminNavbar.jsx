@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Bell, Menu, ArrowRight, Moon, Sun } from "lucide-react";
+import { Bell, Menu, ArrowRight, Moon, Sun, X } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { toggleDarkMode } from "../features/auth/settingsSlice"; // ✅ using your existing slice
+import { toggleDarkMode } from "../features/auth/settingsSlice"; // ✅ your slice
 import API from "../utils/api";
 import toast from "react-hot-toast";
 
@@ -33,6 +33,7 @@ export default function AdminNavbar({ toggleSidebar }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [notificationRef]);
 
+  // ✅ Fetch logged-in admin details
   const fetchUser = async () => {
     try {
       const res = await API.get("/admin/me");
@@ -42,6 +43,7 @@ export default function AdminNavbar({ toggleSidebar }) {
     }
   };
 
+  // ✅ Fetch notifications
   const fetchNotifications = async () => {
     try {
       const res = await API.get("/notifications");
@@ -51,12 +53,14 @@ export default function AdminNavbar({ toggleSidebar }) {
     }
   };
 
+  // ✅ Logout admin
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
     navigate("/");
   };
 
+  // ✅ Click on notification → navigate and delete
   const handleNotificationClick = async (event, notification) => {
     event.preventDefault();
     event.stopPropagation();
@@ -74,6 +78,19 @@ export default function AdminNavbar({ toggleSidebar }) {
     }
   };
 
+  // ✅ Manual delete with “X” icon
+  const handleNotificationDelete = async (event, notificationId) => {
+    event.stopPropagation(); // prevent navigation
+    setNotifications((prev) => prev.filter((n) => n._id !== notificationId));
+    try {
+      await API.delete(`/notifications/${notificationId}`);
+    } catch (err) {
+      toast.error("Failed to delete notification.");
+      fetchNotifications();
+    }
+  };
+
+  // ✅ Dark mode toggle
   const handleDarkToggle = () => {
     dispatch(toggleDarkMode());
     toast.success(isDarkMode ? "Light mode enabled" : "Dark mode enabled");
@@ -100,7 +117,7 @@ export default function AdminNavbar({ toggleSidebar }) {
       <div className="flex items-center gap-4">
         {user && <p className="hidden sm:block font-medium">Welcome, {user.name}</p>}
 
-        {/* Dark Mode Toggle */}
+        {/* 🌙 Dark Mode Toggle */}
         <button
           onClick={handleDarkToggle}
           className="p-2 rounded-full hover:bg-gray-700 transition"
@@ -109,7 +126,7 @@ export default function AdminNavbar({ toggleSidebar }) {
           {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
         </button>
 
-        {/* Notification Bell */}
+        {/* 🔔 Notification Bell */}
         <div className="relative" ref={notificationRef}>
           <button
             onClick={() => setShowNotifications(!showNotifications)}
@@ -123,7 +140,7 @@ export default function AdminNavbar({ toggleSidebar }) {
             )}
           </button>
 
-          {/* Notification Dropdown */}
+          {/* 🔽 Notification Dropdown */}
           {showNotifications && (
             <div
               className={`absolute right-0 mt-2 w-80 ${
@@ -140,35 +157,44 @@ export default function AdminNavbar({ toggleSidebar }) {
                   View All <ArrowRight size={12} />
                 </Link>
               </div>
+
               {notifications.length === 0 ? (
                 <p className="p-4 text-center text-gray-500 dark:text-gray-400">
                   No new notifications
                 </p>
               ) : (
                 notifications.map((n) => (
-                  <a
+                  <div
                     key={n._id}
-                    href={n.link || "#"}
                     onClick={(e) => handleNotificationClick(e, n)}
-                    className={`block p-3 border-b ${
+                    className={`flex justify-between items-start p-3 border-b ${
                       isDarkMode
                         ? "border-gray-700 hover:bg-gray-700"
                         : "hover:bg-gray-50"
                     } text-sm cursor-pointer`}
                   >
-                    <p className="font-medium">{n.title}</p>
-                    <p className="text-gray-500 mt-1">{n.message}</p>
-                    <p className="text-xs text-gray-400 mt-2">
-                      {new Date(n.createdAt).toLocaleString()}
-                    </p>
-                  </a>
+                    <div className="flex-1">
+                      <p className="font-medium">{n.title}</p>
+                      <p className="text-gray-500 mt-1">{n.message}</p>
+                      <p className="text-xs text-gray-400 mt-2">
+                        {new Date(n.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => handleNotificationDelete(e, n._id)}
+                      className="ml-2 text-gray-400 hover:text-red-500"
+                      title="Delete Notification"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
                 ))
               )}
             </div>
           )}
         </div>
 
-        {/* Logout */}
+        {/* 🚪 Logout */}
         <button
           onClick={handleLogout}
           className="bg-red-500 px-3 py-2 rounded-md hover:bg-red-600 text-sm md:text-base"

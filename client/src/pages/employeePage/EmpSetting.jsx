@@ -15,7 +15,7 @@ export default function EmployeeSettings() {
   );
 
   return (
-    <div className="p-6 max-w-2xl mx-auto bg-gray-50 dark:bg-gray-800 dark:text-white rounded-2xl space-y-6">
+    <div className="p-6 max-w-2xl mx-auto  rounded-2xl space-y-6">
       <h1 className="text-2xl font-bold">Employee Settings</h1>
 
       {/* Dark Mode */}
@@ -24,7 +24,7 @@ export default function EmployeeSettings() {
           dispatch(toggleDarkMode());
           toast.success(!isDarkMode ? "Dark mode enabled" : "Light mode enabled");
         }}
-        className="w-full flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-700 rounded-xl hover:shadow-md transition text-left"
+        className="w-full flex items-center justify-between p-4  rounded-xl hover:shadow-md transition text-left"
       >
         <div className="flex items-center gap-3">
           {isDarkMode ? <Moon className="text-yellow-400" /> : <Sun className="text-yellow-400" />}
@@ -39,7 +39,7 @@ export default function EmployeeSettings() {
           dispatch(toggleEmailNotifications());
           toast.success(`${!notificationsEnabled ? "Notifications enabled" : "Notifications disabled"}`);
         }}
-        className="w-full flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-700 rounded-xl hover:shadow-md transition text-left"
+        className="w-full flex items-center justify-between p-4  rounded-xl hover:shadow-md transition text-left"
       >
         <div className="flex items-center gap-3">
           {notificationsEnabled ? <Bell className="text-blue-500" /> : <BellOff className="text-red-500" />}
@@ -49,19 +49,19 @@ export default function EmployeeSettings() {
       </button>
 
       {/* Profile Visibility */}
-      <button
+      {/* <button
         onClick={() => {
           dispatch(toggleProfileVisibility());
           toast.success(`Profile is now ${!profilePublic ? "Public" : "Private"}`);
         }}
-        className="w-full flex items-center justify-between p-4 bg-gray-100 dark:bg-gray-700 rounded-xl hover:shadow-md transition text-left"
+        className="w-full flex items-center justify-between p-4  rounded-xl hover:shadow-md transition text-left"
       >
         <div className="flex items-center gap-3">
           <User className="text-green-500" />
           <span className="font-medium">Profile Visibility</span>
         </div>
         <span className="font-semibold">{profilePublic ? "Public" : "Private"}</span>
-      </button>
+      </button> */}
     </div>
   );
 }

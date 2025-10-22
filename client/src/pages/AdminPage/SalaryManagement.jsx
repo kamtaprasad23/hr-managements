@@ -119,9 +119,9 @@ export default function SalaryManagement() {
                 onChange={(e) => setSelectedEmployee(e.target.value)}
                 className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Select Employee</option>
+                <option value="" className="text-black">Select Employee</option>
                 {employees.map((emp) => (
-                  <option key={emp._id} value={emp._id}>
+                  <option key={emp._id} value={emp._id}className="bg-gray-300 text-black" >
                     {emp.name} - {emp.position}
                   </option>
                 ))}
@@ -240,7 +240,7 @@ export default function SalaryManagement() {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {slips.map((slip) => (
-                    <tr key={slip._id} className="hover:bg-gray-50">
+                    <tr key={slip._id} className="hover:bg-gray-300 hover:text-black">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         {slip.employeeId ? slip.employeeId.name : "Employee not found"}
                       </td>

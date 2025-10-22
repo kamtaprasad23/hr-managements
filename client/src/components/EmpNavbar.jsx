@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Bell, Menu, Sun, Moon } from "lucide-react";
+import { Bell, Menu, Sun, Moon, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import API from "../utils/api";
@@ -48,6 +48,19 @@ export default function EmpNavbar({ toggleSidebar }) {
       setNotifications(res.data);
     } catch (err) {
       console.error("Error fetching notifications:", err);
+    }
+  };
+
+  const handleNotificationClick = async (notificationId) => {
+   
+    setNotifications(prev => prev.filter(n => n._id !== notificationId));
+    try {
+      
+      await API.delete(`/notifications/${notificationId}`);
+    } catch (err) {
+      console.error("Failed to delete notification:", err);
+      
+      fetchNotifications();
     }
   };
 
@@ -119,8 +132,9 @@ export default function EmpNavbar({ toggleSidebar }) {
               ) : (
                 notifications.map((notification) => (
                   <div
+                    onClick={() => handleNotificationClick(notification._id)}
                     key={notification._id}
-                    className={`p-3 border-b cursor-pointer transition ${
+                    className={`flex justify-between items-center p-3 border-b cursor-pointer transition ${
                       isDarkMode
                         ? "border-gray-700 hover:bg-gray-700"
                         : "border-gray-200 hover:bg-gray-100"
@@ -129,12 +143,15 @@ export default function EmpNavbar({ toggleSidebar }) {
                     <p className="font-medium text-blue-600 dark:text-blue-400">
                       {notification.title}
                     </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">
-                      {notification.message}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      {new Date(notification.createdAt).toLocaleString()}
-                    </p>
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        {notification.message}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        {new Date(notification.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                    <X size={18} className="text-gray-400 hover:text-red-500 flex-shrink-0 ml-2" />
                   </div>
                 ))
               )}

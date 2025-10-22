@@ -145,14 +145,12 @@ export default function EmpAttendance() {
 
       // Optimistically update local history and then re-fetch
       setHistory((prev) => {
-        const copy = [...prev];
-        const idx = copy.findIndex((r) => toLocalDateStr(r.date) === selectedDate);
-        if (idx >= 0) {
-          copy[idx] = { ...copy[idx], logout: now };
-        } else {
-          copy.unshift({ date: selectedDate, login: loginTime, logout: now });
-        }
-        return copy.sort((a, b) => new Date(b.date) - new Date(a.date));
+        const todayRecordExists = prev.some(r => toLocalDateStr(r.date) === selectedDate);
+        const newHistory = todayRecordExists
+          ? prev.map(r => toLocalDateStr(r.date) === selectedDate ? { ...r, logout: now } : r)
+          : [{ date: selectedDate, login: loginTime, logout: now }, ...prev];
+        // The sort is already happening in fetchHistory, but keeping it here ensures optimistic UI is also sorted.
+        return newHistory.sort((a, b) => new Date(b.date) - new Date(a.date));
       });
 
       await fetchHistory();
@@ -167,7 +165,7 @@ export default function EmpAttendance() {
   return (
     <div className="flex justify-center items-start w-full">
       <Toaster />
-      <div className="w-full max-w-md sm:max-w-lg md:max-w-3xl bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+      <div className="w-full max-w-md sm:max-w-lg md:max-w-3xl  rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex flex-col items-center mb-6">
           <UserStar className="text-green-500 w-12 h-12 mb-2" />
           <h1 className="text-3xl font-bold text-center">Attendance Tracker</h1>
@@ -180,7 +178,7 @@ export default function EmpAttendance() {
           </label>
           <input
             type="date"
-            className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#007fff] focus:outline-none"
+            className="w-full border  rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#007fff] focus:outline-none"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
             max={getLocalDate()}
@@ -204,7 +202,7 @@ export default function EmpAttendance() {
           </button>
         </div>
 
-        <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-4 mb-6">
+        <div className=" rounded-xl p-4 mb-6">
           <h2 className="text-lg font-semibold  mb-3 flex items-center gap-2">
             <Check className="text-green-600" /> Today’s Summary
           </h2>
@@ -226,9 +224,9 @@ export default function EmpAttendance() {
 
         {isSummaryOpen && (
           <div className="fixed inset-0 flex items-start justify-center bg-black bg-opacity-50 z-50 pt-20 px-4 overflow-auto">
-            <div className="bg-white dark:bg-gray-800 w-full max-w-md sm:max-w-lg rounded-xl shadow-xl p-6 relative">
+            <div className="w-full max-w-md bg-gray-500 sm:max-w-lg rounded-xl shadow-xl p-6 relative">
               <h2 className="text-2xl font-bold mb-2">Attendance Summary</h2>
-              <p className="text-gray-600 dark:text-gray-300 mb-4">Last 10 Days Overview</p>
+              <p className=" mb-4">Last 10 Days Overview</p>
               {history.length === 0 ? (
                 <p className="text-center ">No records yet</p>
               ) : (

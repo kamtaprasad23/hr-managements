@@ -88,6 +88,12 @@ function AdminLogin() {
           />
         </div>
 
+        <div className="text-right mb-4">
+          <Link to="/admin/forgot-password" className="text-sm text-blue-600 hover:underline">
+            Forgot Password?
+          </Link>
+        </div>
+
         <button
           type="submit"
           className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 rounded-xl shadow-lg hover:from-blue-600 hover:to-indigo-700 transition-all mb-5"

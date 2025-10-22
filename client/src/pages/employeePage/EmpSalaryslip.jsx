@@ -8,6 +8,7 @@ import {
   Download,
   X,
 } from "lucide-react";
+import { useSelector } from "react-redux";
 import toast, { Toaster } from "react-hot-toast";
 import API from "../../utils/api";
 import { jsPDF } from "jspdf";
@@ -20,6 +21,7 @@ export default function EmpSalaryslip() {
     employeeId: "EMP123",
   });
   const [selectedSlip, setSelectedSlip] = useState(null);
+  const { isDarkMode } = useSelector((state) => state.settings);
   const logo = "/logo.png"; // ✅ Correct logo path (from public folder)
 
   useEffect(() => {
@@ -233,33 +235,33 @@ export default function EmpSalaryslip() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 flex justify-center items-start">
+    <div className="min-h-screen  p-6 flex justify-center items-start">
       <Toaster />
-      <div className="w-screen max-w-4xl mx-auto bg-gray-50 rounded-2xl p-6 border-gray-200">
+      <div className="w-screen max-w-4xl mx-auto rounded-2xl p-6 border-gray-200">
       
           <FileText className="text-blue-600 w-8 h-8" />
-          <h1 className="text-3xl font-bold text-gray-800">Salary Slip Summary</h1>
+          <h1 className="text-3xl font-bold ">Salary Slip Summary</h1>
 
-        <p className="text-gray-500 mb-6">
+        <p className=" mb-6">
           View or download your last three months’ salary slips.
         </p>
 
         <div className="space-y-4">
           {slips.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <div className="text-center py-8 ">
+              <FileText className="mx-auto h-12 w-12  mb-4" />
               <p>No salary slips available</p>
             </div>
           ) : (
             slips.map((data, idx) => (
               <div
                 key={idx}
-                className="bg-gray-50  border-gray-300 rounded-xl p-4 shadow-sm hover:shadow-2xl transition"
+                className="  border-gray-300 rounded-xl p-4 shadow-sm hover:shadow-2xl transition"
               >
                 <div className="flex justify-between items-center mb-2">
                   <div className="flex items-center gap-2">
                     <Calendar className="text-blue-500" size={18} />
-                    <h2 className="font-semibold text-lg text-gray-800">
+                    <h2 className="font-semibold text-lg ">
                       {data.month} {data.year}
                     </h2>
                   </div>
@@ -279,7 +281,7 @@ export default function EmpSalaryslip() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-1 text-gray-700">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-1 ">
                   <p>
                     <span className="font-semibold">Base Salary:</span> ₹
                     {data.baseSalary}
@@ -320,8 +322,8 @@ export default function EmpSalaryslip() {
 
       {/* -------- VIEW MODAL -------- */}
       {selectedSlip && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-          <div className="bg-white rounded-xl shadow-2xl p-6 w-[90%] max-w-md relative">
+        <div className={`fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 ${isDarkMode ? 'dark' : ''}`}>
+          <div className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl shadow-2xl p-6 w-[90%] max-w-md relative">
             <button
               onClick={() => setSelectedSlip(null)}
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
@@ -329,7 +331,7 @@ export default function EmpSalaryslip() {
               <X size={20} />
             </button>
 
-            <h2 className="text-xl font-bold mb-4 text-center text-blue-600">
+            <h2 className="text-xl font-bold mb-4 text-center text-blue-600 dark:text-blue-400">
               Salary Slip - {selectedSlip.month} {selectedSlip.year}
             </h2>
 

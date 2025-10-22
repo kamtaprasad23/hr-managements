@@ -21,7 +21,7 @@ export default function EmpSidebar({ isOpen }) {
   ];
 
   return (
-    <div className={`bg-white dark:bg-gray-800 shadow-lg h-full flex flex-col gap-4 p-4 transition-all duration-300 ${isOpen ? "w-64" : "w-20"}`}>
+    <div className={`  shadow-lg h-full flex flex-col gap-4 p-4 transition-all duration-300 ${isOpen ? "w-64" : "w-20"}`}>
       {/* Header */}
       <div className={`text-blue-600 dark:text-blue-400 text-lg font-bold border-b dark:border-gray-700 pb-2 mt-4 px-2 ${!isOpen && "text-center"}`}>
         Employee Panel
@@ -35,7 +35,7 @@ export default function EmpSidebar({ isOpen }) {
             to={item.path}
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-2 rounded-lg transition-colors duration-200 ${
-                isActive ? "bg-blue-600 text-white" : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-white"
+                isActive ? "bg-blue-600 text-white" : " dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-white"
               } ${!isOpen && "justify-center"}`
             }
           >

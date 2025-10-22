@@ -207,3 +207,81 @@ export const sendBirthdayWish = async (req, res) => {
     res.status(500).json({ message: "Failed to send birthday wish", error: error.message });
   }
 };
+// 🧩 Update Admin Profile
+export const updateAdminProfile = async (req, res) => {
+  try {
+    const adminId = req.user.id;
+    const { name, email, password } = req.body;
+
+    const admin = await Admin.findById(adminId);
+    if (!admin) return res.status(404).json({ message: "Admin not found" });
+
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (email) updateData.email = email;
+
+    // 🧩 IMPORTANT: Hash the password before saving
+    if (password) {
+      const salt = await bcrypt.genSalt(10);
+      updateData.password = await bcrypt.hash(password, salt);
+    }
+
+    const updatedAdmin = await Admin.findByIdAndUpdate(
+      adminId,
+      { $set: updateData },
+      { new: true }
+    ).select("-password");
+
+    if (!updatedAdmin) return res.status(404).json({ message: "Admin not found after update" });
+
+    res.status(200).json({
+      message: "Profile updated successfully",
+      admin: updatedAdmin,
+    });
+  } catch (error) {
+    console.error("❌ Error updating admin profile:", error);
+    res.status(500).json({ message: "Failed to update admin profile" });
+  }
+};
+
+// Approve employee update
+export const approveEmployeeUpdate = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const employee = await Employee.findById(id);
+    if (!employee) return res.status(404).json({ message: "Employee not found" });
+
+    if (employee.pendingUpdates && Object.keys(employee.pendingUpdates).length > 0) {
+      Object.assign(employee, employee.pendingUpdates);
+      employee.pendingUpdates = {};
+      employee.status = "Verified";
+      employee.verified = true; // Also set the main verified flag
+      await employee.save();
+      return res.json({ message: "Employee update approved successfully" });
+    } else {
+      return res.status(400).json({ message: "No pending update found" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Error approving update", error: error.message });
+  }
+};
+
+// Reject employee update
+export const rejectEmployeeUpdate = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const employee = await Employee.findById(id);
+    if (!employee) return res.status(404).json({ message: "Employee not found" });
+
+    if (employee.pendingUpdates) {
+      employee.pendingUpdates = {};
+      employee.status = "Verified"; // Revert status to Verified
+      await employee.save();
+      return res.json({ message: "Employee update rejected" });
+    } else {
+      return res.status(400).json({ message: "No pending update found" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Error rejecting update", error: error.message });
+  }
+};

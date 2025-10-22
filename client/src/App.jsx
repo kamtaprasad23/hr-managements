@@ -31,6 +31,7 @@ import EmpLeave from "./pages/employeePage/EmpLeave";
 import EmpProfile from "./pages/employeePage/EmpProfile";
 import EmpSalaryslip from "./pages/employeePage/EmpSalaryslip";
 import EmployeeSettings from "./pages/employeePage/EmpSetting";
+import AdminForgotPassword from "./pages/AdminForgotPassword";
 
 function App() {
  const dispatch = useDispatch();
@@ -60,6 +61,7 @@ function App() {
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/admin-register" element={<AdminRegister />} />
           <Route path="/employee-login" element={<EmployeeLogin />} />
+          <Route path="/admin/forgot-password" element={<AdminForgotPassword/>} />
 
           {/* Admin Routes */}
           <Route

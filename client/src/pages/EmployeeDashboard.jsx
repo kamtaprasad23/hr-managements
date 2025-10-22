@@ -50,14 +50,14 @@ export default function EmployeeDashboard() {
     <div>
       {/* Greeting Card */}
       <div
-        className="rounded-xl p-6 shadow-lg flex flex-col md:flex-row items-center justify-between gap-4 transition-all duration-300 bg-blue-600 text-white dark:bg-gray-800 dark:text-white"
+        className="rounded-xl p-6 shadow-lg flex flex-col md:flex-row items-center justify-between gap-4 transition-all duration-300  "
       >
         <div className="text-center md:text-left">
           <h2 className="text-xl md:text-2xl font-bold">
             {greeting}, {reduxUser?.name || user?.name || "Employee"} 👋
           </h2>
           <p
-            className="text-sm md:text-base mt-2 text-blue-100 dark:text-gray-300"
+            className="text-sm md:text-base mt-2 "
           >
             Welcome to your dashboard! Manage your profile, attendance, and
             tasks here.
@@ -120,16 +120,16 @@ function Card({ icon, color, title, text, path }) {
   return (
     <Link to={path} className="w-full">
       <div
-        className={`rounded-xl shadow-md p-5 flex items-center gap-4 border-l-4 transition-all duration-300 hover:shadow-xl hover:scale-105 cursor-pointer bg-white dark:bg-gray-800 text-gray-800 dark:text-white ${colorMap[color].split(" ")[0]} dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700`}
+        className={`rounded-xl shadow-md p-5 flex items-center gap-4 border-l-4 transition-all duration-300 hover:shadow-xl hover:scale-105 cursor-pointer  dark:bg-gray-800 dark:text-white ${colorMap[color].split(" ")[0]} dark:border-gray-600  dark:hover:bg-gray-700`}
       >
         <div
-          className={`p-3 rounded-full bg-gray-100 dark:bg-gray-700 ${colorMap[color].split(" ")[1]} dark:text-white`}
+          className={`p-3 rounded-full  dark:bg-gray-700 ${colorMap[color].split(" ")[1]} dark:text-white`}
         >
           {icon}
         </div>
         <div>
           <h3 className="font-semibold text-lg">{title}</h3>
-          <p className="text-sm text-gray-500 dark:text-gray-300">
+          <p className="text-sm text-gray-500 ">
             {text}
           </p>
         </div>

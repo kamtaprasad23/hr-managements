@@ -27,7 +27,9 @@ const employeeSchema = new mongoose.Schema({
   fullName: {type : String}, // Added for EmployeeProfile
   contact: {type : String},
 verified: { type: Boolean, default: false },
-
+editCount: { type: Number, default: 0 },
+status: { type: String, default: "Verified" }, // Verified, Pending, Rejected
+pendingUpdates: { type: Object },
   alternateNumber: { type: String },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin", required: true },
 }, { timestamps: true });

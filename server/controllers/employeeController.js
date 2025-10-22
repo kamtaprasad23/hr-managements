@@ -39,31 +39,44 @@ export const getProfile = async (req, res) => {
   }
 };
 
+// Employee requests profile update (limited to 2 attempts)
 export const updateProfile = async (req, res) => {
   try {
+    const employeeId = req.user.id;
+
+    const employee = await Employee.findById(employeeId);
+    if (!employee) return res.status(404).json({ message: "Employee not found" });
+
+    // Limit profile updates to 2 attempts
+    if (employee.editCount >= 2) {
+      return res.status(403).json({ message: "Profile update limit reached (2 times)" });
+    }
+
     const allowedFields = [
-      "address", "phone", "highestQualification", "yearOfPassing",
+      "name", "phone", "address", "highestQualification", "yearOfPassing",
       "accountHolder", "accountNumber", "ifsc", "bankName",
       "idType", "idNumber", "emergencyName", "emergencyRelation",
-      "emergencyNumber", "alternateNumber", "birthday", "image",
+      "emergencyNumber", "alternateNumber", "birthday", "image", "contact", "fullName"
     ];
-
     const updates = {};
-    allowedFields.forEach((field) => {
-      if (req.body[field] !== undefined) updates[field] = req.body[field];
-    });
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        updates[field] = req.body[field];
+      }
+    }
 
-    const updated = await Employee.findByIdAndUpdate(
-      req.user.id,
-      updates,
-      { new: true, runValidators: true }
-    ).select("-password");
+    // Store request as pending update
+    employee.pendingUpdates = updates;
+    employee.status = "Pending";
+    employee.editCount = (employee.editCount || 0) + 1;
 
-    res.json({ message: "Profile updated successfully", employee: updated });
-  } catch (err) {
-    res.status(500).json({ message: "Error updating profile", error: err.message });
+    await employee.save();
+    res.json({ message: "Profile update request sent for admin verification", employee });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating profile", error: error.message });
   }
 };
+
 
 export const uploadProfileImg = async (req, res) => {
   try {
@@ -110,7 +123,7 @@ export const updateEmployee = async (req, res) => {
       "department", "jobType", "emergencyName", "emergencyRelation",
       "emergencyNumber", "highestQualification", "yearOfPassing",
       "accountHolder", "accountNumber", "ifsc", "bankName",
-      "idType", "idNumber", "birthday", "image",
+      "idType", "idNumber", "birthday", "image", "password"
     ];
 
     const updates = {};
@@ -118,15 +131,25 @@ export const updateEmployee = async (req, res) => {
       if (req.body[field] !== undefined) updates[field] = req.body[field];
     });
 
+    // 🔐 If password is being updated, hash it
+
+    if (updates.password) {
+      const salt = await bcrypt.genSalt(10);
+      updates.password = await bcrypt.hash(updates.password, salt);
+    }
+
     const employee = await Employee.findOneAndUpdate(
-      { _id: id, createdBy: req.user.id }, // Ensure only the creator can update
+      { _id: id, createdBy: req.user.id }, // ensure only creator can update
       updates,
       { new: true, runValidators: true }
     ).select("-password");
-    if (!employee) return res.status(404).json({ message: "Employee not found or unauthorized" });
+
+    if (!employee)
+      return res.status(404).json({ message: "Employee not found or unauthorized" });
 
     res.json({ message: "Employee updated successfully", employee });
   } catch (error) {
+    console.error("Update Employee Error:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -153,24 +176,6 @@ export const getEmployeeById = async (req, res) => {
   } catch (err) {
     console.error("❌ Backend Error:", err);
     res.status(500).json({ message: "Error fetching employee", error: err.message });
-  }
-};
-
-export const createEmployee = async (req, res) => {
-  try {
-    const employeeData = req.body;
-    if (employeeData.password) {
-      const salt = await bcrypt.genSalt(10);
-      employeeData.password = await bcrypt.hash(employeeData.password, salt);
-    }
-    employeeData.createdBy = req.user.id; // Set the creator
-
-    const newEmployee = new Employee(employeeData);
-    const savedEmployee = await newEmployee.save();
-    res.status(201).json({ message: "Employee created successfully", employee: savedEmployee });
-  } catch (err) {
-    console.error("❌ Create Employee Error:", err);
-    res.status(400).json({ message: "Error creating employee", error: err.message });
   }
 };
 
