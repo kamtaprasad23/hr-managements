@@ -5,10 +5,13 @@ import { store } from "./app/store";
 import App from "./App";
 import "./index.css";
 import { Toaster } from "react-hot-toast";
+import { HashRouter } from "react-router-dom";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <Provider store={store}>
     <Toaster position="top-center" reverseOrder={false} />
+    <HashRouter>
     <App />
+    </HashRouter>
   </Provider>
 );
