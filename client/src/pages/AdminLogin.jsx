@@ -47,7 +47,7 @@ function AdminLogin() {
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-500 via-pink-500 to-red-500 animate-gradient-x">
       <form
         onSubmit={handleLogin}
-        className="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md transform hover:scale-105 transition-transform duration-300"
+        className="bg-white text-black p-10 rounded-3xl shadow-2xl w-full max-w-md transform hover:scale-105 transition-transform duration-300"
       >
         <h2 className="text-3xl font-bold mb-8 text-center text-blue-600 drop-shadow-lg">
           Admin Login
@@ -72,7 +72,7 @@ function AdminLogin() {
             value={form.email}
             onChange={handleChange}
             required
-            className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-4 text-black border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -84,7 +84,7 @@ function AdminLogin() {
             value={form.password}
             onChange={handleChange}
             required
-            className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-4 border text-black border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 

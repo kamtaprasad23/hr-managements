@@ -54,7 +54,7 @@ function EmployeeLogin() {
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-500 via-pink-500 to-indigo-600 animate-gradient-x">
       <form
         onSubmit={handleLogin}
-        className="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md transform hover:scale-105 transition-transform duration-300"
+        className="text-black bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md transform hover:scale-105 transition-transform duration-300"
       >
         <h2 className="text-3xl font-bold mb-8 text-center text-blue-600 drop-shadow-lg">
           Employee Login
@@ -80,7 +80,7 @@ function EmployeeLogin() {
             onChange={handleChange}
             required
             disabled={loading}
-            className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-4 border text-black border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div className="mb-6">
@@ -92,7 +92,7 @@ function EmployeeLogin() {
             onChange={handleChange}
             required
             disabled={loading}
-            className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-4 text-black border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 

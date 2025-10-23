@@ -27,7 +27,7 @@ function AdminRegister() {
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-500 via-pink-500 to-red-500 animate-gradient-x">
       <form
         onSubmit={handleRegister}
-        className="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md transform hover:scale-105 transition-transform duration-300"
+        className="bg-white text-black p-10 rounded-3xl shadow-2xl w-full max-w-md transform hover:scale-105 transition-transform duration-300"
       >
         <h2 className="text-3xl font-bold mb-8 text-center text-green-600 drop-shadow-lg">
           Admin Register
@@ -46,7 +46,7 @@ function AdminRegister() {
           value={form.name}
           onChange={handleChange}
           required
-          className="w-full mb-4 p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="w-full mb-4 p-4 text-black border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
         />
         <input
           type="email"
@@ -55,7 +55,7 @@ function AdminRegister() {
           value={form.email}
           onChange={handleChange}
           required
-          className="w-full mb-4 p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="w-full mb-4 p-4 text-black border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
         />
         <input
           type="password"
@@ -64,7 +64,7 @@ function AdminRegister() {
           value={form.password}
           onChange={handleChange}
           required
-          className="w-full mb-6 p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="w-full mb-6 p-4 text-black border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
         />
 
         <button
