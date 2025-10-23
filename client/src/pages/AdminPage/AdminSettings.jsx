@@ -198,9 +198,9 @@ export default function AdminSettings() {
           className="w-full p-2 rounded border dark:bg-gray-600 dark:border-gray-500 focus:outline-none"
           disabled={loadingEmp}
         >
-          <option value="">Select Employee</option>
+          <option value=""className="bg-gray-600">Select Employee</option>
           {employees.map((emp) => (
-            <option key={emp._id} value={emp._id}>
+            <option key={emp._id} value={emp._id}className="bg-gray-400">
               {emp.name} ({emp.email})
             </option>
           ))}

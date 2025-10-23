@@ -131,12 +131,12 @@ export default function AdminTask() {
                 name="assignedTo"
                 value={form.assignedTo}
                 onChange={handleChange}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border  border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 required
               >
-                <option value="">Select Employee</option>
+                <option value="" className="bg-gray-600">Select Employee</option>
                 {employees.map((emp) => (
-                  <option key={emp._id} value={emp._id}>
+                  <option key={emp._id} value={emp._id}className="bg-gray-400">
                     {emp.name} - {emp.position}
                   </option>
                 ))}

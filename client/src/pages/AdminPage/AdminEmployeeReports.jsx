@@ -249,10 +249,10 @@ export default function AdminEmpReports() {
           name="sort"
           value={filters.sort}
           onChange={handleFilterChange}
-          className="border p-2 rounded w-full md:w-1/4"
+          className="border p-2 rounded w-full md:w-1/4 "
         >
-          <option value="a-z">A-Z</option>
-          <option value="z-a">Z-A</option>
+          <option value="a-z"className="bg-gray-400">A-Z</option>
+          <option value="z-a"className="bg-gray-400">Z-A</option>
         </select>
 
         <button
