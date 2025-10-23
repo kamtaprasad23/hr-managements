@@ -9,9 +9,9 @@ import { HashRouter } from "react-router-dom"; // ✅ Import HashRouter
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <Provider store={store}>
-    {/* <HashRouter>  ✅ Wrap App inside HashRouter */}
+    <HashRouter> 
       <Toaster position="top-center" reverseOrder={false} />
       <App />
-    {/* </HashRouter> */}
+    </HashRouter>
   </Provider>
 );
