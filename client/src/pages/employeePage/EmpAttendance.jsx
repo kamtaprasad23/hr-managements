@@ -134,7 +134,7 @@ export default function EmpAttendance() {
       return;
     }
     try {
-      const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
       setCheckoutTime(now);
 
       await API.post("/attendance/checkout", { date: selectedDate, logout: now });

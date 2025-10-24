@@ -25,7 +25,7 @@ export default function AdminEmployeeProfile() {
       const res = await API.get(`/admin/employee/${id}`);
       const employeeData = {
         ...res.data,
-        image: res.data.image ? `http://localhost:5000${res.data.image}` : "https://via.placeholder.com/150"
+        image: res.data.image ? `${API.defaults.baseURL}${res.data.image}` : "https://via.placeholder.com/150"
       };
       setEmployee(employeeData);
       setForm(employeeData);
@@ -52,7 +52,7 @@ export default function AdminEmployeeProfile() {
       const res = await API.post("/upload", formData);
       const { filePath } = res.data;
       setForm(prev => ({ ...prev, image: filePath }));
-      setEmployee(prev => ({ ...prev, image: `http://localhost:5000${filePath}` }));
+      setEmployee(prev => ({ ...prev, image: `${API.defaults.baseURL}${filePath}` }));
       toast.success("Image uploaded successfully");
     } catch (err) {
       toast.error("Image upload failed");
@@ -76,8 +76,8 @@ export default function AdminEmployeeProfile() {
 
     try {
       const payload = { ...form };
-      if (payload.image && payload.image.startsWith("http")) {
-        payload.image = payload.image.replace("http://localhost:5000", "");
+      if (payload.image && payload.image.startsWith(API.defaults.baseURL)) {
+        payload.image = payload.image.replace(API.defaults.baseURL, "");
       }
 
       await API.put(`/admin/employee/${id}`, payload);
@@ -174,7 +174,9 @@ export default function AdminEmployeeProfile() {
       {/* Profile Header */}
       <div className="flex flex-col items-center mb-6">
         <img
-          src={employee.image || "https://via.placeholder.com/150"}
+          src={editing && form.image && !form.image.startsWith('http')
+            ? `${API.defaults.baseURL}${form.image}`
+            : (employee.image || "https://via.placeholder.com/150")}
           alt="Profile"
           className="w-32 h-32 rounded-full border-4 border-indigo-500 object-cover mb-3"
         />
@@ -334,7 +336,7 @@ export default function AdminEmployeeProfile() {
 
 function ProfileCard({ icon, title, fields, editing, form, employee, handleChange }) {
   return (
-    <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-200">
+    <div className=" rounded-2xl shadow-md p-6 border  border-gray-200">
       <div className="flex items-center gap-2 mb-4">
         {icon}
         <h3 className="font-semibold text-gray-800">{title}</h3>
@@ -344,7 +346,7 @@ function ProfileCard({ icon, title, fields, editing, form, employee, handleChang
         {fields.map(([key, label, type = "text"]) => (
           editing ? (
             <div key={key} className="space-y-1"> 
-              <label className="text-xs font-medium text-gray-600 block mb-1">
+              <label className="text-xs font-medium  block mb-1">
                 {label} {["fullName", "email", "contact", "position", "address", "idType", "idNumber"].includes(key) && <span className="text-red-500">*</span>}
               </label>
               {key === "idType" ? (
@@ -378,7 +380,7 @@ function ProfileCard({ icon, title, fields, editing, form, employee, handleChang
             </div>
           ) : (
             <div key={key} className="py-2 border-b border-gray-100 last:border-b-0">
-              <span className="text-gray-500 text-sm block">{label}:</span>
+              <span className="text-sm block">{label}:</span>
               <span className="font-medium text-gray-800">
                 {type === "date" && employee[key] 
                   ? new Date(employee[key]).toLocaleDateString() 

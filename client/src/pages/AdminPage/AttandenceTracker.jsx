@@ -31,45 +31,82 @@ const AttendanceTracker = () => {
     },
   ];
 
-  useEffect(() => {
-    const fetchAttendance = async () => {
-      setLoading(true);
-      try {
-        console.log("🔄 Fetching attendance for date:", selectedDate.toISOString().split("T")[0]);
-        const formattedDate = selectedDate.toISOString().split("T")[0];
-        const res = await API.get(`/attendance?date=${formattedDate}`);
-        console.log("✅ Attendance Response:", res.data);
+  // useEffect(() => {
+  //   const fetchAttendance = async () => {
+  //     setLoading(true);
+  //     try {
+  //       console.log("🔄 Fetching attendance for date:", selectedDate.toISOString().split("T")[0]);
+  //       const formattedDate = selectedDate.toISOString().split("T")[0];
+  //       const res = await API.get(`/attendance?date=${formattedDate}`);
+  //       console.log("✅ Attendance Response:", res.data);
 
-        const formatted = res.data.map((a) => ({
-          id: a.user?._id || "",
-          name: a.user?.name || "Unknown",
-          Department: a.user?.department || "-",
-          status: a.status || "Absent",
-          role: a.user?.role || "-",
-          joinDate: a.user?.joinDate ? new Date(a.user.joinDate).toLocaleDateString() : "-",
-          email: a.user?.email || "-",
-          phone: a.user?.phone || "-",
-          totalAttendance: a.user?.totalAttendance || 0,
-          avgCheckIn: a.checkIn ? new Date(a.checkIn).toLocaleTimeString() : "-",
-          avgCheckOut: a.checkOut ? new Date(a.checkOut).toLocaleTimeString() : "-",
-          history: a.user?.history || [],
-        }));
-        setEmployees(formatted);
-        setError("");
-      } catch (err) {
-        console.error("❌ Fetch Attendance Error:", err);
-        setError(err.response?.data?.message || "Failed to fetch attendance");
-        toast.error(err.response?.data?.message || "Failed to fetch attendance");
-      } finally {
-        setLoading(false);
-      }
-    };
+  //       const formatted = res.data.map((a) => ({
+  //         id: a.user?._id || "",
+  //         name: a.user?.name || "Unknown",
+  //         Department: a.user?.department || "-",
+  //         status: a.status || "Absent",
+  //         role: a.user?.role || "-",
+  //         joinDate: a.user?.joinDate ? new Date(a.user.joinDate).toLocaleDateString() : "-",
+  //         email: a.user?.email || "-",
+  //         phone: a.user?.phone || "-",
+  //         totalAttendance: a.user?.totalAttendance || 0,
+  //         avgCheckIn: a.checkIn ? new Date(a.checkIn).toLocaleTimeString() : "-",
+  //         avgCheckOut: a.checkOut ? new Date(a.checkOut).toLocaleTimeString() : "-",
+  //         history: a.user?.history || [],
+  //       }));
+  //       setEmployees(formatted);
+  //       setError("");
+  //     } catch (err) {
+  //       console.error("❌ Fetch Attendance Error:", err);
+  //       setError(err.response?.data?.message || "Failed to fetch attendance");
+  //       toast.error(err.response?.data?.message || "Failed to fetch attendance");
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
 
-    fetchAttendance();
-    const interval = setInterval(fetchAttendance, 30000);
+  //   fetchAttendance();
+  //   const interval = setInterval(fetchAttendance, 30000);
 
-    return () => clearInterval(interval);
-  }, [selectedDate]);
+  //   return () => clearInterval(interval);
+  // }, [selectedDate]);
+useEffect(() => {
+  const fetchAttendance = async () => {
+    setLoading(true);
+    try {
+      const formattedDate = selectedDate.toISOString().split("T")[0];
+      const res = await API.get(`/attendance?date=${formattedDate}`);
+      
+      const formatted = res.data.map((a) => ({
+        id: a.user?._id || "",
+        name: a.user?.name || "Unknown",
+        Department: a.user?.department || "-",
+        status: a.status || "Absent",
+        role: a.user?.role || "-",
+        joinDate: a.user?.joinDate ? new Date(a.user.joinDate).toLocaleDateString() : "-",
+        email: a.user?.email || "-",
+        phone: a.user?.phone || "-",
+        totalAttendance: a.user?.totalAttendance || 0,
+        avgCheckIn: a.checkIn ? new Date(a.checkIn).toLocaleTimeString() : "-",
+        avgCheckOut: a.checkOut ? new Date(a.checkOut).toLocaleTimeString() : "-",
+        history: a.user?.history || [],
+      }));
+      
+      setEmployees(formatted);
+      setError("");
+    } catch (err) {
+      console.error("❌ Fetch Attendance Error:", err);
+      setError(err.response?.data?.message || "Failed to fetch attendance");
+      toast.error(err.response?.data?.message || "Failed to fetch attendance");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 👇 Run only once when component mounts
+  fetchAttendance();
+
+}, []); // ← empty dependency array means run only once
 
   const handleDateChange = (e) => {
     setSelectedDate(new Date(e.target.value));

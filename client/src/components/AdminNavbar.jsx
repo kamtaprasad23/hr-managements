@@ -141,7 +141,7 @@ export default function AdminNavbar({ toggleSidebar }) {
           </button>
 
           {/* 🔽 Notification Dropdown */}
-          {showNotifications && (
+          {/* {showNotifications && (
             <div
               className={`absolute right-0 mt-2 w-80 ${
                 isDarkMode ? "bg-gray-800 text-gray-200" : "bg-white text-gray-800"
@@ -191,7 +191,65 @@ export default function AdminNavbar({ toggleSidebar }) {
                 ))
               )}
             </div>
-          )}
+          )} */}
+          {showNotifications && (
+  <div
+    className={`${
+      isDarkMode ? "bg-gray-800 text-gray-200" : "bg-white text-gray-800"
+    } 
+    rounded-lg shadow-xl border dark:border-gray-700 
+    max-h-96 overflow-y-auto z-50 
+    w-[90vw] sm:w-80 
+    fixed sm:absolute 
+    right-2 sm:right-0 top-[64px] sm:top-auto mt-0 sm:mt-2
+    transition-all duration-300`}
+  >
+    <div className="p-3 border-b dark:border-gray-700 flex justify-between items-center">
+      <h3 className="font-semibold">Notifications</h3>
+      <Link
+        to="/admin/dashboard/notification"
+        onClick={() => setShowNotifications(false)}
+        className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+      >
+        View All <ArrowRight size={12} />
+      </Link>
+    </div>
+
+    {notifications.length === 0 ? (
+      <p className="p-4 text-center text-gray-500 dark:text-gray-400">
+        No new notifications
+      </p>
+    ) : (
+      notifications.map((n) => (
+        <div
+          key={n._id}
+          onClick={(e) => handleNotificationClick(e, n)}
+          className={`flex justify-between items-start p-3 border-b ${
+            isDarkMode
+              ? "border-gray-700 hover:bg-gray-700"
+              : "hover:bg-gray-50"
+          } text-sm cursor-pointer`}
+        >
+          <div className="flex-1">
+            <p className="font-medium">{n.title}</p>
+            <p className="text-gray-500 mt-1">{n.message}</p>
+            <p className="text-xs text-gray-400 mt-2">
+              {new Date(n.createdAt).toLocaleString()}
+            </p>
+          </div>
+          <button
+            onClick={(e) => handleNotificationDelete(e, n._id)}
+            className="ml-2 text-gray-400 hover:text-red-500"
+            title="Delete Notification"
+          >
+            <X size={18} />
+          </button>
+        </div>
+      ))
+    )}
+  </div>
+)}
+
         </div>
 
         {/* 🚪 Logout */}

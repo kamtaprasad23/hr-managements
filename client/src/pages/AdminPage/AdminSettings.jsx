@@ -28,6 +28,12 @@ export default function AdminSettings() {
   const [loadingEmp, setLoadingEmp] = useState(false);
   const [employees, setEmployees] = useState([]);
 
+  // 🆕 Admin creation state
+  const [newAdminName, setNewAdminName] = useState("");
+  const [newAdminEmail, setNewAdminEmail] = useState("");
+  const [newAdminPassword, setNewAdminPassword] = useState("");
+  const [loadingAdminCreate, setLoadingAdminCreate] = useState(false);
+
   // ✅ Fetch employee list for dropdown
   useEffect(() => {
     const fetchEmployees = async () => {
@@ -104,6 +110,30 @@ export default function AdminSettings() {
       toast.error(err.response?.data?.message || "Failed to update employee");
     } finally {
       setLoadingEmp(false);
+    }
+  };
+
+  // 🆕 Create New Admin
+  const handleAdminCreate = async () => {
+    if (!newAdminName || !newAdminEmail || !newAdminPassword) {
+      toast.error("Please fill all admin fields");
+      return;
+    }
+    setLoadingAdminCreate(true);
+    try {
+      const res = await API.post("/admin/create", {
+        name: newAdminName,
+        email: newAdminEmail,
+        password: newAdminPassword,
+      });
+      toast.success(res.data.message || "New Admin created successfully");
+      setNewAdminName("");
+      setNewAdminEmail("");
+      setNewAdminPassword("");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to create new admin");
+    } finally {
+      setLoadingAdminCreate(false);
     }
   };
 
@@ -198,9 +228,11 @@ export default function AdminSettings() {
           className="w-full p-2 rounded border dark:bg-gray-600 dark:border-gray-500 focus:outline-none"
           disabled={loadingEmp}
         >
-          <option value=""className="bg-gray-600">Select Employee</option>
+          <option value="" className="bg-gray-600">
+            Select Employee
+          </option>
           {employees.map((emp) => (
-            <option key={emp._id} value={emp._id}className="bg-gray-400">
+            <option key={emp._id} value={emp._id} className="bg-gray-400">
               {emp.name} ({emp.email})
             </option>
           ))}
@@ -237,6 +269,44 @@ export default function AdminSettings() {
           }`}
         >
           {loadingEmp ? "Updating..." : "Update Employee"}
+        </button>
+      </div>
+
+      {/* 🆕 Admin ID Creation Section */}
+      <div className="p-4 dark:bg-gray-700 rounded-xl space-y-3">
+        <h2 className="font-semibold text-lg">Create New Admin</h2>
+        <input
+          type="text"
+          placeholder="Admin Name"
+          value={newAdminName}
+          onChange={(e) => setNewAdminName(e.target.value)}
+          className="w-full p-2 rounded border dark:bg-gray-600 dark:border-gray-500 focus:outline-none"
+          disabled={loadingAdminCreate}
+        />
+        <input
+          type="email"
+          placeholder="Admin Email"
+          value={newAdminEmail}
+          onChange={(e) => setNewAdminEmail(e.target.value)}
+          className="w-full p-2 rounded border dark:bg-gray-600 dark:border-gray-500 focus:outline-none"
+          disabled={loadingAdminCreate}
+        />
+        <input
+          type="password"
+          placeholder="Admin Password"
+          value={newAdminPassword}
+          onChange={(e) => setNewAdminPassword(e.target.value)}
+          className="w-full p-2 rounded border dark:bg-gray-600 dark:border-gray-500 focus:outline-none"
+          disabled={loadingAdminCreate}
+        />
+        <button
+          onClick={handleAdminCreate}
+          disabled={loadingAdminCreate}
+          className={`w-full py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition ${
+            loadingAdminCreate ? "cursor-not-allowed bg-gray-400" : ""
+          }`}
+        >
+          {loadingAdminCreate ? "Creating..." : "Create Admin"}
         </button>
       </div>
     </div>

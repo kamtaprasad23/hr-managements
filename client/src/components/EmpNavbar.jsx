@@ -52,14 +52,14 @@ export default function EmpNavbar({ toggleSidebar }) {
   };
 
   const handleNotificationClick = async (notificationId) => {
-   
+
     setNotifications(prev => prev.filter(n => n._id !== notificationId));
     try {
-      
+
       await API.delete(`/notifications/${notificationId}`);
     } catch (err) {
       console.error("Failed to delete notification:", err);
-      
+
       fetchNotifications();
     }
   };
@@ -116,15 +116,20 @@ export default function EmpNavbar({ toggleSidebar }) {
 
           {showNotifications && (
             <div
-              className={`absolute right-0 mt-2 w-80 rounded-lg shadow-lg border z-50 max-h-96 overflow-y-auto transition-all duration-300 ${
-                isDarkMode
+              className={`${isDarkMode
                   ? "bg-gray-800 text-gray-200 border-gray-700"
                   : "bg-white text-gray-800 border-gray-200"
-              }`}
+                } 
+              fixed top-[64px] right-2 
+              md:absolute md:top-auto md:right-0 md:mt-2
+              w-[90%] md:w-80 
+              rounded-lg shadow-lg border 
+              z-[9999] max-h-96 overflow-y-auto transition-all duration-300`}
             >
               <div className="p-4 border-b dark:border-gray-700">
                 <h3 className="font-semibold">Notifications</h3>
               </div>
+
               {notifications.length === 0 ? (
                 <p className="p-4 text-gray-500 dark:text-gray-400">
                   No notifications
@@ -134,16 +139,15 @@ export default function EmpNavbar({ toggleSidebar }) {
                   <div
                     onClick={() => handleNotificationClick(notification._id)}
                     key={notification._id}
-                    className={`flex justify-between items-center p-3 border-b cursor-pointer transition ${
-                      isDarkMode
+                    className={`flex justify-between items-start p-3 border-b cursor-pointer transition ${isDarkMode
                         ? "border-gray-700 hover:bg-gray-700"
                         : "border-gray-200 hover:bg-gray-100"
-                    }`}
+                      }`}
                   >
-                    <p className="font-medium text-blue-600 dark:text-blue-400">
-                      {notification.title}
-                    </p>
-                    <div>
+                    <div className="flex-1">
+                      <p className="font-medium text-blue-600 dark:text-blue-400">
+                        {notification.title}
+                      </p>
                       <p className="text-sm text-gray-600 dark:text-gray-300">
                         {notification.message}
                       </p>
@@ -151,12 +155,17 @@ export default function EmpNavbar({ toggleSidebar }) {
                         {new Date(notification.createdAt).toLocaleString()}
                       </p>
                     </div>
-                    <X size={18} className="text-gray-400 hover:text-red-500 flex-shrink-0 ml-2" />
+                    <X
+                      size={18}
+                      className="text-gray-400 hover:text-red-500 ml-2 flex-shrink-0"
+                    />
                   </div>
                 ))
               )}
             </div>
           )}
+
+
         </div>
 
         <button

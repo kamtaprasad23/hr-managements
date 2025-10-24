@@ -72,17 +72,21 @@ export const createTask = async (req, res) => {
   }
 };
 
+// controllers/taskController.js
+
 export const getAdminTasks = async (req, res) => {
   try {
     const tasks = await Task.find({ assignedBy: req.user.id })
       .populate("assignedTo", "name position")
       .sort({ dueDate: 1 })
-      .lean();
-    
+      .lean(); // lean() converts mongoose doc to plain object
+
     const today = new Date();
     const tasksWithStatus = tasks.map(task => ({
       ...task,
       isOverdue: new Date(task.dueDate) < today && task.status !== "Completed",
+      // include rejectionReason
+      rejectionReason: task.rejectionReason || "",  
     }));
 
     res.json(tasksWithStatus);
@@ -91,6 +95,7 @@ export const getAdminTasks = async (req, res) => {
     res.status(500).json({ message: "Error fetching tasks", error: error.message });
   }
 };
+
 
 export const getEmployeeTasks = async (req, res) => {
   try {
@@ -116,44 +121,47 @@ export const updateTaskStatus = async (req, res) => {
   console.log("Updating task status:", req.body);
   try {
     const { id } = req.params;
-    const { status, notes } = req.body;
+    const { status, notes, rejectionReason } = req.body;
 
     const task = await Task.findById(id);
-    if (!task) {
-      console.log("Task not found:", id);
-      return res.status(404).json({ message: "Task not found" });
-    }
+    if (!task) return res.status(404).json({ message: "Task not found" });
 
+    // Only assigned employee can update
     if (task.assignedTo.toString() !== req.user.id.toString()) {
-      console.log("Unauthorized update attempt by:", req.user.id);
       return res.status(403).json({ message: "You can only update your own tasks" });
     }
 
     task.status = status;
-    task.notes = notes || task.notes;
-    if (status === "Completed") {
-      task.completionDate = new Date();
+    if (notes) task.notes = notes;
+
+    // Save rejection reason if rejected
+    if (status === "Rejected" && rejectionReason) {
+      task.rejectionReason = rejectionReason;
     }
 
-    await task.save();
-    console.log("Task updated:", task._id);
+    if (status === "Completed") task.completionDate = new Date();
 
+    await task.save();
+
+    // Notify admin
     const adminNotif = new Notification({
-      title: "Task Status Updated",
-      message: `Task "${task.title}" has been updated to "${status}" by the employee.`,
+      title: `Task "${task.title}" Status Updated`,
+      message: status === "Rejected" 
+        ? `Task rejected by employee: ${rejectionReason || "No reason provided"}`
+        : `Task updated to "${status}" by employee`,
       type: "task",
-      category: status === "Completed" ? "task-completed" : "task-updated",
+      category: status === "Completed" ? "task-completed" : (status === "Rejected" ? "task-rejected" : "task-updated"),
       taskId: task._id,
       userId: task.assignedBy,
       priority: task.priority,
       read: false,
     });
     await adminNotif.save();
-    console.log("Admin notification created:", adminNotif._id);
 
+    // Notify employee
     const employeeNotif = new Notification({
       title: "Task Status Updated",
-      message: `Your task "${task.title}" status has been updated to "${status}".`,
+      message: `Your task "${task.title}" status is now "${status}".`,
       type: "task",
       category: "task-status-update",
       taskId: task._id,
@@ -162,12 +170,41 @@ export const updateTaskStatus = async (req, res) => {
       read: false,
     });
     await employeeNotif.save();
-    console.log("Employee notification created:", employeeNotif._id);
 
     res.json({ message: "Task status updated successfully", task });
   } catch (error) {
     console.error("Update task status error:", error);
     res.status(500).json({ message: "Error updating task status", error: error.message });
+  }
+};
+
+export const deleteTask = async (req, res) => {
+  console.log(`🔥 Attempting to delete task with ID: ${req.params.id}`);
+  // Log user details to check authentication/authorization context
+  console.log(`👤 User attempting deletion: ID=${req.user?.id}, Role=${req.user?.role}`);
+  try {
+    const { id } = req.params;
+    const task = await Task.findById(id);
+
+    if (!task) {
+      console.log(`❌ Task not found for deletion: ${id}`);
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    // Optional: You can add a check to ensure only the admin who created it can delete.
+    // if (task.assignedBy.toString() !== req.user.id) {
+    //   return res.status(403).json({ message: "Not authorized to delete this task" });
+    // }
+
+    await Notification.deleteMany({ taskId: id });
+    console.log(`🗑️  Deleted notifications associated with task ${id}`);
+    await task.deleteOne(); // Use deleteOne() on the found document
+
+    console.log(`✅ Task and associated notifications deleted successfully: ${id}`);
+    res.json({ message: "Task deleted successfully" });
+  } catch (error) {
+    console.error("❌ Delete task error:", error);
+    res.status(500).json({ message: "Error deleting task", error: error.message });
   }
 };
 

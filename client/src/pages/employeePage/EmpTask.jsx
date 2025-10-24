@@ -11,6 +11,8 @@ export default function EmpTask() {
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [completionNotes, setCompletionNotes] = useState("");
   const [loading, setLoading] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -53,6 +55,10 @@ export default function EmpTask() {
 
   const updateTaskStatus = async (taskId, status, notes = "") => {
     setLoading(true);
+    setShowCompletionModal(false);
+setCompletionNotes("");
+setRejecting(false);
+
     try {
       await API.put(`/task/${taskId}/status`, { status, notes });
       toast.success(`Task ${status.toLowerCase()} successfully!`);
@@ -122,10 +128,10 @@ export default function EmpTask() {
                   {task.status}
                 </span>
               </div>
-              
+
               <h4 className="text-lg font-semibold  mb-2">{task.title}</h4>
               <p className=" mb-4">{task.description}</p>
-              
+
               <div className="grid grid-cols-2 gap-4 text-sm  mb-4">
                 <div>
                   <span className="font-medium">From:</span> {task.assignedBy.name}
@@ -150,7 +156,7 @@ export default function EmpTask() {
                     Start Task
                   </button>
                 )}
-                
+
                 {task.status === "In Progress" && (
                   <button
                     onClick={() => handleCompleteTask(task)}
@@ -160,16 +166,21 @@ export default function EmpTask() {
                     Complete
                   </button>
                 )}
-                
+
                 {task.status === "In Progress" && (
                   <button
-                    onClick={() => updateTaskStatus(task._id, "Rejected", "Task rejected by employee")}
+                    onClick={() => {
+                      setActiveTask(task);
+                      setShowCompletionModal(true); // reuse modal but will detect reject
+                      setRejecting(true); // new state
+                    }}
                     className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm"
                   >
                     <X size={16} className="inline mr-1" />
                     Reject
                   </button>
                 )}
+
               </div>
             </div>
           ))}
@@ -190,8 +201,8 @@ export default function EmpTask() {
             <h3 className="text-lg font-semibold mb-4">🔔 New Notifications</h3>
             <div className="space-y-3">
               {notifications.slice(0, 3).map((notification) => (
-                <div 
-                  key={notification._id} 
+                <div
+                  key={notification._id}
                   onClick={() => deleteNotification(notification._id)}
                   className={`p-4 rounded-lg border-l-4 cursor-pointer hover:shadow-md transition-shadow ${notification.read ? ' border-gray-200' : ' border-blue-500'}`}
                 >
@@ -244,7 +255,7 @@ export default function EmpTask() {
             <div className="rounded-lg p-6 bg-white text-black max-w-md w-full max-h-[80vh] overflow-y-auto">
               <h3 className="text-lg font-semibold mb-4">Complete Task</h3>
               <p className=" mb-4">Task: <strong>{activeTask.title}</strong></p>
-              
+
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-2">Completion Notes</label>
                 <textarea
@@ -275,6 +286,64 @@ export default function EmpTask() {
           </div>
         )}
       </div>
+      {showCompletionModal && activeTask && (
+  <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="rounded-lg p-6 bg-white text-black max-w-md w-full max-h-[80vh] overflow-y-auto">
+      <h3 className="text-lg font-semibold mb-4">
+        {rejecting ? "Reject Task" : "Complete Task"}
+      </h3>
+      <p className="mb-4">
+        Task: <strong>{activeTask.title}</strong>
+      </p>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium mb-2">
+          {rejecting ? "Rejection Reason" : "Completion Notes"}
+        </label>
+        <textarea
+          value={completionNotes}
+          onChange={(e) => setCompletionNotes(e.target.value)}
+          rows="3"
+          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          placeholder={rejecting ? "Enter reason for rejection..." : "Add any completion notes..."}
+        />
+      </div>
+
+      <div className="flex gap-3 justify-end">
+        <button
+          onClick={() => {
+            setShowCompletionModal(false);
+            setCompletionNotes("");
+            setRejecting(false);
+          }}
+          className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={() =>
+            updateTaskStatus(
+              activeTask._id,
+              rejecting ? "Rejected" : "Completed",
+              completionNotes
+            )
+          }
+          disabled={loading}
+          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+        >
+          {loading
+            ? rejecting
+              ? "Rejecting..."
+              : "Completing..."
+            : rejecting
+            ? "Reject Task"
+            : "Complete Task"}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }

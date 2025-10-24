@@ -105,7 +105,9 @@ export default function EmployeeProfile() {
       {/* Profile Header */}
       <div className="flex flex-col items-center mb-6">
         <img
-          src={profile.image ? `http://localhost:5000${profile.image}` : "https://via.placeholder.com/150"}
+          src={editing && form.image && !form.image.startsWith('http')
+            ? `http://localhost:5000${form.image}`
+            : (profile.image ? `http://localhost:5000${profile.image}` : "https://via.placeholder.com/150")}
           alt="Profile"
           className="w-32 h-32 rounded-full border-4 border-indigo-500 object-cover mb-3"
         />
@@ -130,8 +132,8 @@ export default function EmployeeProfile() {
       </div>
 
       {/* Profile Cards */}
-      <div className="grid md:grid-cols-3 gap-6"> 
-        <ProfileCard icon={<User />} title="Basic Info" fields={[["name", "Full Name"], ["email", "Email"], ["phone", "Contact"], ["position", "Position"]]} editing={editing} form={form} employee={profile} handleChange={handleChange} />
+      <div className="grid md:grid-cols-3  gap-6"> 
+        <ProfileCard icon={<User />} title="Basic Info" fields={[["name", "Full Name"], ["email", "Email"], ["phone", "Contact"], ["position", "Position"]]} editing={editing} form={form} employee={profile} handleChange={handleChange}/>
         <ProfileCard icon={<BookOpen />} title="Education" fields={[["highestQualification", "Highest Qualification"], ["yearOfPassing", "Year of Passing"]]} editing={editing} form={form} employee={profile} handleChange={handleChange} />
         <ProfileCard icon={<Home />} title="Address" fields={[["address", "Address"]]} editing={editing} form={form} employee={profile} handleChange={handleChange} />
         <ProfileCard icon={<Banknote />} title="Bank Details" fields={[["accountHolder", "Account Holder"], ["bankName", "Bank Name"], ["accountNumber", "Account Number"], ["ifsc", "IFSC Code"]]} editing={editing} form={form} employee={profile} handleChange={handleChange} />
@@ -145,16 +147,16 @@ export default function EmployeeProfile() {
 
 function ProfileCard({ icon, title, fields, editing, form, employee, handleChange }) {
   return (
-    <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-200">
+    <div className=" rounded-2xl shadow-md p-6 border border-gray-200">
       <div className="flex items-center gap-2 mb-4">
         {React.cloneElement(icon, { className: "text-blue-500" })}
-        <h3 className="font-semibold text-gray-800">{title}</h3>
+        <h3 className="font-semibold ">{title}</h3>
       </div>
       <div className="space-y-3">
         {fields.map(([key, label, type = "text"]) => (
           editing ? (
             <div key={key} className="space-y-1">
-              <label className="text-xs font-medium text-gray-600 block mb-1">{label}</label>
+              <label className="text-xs font-medium  block mb-1">{label}</label>
               <input
                 type={type}
                 name={key}
@@ -167,8 +169,8 @@ function ProfileCard({ icon, title, fields, editing, form, employee, handleChang
             </div>
           ) : (
             <div key={key} className="py-2 border-b border-gray-100 last:border-b-0">
-              <span className="text-gray-500 text-sm block">{label}:</span>
-              <span className="font-medium text-gray-800">
+              <span className=" text-sm block">{label}:</span>
+              <span className="font-medium ">
                 {type === "date" && employee[key] ? new Date(employee[key]).toLocaleDateString() : employee[key] || "—"}
               </span>
             </div>

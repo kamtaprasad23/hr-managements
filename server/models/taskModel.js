@@ -24,10 +24,18 @@ const taskSchema = new mongoose.Schema({
     enum: ["Low", "Medium", "High", "Urgent"], 
     default: "Medium" 
   },
+  notes: { type: String },
+rejectionReason: { type: String }, // 🔥 New field to store rejection reason
+attachments: [{ type: String }],
+
   completionDate: { type: Date },
   notes: { type: String },
   attachments: [{ type: String }],
-}, { timestamps: true });
+},
+
+{ timestamps: true });
+
+
 
 taskSchema.index({ assignedTo: 1, status: 1 });
 taskSchema.index({ dueDate: 1 });

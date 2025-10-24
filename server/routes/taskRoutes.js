@@ -5,7 +5,8 @@ import {
   getEmployeeTasks, 
   updateTaskStatus, 
   getTaskNotifications, 
-  markNotificationAsRead 
+  markNotificationAsRead,
+  deleteTask
 } from "../controllers/taskController.js";
 import { verifyToken, adminOnly } from "../middleware/authMiddleware.js";
 
@@ -17,5 +18,8 @@ router.get("/employee", verifyToken, getEmployeeTasks);
 router.put("/:id/status", verifyToken, updateTaskStatus);
 router.get("/notifications", verifyToken, getTaskNotifications);
 router.put("/notifications/:id/read", verifyToken, markNotificationAsRead);
+router.delete("/:id", verifyToken, adminOnly, deleteTask);
+
+
 
 export default router;

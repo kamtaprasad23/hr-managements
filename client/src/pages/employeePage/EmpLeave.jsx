@@ -139,23 +139,24 @@ export default function LeaveCalendar() {
         days.push(
           <div
             key={day}
-            onClick={() => handleDayClick(day)}className={`border dark:border-gray-700 rounded-xl h-20 flex flex-col items-center justify-center cursor-pointer hover:shadow-lg dark:hover:bg-gray-800 transition ${
-              isSunday ? "" : ""
-            }`}
+            onClick={() => handleDayClick(day)}
+            className={`border dark:border-gray-700 rounded-xl aspect-square flex flex-col items-center justify-center cursor-pointer hover:shadow-lg dark:hover:bg-gray-800 transition p-1`}
           >
-            <span className="font-semibold">{day}</span>
+            <span className="font-semibold text-sm sm:text-base">{day}</span>
             {isSunday ? (
-              <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">WEEK OFF</span>
+              <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <span className="hidden sm:inline">WEEK </span>OFF
+              </span>
             ) : leave ? (
               <span
-                className={`mt-1 px-2 py-1 rounded-full text-xs font-medium ${getBadgeClasses(
+                className={`mt-1 px-1 sm:px-2 py-1 rounded-full text-xs font-medium ${getBadgeClasses(
                   leave.status
                 )}`}
               >
                 {leave.status.toUpperCase()}
               </span>
             ) : (
-              <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">WORKING</span>
+              <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">WORK</span>
             )}
           </div>
         );
@@ -186,7 +187,7 @@ export default function LeaveCalendar() {
       </div>
 
       {/* Calendar */}
-      <div className="grid grid-cols-7 gap-2">{renderCalendarDays()}</div>
+      <div className="grid grid-cols-7 gap-1 sm:gap-2">{renderCalendarDays()}</div>
 
       {/* Action Buttons */}
       <div className="flex gap-4 mt-6 flex-wrap">
