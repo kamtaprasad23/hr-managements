@@ -42,11 +42,12 @@ export default function EmployeeProfile() {
     formData.append("profileImage", file);
 
     try {
-      const res = await API.post("/upload", formData);
-      const { filePath } = res.data;
-      setForm(prev => ({ ...prev, image: filePath }));
-      toast.success("Image staged for update.");
+      const res = await API.post("/upload/profile", formData);
+      const { fileUrl } = res.data;
+      setForm(prev => ({ ...prev, image: fileUrl }));
+      toast.success("Image selected. Click 'Submit for Approval' to save.");
     } catch (err) {
+      console.error("Image upload error:", err);
       toast.error("Image upload failed.");
     }
   };
@@ -54,11 +55,7 @@ export default function EmployeeProfile() {
   const handleSave = async () => {
     setLoading(true);
     try {
-      const payload = { ...form };
-      if (payload.image && payload.image.startsWith("http")) {
-        payload.image = payload.image.replace("http://localhost:5000", "");
-      }
-      const res = await API.put("/profile", payload);
+      const res = await API.put("/profile", form);
       setProfile(res.data.employee);
       setForm(res.data.employee);
       setEditing(false);
@@ -105,9 +102,7 @@ export default function EmployeeProfile() {
       {/* Profile Header */}
       <div className="flex flex-col items-center mb-6">
         <img
-          src={editing && form.image && !form.image.startsWith('http')
-            ? `http://localhost:5000${form.image}`
-            : (profile.image ? `http://localhost:5000${profile.image}` : "https://via.placeholder.com/150")}
+          src={form.image || profile.image || "https://via.placeholder.com/150"}
           alt="Profile"
           className="w-32 h-32 rounded-full border-4 border-indigo-500 object-cover mb-3"
         />

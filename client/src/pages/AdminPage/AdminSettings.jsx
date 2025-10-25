@@ -39,7 +39,7 @@ export default function AdminSettings() {
     const fetchEmployees = async () => {
       try {
         const res = await API.get("/admin/employees");
-        setEmployees(res.data.employees || []);
+        setEmployees(Array.isArray(res.data) ? res.data : []);
       } catch (err) {
         console.error("Failed to fetch employees:", err);
         toast.error("Unable to load employee list");
@@ -218,59 +218,84 @@ export default function AdminSettings() {
       </div>
 
       {/* 👷 Employee Credentials Management */}
-      <div className="p-4 dark:bg-gray-700 rounded-xl space-y-3">
-        <h2 className="font-semibold text-lg">
-          Employee Credentials Management
-        </h2>
-        <select
-          value={empId}
-          onChange={(e) => setEmpId(e.target.value)}
-          className="w-full p-2 rounded border dark:bg-gray-600 dark:border-gray-500 focus:outline-none"
-          disabled={loadingEmp}
-        >
-          <option value="" className="bg-gray-600">
-            Select Employee
-          </option>
-          {employees.map((emp) => (
-            <option key={emp._id} value={emp._id} className="bg-gray-400">
-              {emp.name} ({emp.email})
-            </option>
-          ))}
-        </select>
-        <input
-          type="text"
-          placeholder="New Employee Name"
-          value={empName}
-          onChange={(e) => setEmpName(e.target.value)}
-          className="w-full p-2 rounded border dark:bg-gray-600 dark:border-gray-500 focus:outline-none"
-          disabled={loadingEmp}
-        />
-        <input
-          type="email"
-          placeholder="New Employee Email"
-          value={empEmail}
-          onChange={(e) => setEmpEmail(e.target.value)}
-          className="w-full p-2 rounded border dark:bg-gray-600 dark:border-gray-500 focus:outline-none"
-          disabled={loadingEmp}
-        />
-        <input
-          type="password"
-          placeholder="New Employee Password"
-          value={empPassword}
-          onChange={(e) => setEmpPassword(e.target.value)}
-          className="w-full p-2 rounded border dark:bg-gray-600 dark:border-gray-500 focus:outline-none"
-          disabled={loadingEmp}
-        />
-        <button
-          onClick={handleEmployeeUpdate}
-          disabled={loadingEmp}
-          className={`w-full py-2 bg-green-600 text-white rounded hover:bg-green-700 transition ${
-            loadingEmp ? "cursor-not-allowed bg-gray-400" : ""
-          }`}
-        >
-          {loadingEmp ? "Updating..." : "Update Employee"}
-        </button>
-      </div>
+     <div className="p-4 dark:bg-gray-700 rounded-xl space-y-3">
+  <h2 className="font-semibold text-lg">Employee Credentials Management</h2>
+
+  <select
+    value={empId}
+    onChange={(e) => setEmpId(e.target.value)}
+    className="w-full p-2 rounded border dark:bg-gray-600 dark:border-gray-500 
+               focus:outline-none hover:border-green-500 dark:hover:border-green-400 
+               focus:border-green-500 dark:focus:border-green-400 
+               transition duration-200 cursor-pointer"
+    disabled={loadingEmp}
+  >
+    <option value="" className="text-gray-500 dark:text-gray-400">
+      Select Employee
+    </option>
+    {employees.map((emp) => (
+      <option
+        key={emp._id}
+        value={emp._id}
+        className="bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 
+                   hover:bg-green-100 dark:hover:bg-green-600 cursor-pointer 
+                   transition-colors duration-150"
+      >
+        {emp.name} ({emp.email})
+      </option>
+    ))}
+  </select>
+
+  <input
+    type="text"
+    placeholder="New Employee Name"
+    value={empName}
+    onChange={(e) => setEmpName(e.target.value)}
+    className="w-full p-2 rounded border dark:bg-gray-600 dark:border-gray-500 
+               focus:outline-none hover:border-green-500 dark:hover:border-green-400 
+               focus:border-green-500 dark:focus:border-green-400 
+               transition duration-200"
+    disabled={loadingEmp}
+  />
+
+  <input
+    type="email"
+    placeholder="New Employee Email"
+    value={empEmail}
+    onChange={(e) => setEmpEmail(e.target.value)}
+    className="w-full p-2 rounded border dark:bg-gray-600 dark:border-gray-500 
+               focus:outline-none hover:border-green-500 dark:hover:border-green-400 
+               focus:border-green-500 dark:focus:border-green-400 
+               transition duration-200"
+    disabled={loadingEmp}
+  />
+
+  <input
+    type="password"
+    placeholder="New Employee Password"
+    value={empPassword}
+    onChange={(e) => setEmpPassword(e.target.value)}
+    className="w-full p-2 rounded border dark:bg-gray-600 dark:border-gray-500 
+               focus:outline-none hover:border-green-500 dark:hover:border-green-400 
+               focus:border-green-500 dark:focus:border-green-400 
+               transition duration-200"
+    disabled={loadingEmp}
+  />
+
+  <button
+    onClick={handleEmployeeUpdate}
+    disabled={loadingEmp}
+    className={`w-full py-2 bg-green-600 text-white rounded 
+               transition-all duration-200 ${
+                 loadingEmp
+                   ? "cursor-not-allowed bg-gray-400"
+                   : "hover:bg-green-700 hover:scale-[1.02] shadow-md"
+               }`}
+  >
+    {loadingEmp ? "Updating..." : "Update Employee"}
+  </button>
+</div>
+
 
       {/* 🆕 Admin ID Creation Section */}
       <div className="p-4 dark:bg-gray-700 rounded-xl space-y-3">

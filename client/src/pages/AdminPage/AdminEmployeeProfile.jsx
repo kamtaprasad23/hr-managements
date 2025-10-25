@@ -23,10 +23,7 @@ export default function AdminEmployeeProfile() {
   const fetchEmployee = async () => {
     try {
       const res = await API.get(`/admin/employee/${id}`);
-      const employeeData = {
-        ...res.data,
-        image: res.data.image ? `${API.defaults.baseURL}${res.data.image}` : "https://via.placeholder.com/150"
-      };
+      const employeeData = res.data;
       setEmployee(employeeData);
       setForm(employeeData);
       setLoading(false);
@@ -49,13 +46,13 @@ export default function AdminEmployeeProfile() {
     formData.append("profileImage", file);
 
     try {
-      const res = await API.post("/upload", formData);
-      const { filePath } = res.data;
-      setForm(prev => ({ ...prev, image: filePath }));
-      setEmployee(prev => ({ ...prev, image: `${API.defaults.baseURL}${filePath}` }));
-      toast.success("Image uploaded successfully");
+      const res = await API.post("/upload/profile", formData);
+      const { fileUrl } = res.data;
+      setForm(prev => ({ ...prev, image: fileUrl }));
+      toast.success("Image uploaded. Click 'Save Changes' to apply.");
     } catch (err) {
-      toast.error("Image upload failed");
+      console.error("Image upload error:", err);
+      toast.error("Image upload failed.");
     }
   };
 
@@ -75,12 +72,7 @@ export default function AdminEmployeeProfile() {
     }
 
     try {
-      const payload = { ...form };
-      if (payload.image && payload.image.startsWith(API.defaults.baseURL)) {
-        payload.image = payload.image.replace(API.defaults.baseURL, "");
-      }
-
-      await API.put(`/admin/employee/${id}`, payload);
+      await API.put(`/admin/employee/${id}`, form);
       setEditing(false);
       toast.success("Employee profile updated successfully!");
       fetchEmployee();
@@ -174,9 +166,7 @@ export default function AdminEmployeeProfile() {
       {/* Profile Header */}
       <div className="flex flex-col items-center mb-6">
         <img
-          src={editing && form.image && !form.image.startsWith('http')
-            ? `${API.defaults.baseURL}${form.image}`
-            : (employee.image || "https://via.placeholder.com/150")}
+          src={form.image || "https://via.placeholder.com/150"}
           alt="Profile"
           className="w-32 h-32 rounded-full border-4 border-indigo-500 object-cover mb-3"
         />

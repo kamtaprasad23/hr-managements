@@ -1,19 +1,21 @@
 import express from "express";
-import upload from "../middleware/upload.js";
+import upload from "../middleware/uploadCloudinary.js";
+import { verifyToken } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-
-router.post("/upload", upload.single("profileImage"), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ msg: "No file uploaded." });
+// ...existing code...
+router.post("/profile", verifyToken, upload.single("profileImage"), (req, res) => {
+  try {
+    console.log("UPLOAD REQ.user:", req.user?.id);
+    console.log("UPLOAD req.file:", req.file);
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+    const fileUrl = req.file.path; // Cloudinary URL or local path
+    return res.json({ message: "Uploaded successfully", fileUrl });
+  } catch (err) {
+    console.error("Upload route error:", err);
+    return res.status(500).json({ message: err.message });
   }
-
-  res.status(200).json({
-    message: "File uploaded successfully",
-    filePath: `/${req.file.path.replace(/\\/g, "/")}`, // Standardize path for web
-  });
 });
 
 export default router;
-

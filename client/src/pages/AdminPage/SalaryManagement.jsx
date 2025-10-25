@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { 
-  FileText, 
-  Calendar, 
-  Send, 
-  Calculator, 
-  Eye, 
-  X, 
+import {
+  FileText,
+  Calendar,
+  Send,
+  Calculator,
+  Eye,
+  X,
   User,
   AlertTriangle,
-  CheckCircle 
+  CheckCircle
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import API from "../../utils/api";
@@ -31,7 +31,7 @@ export default function SalaryManagement() {
   const fetchEmployees = async () => {
     try {
       const res = await API.get("/admin/employees");
-      setEmployees(res.data.employees || []);
+      setEmployees(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to fetch employees");
     }
@@ -117,16 +117,28 @@ export default function SalaryManagement() {
               <select
                 value={selectedEmployee}
                 onChange={(e) => setSelectedEmployee(e.target.value)}
-                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 
+               hover:border-blue-500 transition duration-200 cursor-pointer 
+               dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               >
-                <option value="" className="text-black">Select Employee</option>
+                <option value="" className="text-gray-500 dark:text-gray-400">
+                  Select Employee
+                </option>
+
                 {employees.map((emp) => (
-                  <option key={emp._id} value={emp._id}className="bg-gray-300 text-black" >
+                  <option
+                    key={emp._id}
+                    value={emp._id}
+                    className="bg-white text-black hover:bg-blue-100 
+                   dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-blue-600 
+                   cursor-pointer transition-colors duration-150"
+                  >
                     {emp.name} - {emp.position}
                   </option>
                 ))}
               </select>
             </div>
+
             <div>
               <label className="block text-sm font-medium mb-2">Month</label>
               <input

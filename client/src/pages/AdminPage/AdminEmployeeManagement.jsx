@@ -57,7 +57,7 @@ export default function AdminEmpManagement() {
       console.log("🔄 Fetching employees from /admin/employees...");
       const res = await API.get("/admin/employees");
       console.log("✅ Employees Response:", res.data);
-      setEmployees(Array.isArray(res.data.employees) ? res.data.employees : []);
+      setEmployees(Array.isArray(res.data) ? res.data : []);
       setError("");
     } catch (err) {
       console.error("❌ Fetch Employees Error:", {
@@ -203,7 +203,7 @@ export default function AdminEmpManagement() {
           <option value="Digital Marketing">Digital Marketing</option>
           <option value="UI/UX">UI/UX</option>
           <option value="Graphic Design">Graphic Design</option>
-          <option value="Floater">Floater</option>
+          <option value="Flutter">Floater</option>
         </select>
 
         <input
