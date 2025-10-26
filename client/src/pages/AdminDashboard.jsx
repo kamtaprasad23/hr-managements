@@ -155,7 +155,7 @@ export default function AdminHome() {
                     key={b._id}
                     className={`p-4 rounded-lg shadow ${isDarkMode ? "bg-gray-700 text-white" : "bg-white text-gray-900"}`}
                   >
-                    <img src={b.image || "https://i.pravatar.cc/150"} alt={b.name} className="w-24 h-24 rounded-full mx-auto mb-2" />
+                    <img src={b.image || "https://i.pravatar.cc/150"} alt={b.name} className="w-24 h-24 rounded-full mx-auto mb-2 object-cover" />
                     <h2 className="text-lg font-semibold">{b.name}</h2>
                     <p className="text-sm">{b.date}</p>
                     <button

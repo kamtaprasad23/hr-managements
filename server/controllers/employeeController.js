@@ -14,10 +14,16 @@ export const loginEmployee = async (req, res) => {
     const isMatch = await bcrypt.compare(password, employee.password);
     if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-    const token = jwt.sign({ id: employee._id, role: "employee" }, jwtSecret, {
-      expiresIn: "1d",
+    const token = jwt.sign(
+      { id: employee._id, role: "employee", adminId: employee.adminId }, // ✅ include adminId
+      jwtSecret,
+      { expiresIn: "1d" }
+    );
+
+    res.json({
+      token,
+      employee: { id: employee._id, name: employee.name, email, adminId: employee.adminId },
     });
-    res.json({ token, employee: { id: employee._id, name: employee.name, email } });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -39,15 +45,13 @@ export const getProfile = async (req, res) => {
   }
 };
 
-// Employee requests profile update (limited to 2 attempts)
+// --- Employee requests profile update (limited to 2 attempts) ---
 export const updateProfile = async (req, res) => {
   try {
     const employeeId = req.user.id;
-
     const employee = await Employee.findById(employeeId);
     if (!employee) return res.status(404).json({ message: "Employee not found" });
 
-    // Limit profile updates to 2 attempts
     if (employee.editCount >= 2) {
       return res.status(403).json({ message: "Profile update limit reached (2 times)" });
     }
@@ -65,19 +69,18 @@ export const updateProfile = async (req, res) => {
       }
     }
 
-    // Store request as pending update
     employee.pendingUpdates = updates;
     employee.status = "Pending";
     employee.editCount = (employee.editCount || 0) + 1;
-
     await employee.save();
+
     res.json({ message: "Profile update request sent for admin verification", employee });
   } catch (error) {
     res.status(500).json({ message: "Error updating profile", error: error.message });
   }
 };
 
-
+// --- Upload & Delete Profile Image ---
 export const uploadProfileImg = async (req, res) => {
   try {
     const updated = await Employee.findByIdAndUpdate(
@@ -107,8 +110,8 @@ export const deleteProfileImg = async (req, res) => {
 // --- Admin Employee Management ---
 export const getEmployees = async (req, res) => {
   try {
-    const employees = await Employee.find({ createdBy: req.user.id })
-      .select("-password");
+    // ✅ Only show employees created by this admin
+    const employees = await Employee.find({ createdBy: req.user.id }).select("-password");
     res.json(employees);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -118,6 +121,7 @@ export const getEmployees = async (req, res) => {
 export const updateEmployee = async (req, res) => {
   try {
     const { id } = req.params;
+
     const allowedFields = [
       "name", "email", "phone", "position", "salary", "address",
       "department", "jobType", "emergencyName", "emergencyRelation",
@@ -131,15 +135,14 @@ export const updateEmployee = async (req, res) => {
       if (req.body[field] !== undefined) updates[field] = req.body[field];
     });
 
-    // 🔐 If password is being updated, hash it
-
     if (updates.password) {
       const salt = await bcrypt.genSalt(10);
       updates.password = await bcrypt.hash(updates.password, salt);
     }
 
+    // ✅ Ensure only creator admin can update this employee
     const employee = await Employee.findOneAndUpdate(
-      { _id: id, createdBy: req.user.id }, // ensure only creator can update
+      { _id: id, createdBy: req.user.id },
       updates,
       { new: true, runValidators: true }
     ).select("-password");
@@ -149,7 +152,6 @@ export const updateEmployee = async (req, res) => {
 
     res.json({ message: "Employee updated successfully", employee });
   } catch (error) {
-    console.error("Update Employee Error:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -157,8 +159,16 @@ export const updateEmployee = async (req, res) => {
 export const deleteEmployee = async (req, res) => {
   try {
     const { id } = req.params;
-    const employee = await Employee.findOneAndDelete({ _id: id, createdBy: req.user.id }); // Ensure only the creator can delete
-    if (!employee) return res.status(404).json({ message: "Employee not found or unauthorized" });
+
+    // ✅ Only creator admin can delete
+    const employee = await Employee.findOneAndDelete({
+      _id: id,
+      createdBy: req.user.id,
+    });
+
+    if (!employee)
+      return res.status(404).json({ message: "Employee not found or unauthorized" });
+
     res.json({ message: "Employee deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -168,10 +178,16 @@ export const deleteEmployee = async (req, res) => {
 export const getEmployeeById = async (req, res) => {
   try {
     console.log("🔍 Backend: Fetching employee with ID:", req.params.id);
-    const employee = await Employee.findOne({ _id: req.params.id, createdBy: req.user.id }).select("-password"); // Ensure only the creator can view
-    if (!employee) {
+
+    // ✅ Ensure this admin owns this employee
+    const employee = await Employee.findOne({
+      _id: req.params.id,
+      createdBy: req.user.id,
+    }).select("-password");
+
+    if (!employee)
       return res.status(404).json({ message: "Employee not found or unauthorized" });
-    }
+
     res.json(employee);
   } catch (err) {
     console.error("❌ Backend Error:", err);
@@ -183,43 +199,53 @@ export const verifyEmployee = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const employee = await Employee.findById(id);
-    if (!employee) {
-      return res.status(404).json({ success: false, message: "Employee not found" });
-    }
+    // ✅ Verify only if employee belongs to this admin
+    const employee = await Employee.findOne({ _id: id, adminId: req.user.id });
+    if (!employee)
+      return res.status(404).json({ message: "Employee not found or unauthorized" });
 
-    employee.verified = true; // or isVerified depending on your model
+    employee.verified = true;
     await employee.save();
 
-    res.status(200).json({ success: true, message: "Employee verified successfully", employee });
+    res.status(200).json({
+      success: true,
+      message: "Employee verified successfully",
+      employee,
+    });
   } catch (error) {
-    console.error("Verification Error:", error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ message: error.message });
   }
 };
 
 // --- Employee-specific Data Fetching ---
-// Get employee profile
 export const getEmployeeProfile = async (req, res) => {
   try {
     const empId = req.params.id;
+
+    // ✅ Restrict employee to own data
     if (req.user.role === "employee" && req.user.id !== empId) {
       return res.status(403).json({ message: "Access denied" });
     }
+
     const employee = await Employee.findById(empId).select("-password");
     if (!employee) return res.status(404).json({ message: "Employee not found" });
+
     res.json(employee);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// Get employee dashboard (attendance etc.)
+// --- Employee Dashboard (Attendance) ---
 export const getEmployeeDashboard = async (req, res) => {
   try {
     const employeeId = req.user.id;
     const today = new Date();
-    const attendance = await Attendance.find({ employee: employeeId, date: today });
+    const attendance = await Attendance.find({
+      employee: employeeId,
+      adminId: req.user.adminId, // ✅ ensure same admin
+      date: today,
+    });
     res.json({ attendance });
   } catch (err) {
     res.status(500).json({ message: err.message });

@@ -11,6 +11,7 @@ const notificationSchema = new mongoose.Schema({
   userModel: { type: String, enum: ["Employee", "Admin"] },
   priority: { type: String, enum: ["Low", "Medium", "High", "Urgent"] },
   read: { type: Boolean, default: false },
+   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin", required: true },
 }, { timestamps: true });
 
 export default mongoose.model("Notification", notificationSchema);

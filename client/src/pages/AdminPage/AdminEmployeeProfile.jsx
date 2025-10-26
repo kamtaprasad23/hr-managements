@@ -58,8 +58,8 @@ export default function AdminEmployeeProfile() {
 
   const handleSave = async () => {
     const requiredFields = [
-      "fullName", "email", "contact", "position", "address",
-      "emergencyName", "emergencyRelation", "emergencyNumber",
+      "name", "email", "phone", "position", "address", "emergencyName",
+      "emergencyRelation", "emergencyNumber",
       "highestQualification", "yearOfPassing", "accountHolder",
       "accountNumber", "ifsc", "bankName", "idType", "idNumber", "birthday"
     ];
@@ -71,6 +71,7 @@ export default function AdminEmployeeProfile() {
       }
     }
 
+    // console.log("Client: Form state before saving:", form); 
     try {
       await API.put(`/admin/employee/${id}`, form);
       setEditing(false);
@@ -337,7 +338,12 @@ function ProfileCard({ icon, title, fields, editing, form, employee, handleChang
           editing ? (
             <div key={key} className="space-y-1"> 
               <label className="text-xs font-medium  block mb-1">
-                {label} {["fullName", "email", "contact", "position", "address", "idType", "idNumber"].includes(key) && <span className="text-red-500">*</span>}
+                {label} {["name", "email", "phone", "position", "address", 
+                          "emergencyName", "emergencyRelation", "emergencyNumber",
+                          "highestQualification", "yearOfPassing", "accountHolder",
+                          "accountNumber", "ifsc", "bankName", 
+                          "idType", "idNumber", "birthday"
+                          ].includes(key) && <span className="text-red-500"> *</span>}
               </label>
               {key === "idType" ? (
                 <select

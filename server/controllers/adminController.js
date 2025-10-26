@@ -1,14 +1,15 @@
 import Admin from "../models/adminModel.js";
 import Employee from "../models/employeeModel.js";
 import Task from "../models/taskModel.js";
-import Notification from "../models/notificationModel.js"; // Import Notification model
+import Notification from "../models/notificationModel.js";
 import Attendance from "../models/attendanceModel.js";
-import Leave from "../models/leaveModel.js"; // Import Leave model
+import Leave from "../models/leaveModel.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { jwtSecret } from "../config/config.js";
 import dayjs from "dayjs";
 
+// 🟩 Admin Registration
 export const registerAdmin = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -24,6 +25,7 @@ export const registerAdmin = async (req, res) => {
   }
 };
 
+// 🟩 Admin Login
 export const loginAdmin = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -40,16 +42,20 @@ export const loginAdmin = async (req, res) => {
   }
 };
 
+// 🟩 Create Employee (only for logged admin)
 export const createEmployee = async (req, res) => {
   try {
-    console.log("📥 Incoming employee data:", req.body);
-    console.log("👤 Authenticated user:", req.user);
-
     if (req.user.role !== "admin") {
       return res.status(403).json({ message: "Unauthorized: Admin access required" });
     }
 
-    const { name, email, password, phone, position, salary, address, department, jobType, emergencyName, emergencyRelation, emergencyNumber, birthday, image, highestQualification, yearOfPassing, accountHolder, accountNumber, ifsc, bankName, idType, idNumber, alternateNumber } = req.body;
+    const {
+      name, email, password, phone, position, salary, address,
+      department, jobType, emergencyName, emergencyRelation, emergencyNumber,
+      birthday, image, highestQualification, yearOfPassing,
+      accountHolder, accountNumber, ifsc, bankName,
+      idType, idNumber, alternateNumber
+    } = req.body;
 
     if (!name || !email || !password || !phone || !position) {
       return res.status(400).json({ message: "All required fields must be filled" });
@@ -59,33 +65,14 @@ export const createEmployee = async (req, res) => {
     if (exists) return res.status(400).json({ message: "Employee already exists" });
 
     const employee = new Employee({
-      name,
-      email,
-      password,
-      phone,
-      position,
-      salary,
-      address,
-      department,
-      jobType,
-      emergencyName,
-      emergencyRelation,
-      emergencyNumber,
-      birthday,
-      image,
-      highestQualification,
-      yearOfPassing,
-      accountHolder,
-      accountNumber,
-      ifsc,
-      bankName,
-      idType,
-      idNumber,
-      alternateNumber,
-      createdBy: req.user.id,
+      name, email, password, phone, position, salary, address,
+      department, jobType, emergencyName, emergencyRelation, emergencyNumber,
+      birthday, image, highestQualification, yearOfPassing,
+      accountHolder, accountNumber, ifsc, bankName,
+      idType, idNumber, alternateNumber,
+      createdBy: req.user.id, // 👈 important
     });
 
-    console.log("💾 Saving employee...");
     await employee.save();
 
     res.status(201).json({ message: "Employee created successfully", employee });
@@ -95,12 +82,11 @@ export const createEmployee = async (req, res) => {
   }
 };
 
+// 🟩 Get Admin Profile
 export const getAdminProfile = async (req, res) => {
   try {
     const admin = await Admin.findById(req.user.id).select("-password");
-    if (!admin) {
-      return res.status(404).json({ message: "Admin not found" });
-    }
+    if (!admin) return res.status(404).json({ message: "Admin not found" });
     res.json(admin);
   } catch (error) {
     console.error("Get Admin Profile Error:", error);
@@ -108,60 +94,62 @@ export const getAdminProfile = async (req, res) => {
   }
 };
 
+// 🟩 Admin Dashboard (Only show that admin's data)
 export const getAdminDashboardData = async (req, res) => {
   try {
-    const totalEmployees = await Employee.countDocuments();
-    const jobApplicants = 0; // Placeholder until implemented
+    const adminId = req.user.id;
+
+    const totalEmployees = await Employee.countDocuments({ createdBy: adminId });
     const today = dayjs().startOf("day").toDate();
     const tomorrow = dayjs(today).add(1, "day").toDate();
-    const todayAttendance = await Attendance.find({ date: { $gte: today, $lt: tomorrow } });
-    
-    // --- Leave Data ---
-    const pendingLeaves = await Leave.countDocuments({ status: "Pending" });
-    const approvedLeaves = await Leave.countDocuments({ status: "Approved" });
-    const rejectedLeaves = await Leave.countDocuments({ status: "Rejected" });
-    
-    const onTime = todayAttendance.filter((a) => a.status === "Present").length; // Adjusted to match enum
+
+    const todayAttendance = await Attendance.find({
+      createdBy: adminId,
+      date: { $gte: today, $lt: tomorrow },
+    });
+
+    const pendingLeaves = await Leave.countDocuments({ createdBy: adminId, status: "Pending" });
+    const approvedLeaves = await Leave.countDocuments({ createdBy: adminId, status: "Approved" });
+    const rejectedLeaves = await Leave.countDocuments({ createdBy: adminId, status: "Rejected" });
+
+    const onTime = todayAttendance.filter((a) => a.status === "Present").length;
     const late = todayAttendance.filter((a) => a.status === "Late").length;
     const absent = totalEmployees - todayAttendance.length;
 
     res.json({
       totalEmployees,
-      jobApplicants,
       attendance: { total: totalEmployees, onTime, late, absent },
-      // Add leave data to the response
-      leaves: {
-        pending: pendingLeaves,
-        approved: approvedLeaves,
-        rejected: rejectedLeaves,
-      },
+      leaves: { pending: pendingLeaves, approved: approvedLeaves, rejected: rejectedLeaves },
     });
   } catch (error) {
     res.status(500).json({ message: "Failed to load dashboard data" });
   }
 };
 
+// 🟩 Get Total Employees (only own employees)
 export const getTotalEmployees = async (req, res) => {
   try {
     if (req.user.role !== "admin") {
       return res.status(403).json({ message: "Admin access required" });
     }
     const adminId = req.user.id;
-    const employees = await Employee.find({ createdBy: adminId }).select("name email phone position salary");
+    const employees = await Employee.find({ createdBy: adminId })
+      .select("name email phone position salary");
     res.json({ totalEmployees: employees.length, employees });
   } catch (err) {
     res.status(500).json({ message: "Server error" });
   }
 };
 
+// 🟩 Get Today Birthdays (only own employees)
 export const getBirthdays = async (req, res) => {
   try {
-    // Get today's month and day (1-based for month, 1-based for day)
+    const adminId = req.user.id;
     const todayMonth = dayjs().month() + 1;
     const todayDate = dayjs().date();
 
-    // Find employees whose birthday matches today's month and day
     const employeesWithBirthdayToday = await Employee.find({
+      createdBy: adminId,
       $expr: {
         $and: [
           { $eq: [{ $month: "$birthday" }, todayMonth] },
@@ -173,23 +161,26 @@ export const getBirthdays = async (req, res) => {
     const birthdays = employeesWithBirthdayToday.map(emp => ({
       _id: emp._id,
       name: emp.name,
-      date: dayjs(emp.birthday).format("MMMM D"), // Format date for display
+      date: dayjs(emp.birthday).format("MMMM D"),
       message: "Happy Birthday!",
-      image: emp.image ? `http://localhost:5000${emp.image}` : "https://i.pravatar.cc/150",
+      image: emp.image || "https://i.pravatar.cc/150",
     }));
+
     res.json(birthdays);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
+// 🟩 Send Birthday Notification (only for own employee)
 export const sendBirthdayWish = async (req, res) => {
   try {
+    const adminId = req.user.id;
     const { employeeId } = req.params;
-    const employee = await Employee.findById(employeeId);
+    const employee = await Employee.findOne({ _id: employeeId, createdBy: adminId });
 
     if (!employee) {
-      return res.status(404).json({ message: "Employee not found" });
+      return res.status(404).json({ message: "Employee not found or not yours" });
     }
 
     const notification = new Notification({
@@ -198,16 +189,18 @@ export const sendBirthdayWish = async (req, res) => {
       type: "employee",
       userId: employeeId,
       priority: "Medium",
+      createdBy: adminId,
     });
     await notification.save();
 
     res.status(200).json({ message: `Birthday wish sent to ${employee.name}` });
   } catch (error) {
-    console.error("Error sending birthday wish:", error); // Added for better logging
-    res.status(500).json({ message: "Failed to send birthday wish", error: error.message });
+    console.error("Error sending birthday wish:", error);
+    res.status(500).json({ message: "Failed to send birthday wish" });
   }
 };
-// 🧩 Update Admin Profile
+
+// 🟩 Update Admin Profile
 export const updateAdminProfile = async (req, res) => {
   try {
     const adminId = req.user.id;
@@ -220,42 +213,35 @@ export const updateAdminProfile = async (req, res) => {
     if (name) updateData.name = name;
     if (email) updateData.email = email;
 
-    // 🧩 IMPORTANT: Hash the password before saving
     if (password) {
       const salt = await bcrypt.genSalt(10);
       updateData.password = await bcrypt.hash(password, salt);
     }
 
-    const updatedAdmin = await Admin.findByIdAndUpdate(
-      adminId,
-      { $set: updateData },
-      { new: true }
-    ).select("-password");
+    const updatedAdmin = await Admin.findByIdAndUpdate(adminId, { $set: updateData }, { new: true })
+      .select("-password");
 
-    if (!updatedAdmin) return res.status(404).json({ message: "Admin not found after update" });
-
-    res.status(200).json({
-      message: "Profile updated successfully",
-      admin: updatedAdmin,
-    });
+    res.status(200).json({ message: "Profile updated successfully", admin: updatedAdmin });
   } catch (error) {
     console.error("❌ Error updating admin profile:", error);
     res.status(500).json({ message: "Failed to update admin profile" });
   }
 };
 
-// Approve employee update
+// 🟩 Approve Employee Update (only if employee belongs to that admin)
 export const approveEmployeeUpdate = async (req, res) => {
   try {
     const { id } = req.params;
-    const employee = await Employee.findById(id);
-    if (!employee) return res.status(404).json({ message: "Employee not found" });
+    const adminId = req.user.id;
+
+    const employee = await Employee.findOne({ _id: id, createdBy: adminId });
+    if (!employee) return res.status(404).json({ message: "Employee not found or not yours" });
 
     if (employee.pendingUpdates && Object.keys(employee.pendingUpdates).length > 0) {
       Object.assign(employee, employee.pendingUpdates);
       employee.pendingUpdates = {};
       employee.status = "Verified";
-      employee.verified = true; // Also set the main verified flag
+      employee.verified = true;
       await employee.save();
       return res.json({ message: "Employee update approved successfully" });
     } else {
@@ -266,16 +252,18 @@ export const approveEmployeeUpdate = async (req, res) => {
   }
 };
 
-// Reject employee update
+// 🟩 Reject Employee Update (only if employee belongs to that admin)
 export const rejectEmployeeUpdate = async (req, res) => {
   try {
     const { id } = req.params;
-    const employee = await Employee.findById(id);
-    if (!employee) return res.status(404).json({ message: "Employee not found" });
+    const adminId = req.user.id;
+
+    const employee = await Employee.findOne({ _id: id, createdBy: adminId });
+    if (!employee) return res.status(404).json({ message: "Employee not found or not yours" });
 
     if (employee.pendingUpdates) {
       employee.pendingUpdates = {};
-      employee.status = "Verified"; // Revert status to Verified
+      employee.status = "Verified";
       await employee.save();
       return res.json({ message: "Employee update rejected" });
     } else {

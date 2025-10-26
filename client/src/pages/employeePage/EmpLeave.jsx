@@ -13,6 +13,7 @@ export default function LeaveCalendar() {
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const [leaves, setLeaves] = useState([]);
+  const [employee, setEmployee] = useState(null); // To store employee data
   const { isDarkMode } = useSelector((state) => state.settings);
   const [summary, setSummary] = useState({
     totalLeaves: 0,
@@ -30,14 +31,24 @@ export default function LeaveCalendar() {
   // Fetch leaves when component mounts
   useEffect(() => {
     fetchLeaves();
+    fetchEmployee(); // Fetch current employee's data
   }, []);
 
   const fetchLeaves = async () => {
     try {
-      const res = await API.get("/leave/");
+      const res = await API.get("/leave/me");
       setLeaves(res.data || []);
     } catch (err) {
       toast.error("Error fetching leaves");
+    }
+  };
+
+  const fetchEmployee = async () => {
+    try {
+      const res = await API.get("/profile");
+      setEmployee(res.data);
+    } catch (err) {
+      console.error("Failed to fetch employee profile for notifications");
     }
   };
 
@@ -91,14 +102,6 @@ export default function LeaveCalendar() {
     e.preventDefault();
     try {
       await API.post("/leave/", form);
-
-      // Send admin notification
-      await API.post("/notifications/", {
-        title: "New Leave Applied",
-        message: `Employee applied leave on ${form.date}.`,
-        type: "task",
-        userId: "ADMIN_ID_HERE", // replace if needed
-      });
 
       toast.success("Leave applied successfully");
       setIsApplyModalOpen(false);

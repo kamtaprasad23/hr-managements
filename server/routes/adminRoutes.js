@@ -41,3 +41,4 @@ router.post("/birthday-wish/:employeeId", verifyToken, adminOnly, sendBirthdayWi
 router.put("/profile", verifyToken, adminOnly, updateAdminProfile);
 
 export default router;
+

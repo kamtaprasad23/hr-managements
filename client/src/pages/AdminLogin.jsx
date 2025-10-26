@@ -239,12 +239,12 @@ function AdminLogin() {
           {loading ? "Logging in..." : "Login"}
         </button>
 
-        {/* <p className="mt-4 text-center text-gray-600">
+        <p className="mt-4 text-center text-gray-600">
           Don’t have an account?{" "}
           <Link to="/admin-register" className="text-blue-600 hover:underline">
             Register
           </Link>
-        </p> */}
+        </p>
       </form>
     </div>
   );

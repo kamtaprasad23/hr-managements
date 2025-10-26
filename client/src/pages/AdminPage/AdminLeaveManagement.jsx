@@ -1,12 +1,15 @@
 
 import React, { useEffect, useState } from "react";
-import { Check, X, FileText } from "lucide-react";
+import { Check, X, FileText, Trash2 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import API from "../../utils/api";
 
 export default function AdminLeaveManagement() {
   const [leaves, setLeaves] = useState([]);
   const [summary, setSummary] = useState({ Approved: 0, Rejected: 0, Pending: 0 });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [leaveToDeleteId, setLeaveToDeleteId] = useState(null);
+
 
   useEffect(() => {
     fetchLeaves();
@@ -37,6 +40,24 @@ export default function AdminLeaveManagement() {
     } catch (err) {
       toast.error("Error updating leave status");
     }
+  };
+
+  const handleDeleteLeave = async () => {
+    if (!leaveToDeleteId) return;
+    try {
+      await API.delete(`/leave/${leaveToDeleteId}`);
+      toast.success("Leave request deleted successfully");
+      setLeaveToDeleteId(null);
+      setShowDeleteModal(false);
+      fetchLeaves(); // Refresh the list
+    } catch (err) {
+      toast.error("Error deleting leave request");
+    }
+  };
+
+  const openDeleteModal = (id) => {
+    setLeaveToDeleteId(id);
+    setShowDeleteModal(true);
   };
 
   const getStatusClasses = (status) => {
@@ -87,25 +108,58 @@ export default function AdminLeaveManagement() {
                 {leave.status.toUpperCase()}
               </span>
             </div>
-            {leave.status === "Pending" && (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleUpdateStatus(leave._id, "Approved")}
-                  className="flex items-center px-3 py-1 text-white bg-green-500 rounded"
-                >
-                  <Check size={16} />
-                </button>
-                <button
-                  onClick={() => handleUpdateStatus(leave._id, "Rejected")}
-                  className="flex items-center px-3 py-1 text-white bg-red-500 rounded"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-            )}
+            <div className="flex gap-2">
+              {leave.status === "Pending" && (
+                <>
+                  <button
+                    onClick={() => handleUpdateStatus(leave._id, "Approved")}
+                    className="flex items-center px-3 py-1 text-white bg-green-500 rounded hover:bg-green-600"
+                  >
+                    <Check size={16} />
+                  </button>
+                  <button
+                    onClick={() => handleUpdateStatus(leave._id, "Rejected")}
+                    className="flex items-center px-3 py-1 text-white bg-red-500 rounded hover:bg-red-600"
+                  >
+                    <X size={16} />
+                  </button>
+                </>
+              )}
+              <button
+                onClick={() => openDeleteModal(leave._id)}
+                className="flex items-center px-3 py-1 text-white bg-gray-500 rounded hover:bg-gray-600"
+                title="Delete Leave Request"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
           </div>
         ))}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white text-black  rounded-lg shadow-xl p-6 w-96">
+            <h3 className="text-lg font-semibold mb-4">Confirm Deletion</h3>
+            <p className=" mb-6">Are you sure you want to delete this leave request? This action cannot be undone.</p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 bg-gray-400 dark:bg-gray-600 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteLeave}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
+              >
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

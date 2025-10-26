@@ -34,22 +34,23 @@ const settingsSlice = createSlice({
     },
 
     // ♻️ Load persisted settings on refresh
-    loadSettingsFromStorage: (state) => {
-      const darkMode = localStorage.getItem("darkMode") === "true";
-      const emailNotifications = localStorage.getItem("emailNotifications") === "true";
-      const profileVisible = localStorage.getItem("profileVisible") === "true";
+ loadSettingsFromStorage: (state) => {
+  const darkMode = localStorage.getItem("isDarkMode") === "true"; // ✅ match key name
+  const emailNotifications = localStorage.getItem("emailNotifications") === "true";
+  const profileVisible = localStorage.getItem("profileVisible") === "true";
 
-      state.isDarkMode = darkMode;
-      state.emailNotifications = emailNotifications;
-      state.profileVisible = profileVisible;
+  state.isDarkMode = darkMode;
+  state.emailNotifications = emailNotifications;
+  state.profileVisible = profileVisible;
 
-      // Ensure HTML reflects saved dark mode
-      if (darkMode) {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
-    },
+  // Apply mode instantly
+  if (darkMode) {
+    document.documentElement.classList.add("dark");
+  } else {
+    document.documentElement.classList.remove("dark");
+  }
+},
+
   },
 });
 

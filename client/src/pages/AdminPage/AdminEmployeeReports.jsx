@@ -16,15 +16,33 @@ export default function AdminEmpReports() {
   });
 
   useEffect(() => {
+    setFilters((prev) => ({ ...prev, month: "", startDate: "", endDate: "", search: "" }));
     fetchData();
   }, [filters.reportType]);
 
   async function fetchData() {
     try {
-      let endpoint;
+      let endpoint = "";
+      const params = new URLSearchParams();
+
+      // Handle dateType: month -> convert to startDate and endDate
+      if (filters.dateType === "month" && filters.month) {
+        const [year, month] = filters.month.split("-");
+        const startDate = new Date(year, month - 1, 1).toISOString();
+        const endDate = new Date(year, month, 0, 23, 59, 59).toISOString();
+        params.append("startDate", startDate);
+        params.append("endDate", endDate);
+      } else if (filters.dateType === "range" && filters.startDate && filters.endDate) {
+        const startDate = new Date(filters.startDate).toISOString();
+        const endDate = new Date(filters.endDate);
+        endDate.setHours(23, 59, 59);
+        params.append("startDate", startDate);
+        params.append("endDate", endDate.toISOString());
+      }
+
       switch (filters.reportType) {
         case "attendance":
-          endpoint = "/attendance/all";
+          endpoint = "/attendance";
           break;
         case "employee":
           endpoint = "/admin/employees";
@@ -36,17 +54,38 @@ export default function AdminEmpReports() {
           throw new Error("Invalid report type");
       }
 
-      const res = await API.get(endpoint);
+      const res = await API.get(endpoint, { params });
+
       let dataToProcess = [];
-      if (filters.reportType === 'employee' && res.data.employees) {
+      if (filters.reportType === "employee" && res.data.employees) {
         dataToProcess = res.data.employees;
       } else if (Array.isArray(res.data)) {
         dataToProcess = res.data;
       }
 
-      setRecords(dataToProcess);
-      applyFilters(dataToProcess);
+      // Map data to unified structure
+      const formatted = dataToProcess.map((r) => ({
+        id: r._id,
+        name: r.employee?.name || r.name || "Unknown",
+        email: r.employee?.email || r.email || "-",
+        Department: r.employee?.department || r.department || "-",
+        role: r.employee?.position || r.role || "-",
+        date: r.date,
+        checkIn: r.checkIn,
+        checkOut: r.checkOut,
+        totalHours: r.totalHours || 0,
+        status: r.status || "Absent",
+        phone: r.phone || "-",
+        position: r.position || "-",
+        salary: r.salary || "-",
+        month: r.month || "",
+        amount: r.amount || "0",
+      }));
+
+      setRecords(formatted);
+      applyFilters(formatted);
     } catch (err) {
+      console.error(err);
       setError(err.response?.data?.message || `Error fetching ${filters.reportType} data`);
       setFiltered([]);
     }
@@ -55,33 +94,15 @@ export default function AdminEmpReports() {
   const applyFilters = (data) => {
     let filteredData = [...data];
 
-    // Date Filter
-    if (filters.dateType === "month" && filters.month) {
-      const [year, monthNum] = filters.month.split("-");
-      filteredData = filteredData.filter((r) => {
-        const date = new Date(r.date || r.month);
-        return date.getFullYear() === parseInt(year) && date.getMonth() + 1 === parseInt(monthNum);
-      });
-    } else if (filters.dateType === "range" && filters.startDate && filters.endDate) {
-      const start = new Date(filters.startDate);
-      const end = new Date(filters.endDate);
-      filteredData = filteredData.filter((r) => {
-        const date = new Date(r.date || r.month);
-        return date >= start && date <= end;
-      });
-    }
-
-    // Search Filter
     if (filters.search) {
       filteredData = filteredData.filter((r) =>
-        (r.user?.name || r.name || "").toLowerCase().includes(filters.search.toLowerCase())
+        (r.name || "").toLowerCase().includes(filters.search.toLowerCase())
       );
     }
 
-    // Sort Filter
     filteredData.sort((a, b) => {
-      const nameA = (a.user?.name || a.name || "").toLowerCase();
-      const nameB = (b.user?.name || b.name || "").toLowerCase();
+      const nameA = (a.name || "").toLowerCase();
+      const nameB = (b.name || "").toLowerCase();
       return filters.sort === "a-z" ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
     });
 
@@ -102,7 +123,7 @@ export default function AdminEmpReports() {
     });
   };
 
-  const handleFilter = () => {
+  const handleFilter = async () => {
     if (filters.dateType === "month" && !filters.month) {
       setError("Please select a month");
       return;
@@ -111,7 +132,8 @@ export default function AdminEmpReports() {
       setError("Please select both start and end dates");
       return;
     }
-    applyFilters(records);
+
+    fetchData();
   };
 
   const downloadCSV = () => {
@@ -120,40 +142,28 @@ export default function AdminEmpReports() {
       return;
     }
 
-    let headers, rows;
+    let headers = [];
+    let rows = [];
+
     switch (filters.reportType) {
       case "attendance":
         headers = ["Name,Email,Date,CheckIn,CheckOut,TotalHours"];
         rows = filtered.map((r) => {
-          const name = r.user?.name || r.name || "";
-          const email = r.user?.email || r.email || "";
-          const date = new Date(r.date).toLocaleDateString();
+          const date = r.date ? new Date(r.date).toLocaleDateString() : "-";
           const checkIn = r.checkIn ? new Date(r.checkIn).toLocaleTimeString() : "-";
           const checkOut = r.checkOut ? new Date(r.checkOut).toLocaleTimeString() : "-";
-          const hours = r.totalHours || "0";
-          return `${name},${email},${date},${checkIn},${checkOut},${hours}`;
+          return `${r.name},${r.email},${date},${checkIn},${checkOut},${r.totalHours}`;
         });
         break;
       case "employee":
         headers = ["Name,Email,Phone,Position,Salary"];
-        rows = filtered.map((r) => {
-          const name = r.name || "";
-          const email = r.email || "";
-          const phone = r.phone || "";
-          const position = r.position || "";
-          const salary = r.salary || "-";
-          return `${name},${email},${phone},${position},${salary}`;
-        });
+        rows = filtered.map((r) => `${r.name},${r.email},${r.phone},${r.position},${r.salary}`);
         break;
       case "salary":
         headers = ["Name,Email,Month,Amount,Status"];
         rows = filtered.map((r) => {
-          const name = r.user?.name || r.name || "";
-          const email = r.user?.email || r.email || "";
-          const month = new Date(r.month).toLocaleDateString();
-          const amount = r.amount || "0";
-          const status = r.status || "-";
-          return `${name},${email},${month},${amount},${status}`;
+          const month = r.month ? new Date(r.month).toLocaleDateString() : "-";
+          return `${r.name},${r.email},${month},${r.amount},${r.status || "-"}`;
         });
         break;
       default:
@@ -172,41 +182,40 @@ export default function AdminEmpReports() {
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">📊 Reports</h1>
-      <p className=" mb-6">
-        Filter and download reports for attendance, employees, or salaries.
-      </p>
+      <p className=" mb-6">Filter and download reports for attendance, employees, or salaries.</p>
+
       {error && (
         <div className=" border border-red-200 rounded-lg p-4 mb-4">
           <p className="text-red-600 font-medium">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-2 bg-red-500  px-4 py-1 rounded hover:bg-red-600"
+            className="mt-2 bg-red-500 px-4 py-1 rounded hover:bg-red-600"
           >
             Retry
           </button>
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row gap-4 mb-6  p-4 rounded-lg shadow ">
+      <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 rounded-lg shadow transition-colors">
         <select
           name="reportType"
           value={filters.reportType}
           onChange={handleFilterChange}
-          className="border p-2 rounded w-full md:w-1/4"
+          className="border text-black bg-white p-2 rounded w-full md:w-1/4"
         >
-          <option value="attendance" className="bg-gray-400">Attendance</option>
-          <option value="employee" className="bg-gray-400">Employee</option>
-          <option value="salary" className="bg-gray-400">Salary</option>
+          <option value="attendance">Attendance</option>
+          <option value="employee">Employee</option>
+          <option value="salary">Salary</option>
         </select>
 
         <select
           name="dateType"
           value={filters.dateType}
           onChange={handleFilterChange}
-          className="border p-2 rounded w-full md:w-1/4"
+          className="border text-black bg-white p-2 rounded w-full md:w-1/4"
         >
-          <option value="month"className="bg-gray-400">Month</option>
-          <option value="range"className="bg-gray-400">Custom Range</option>
+          <option value="month">Month</option>
+          <option value="range">Custom Range</option>
         </select>
 
         {filters.dateType === "month" ? (
@@ -215,7 +224,7 @@ export default function AdminEmpReports() {
             name="month"
             value={filters.month}
             onChange={handleFilterChange}
-            className="border p-2 rounded w-full md:w-1/4"
+            className="border text-black bg-white p-2 rounded w-full md:w-1/4"
           />
         ) : (
           <>
@@ -224,14 +233,14 @@ export default function AdminEmpReports() {
               name="startDate"
               value={filters.startDate}
               onChange={handleFilterChange}
-              className="border p-2 rounded w-full md:w-1/4"
+              className="border text-black bg-white p-2 rounded w-full md:w-1/4"
             />
             <input
               type="date"
               name="endDate"
               value={filters.endDate}
               onChange={handleFilterChange}
-              className="border p-2 rounded w-full md:w-1/4"
+              className="border text-black bg-white p-2 rounded w-full md:w-1/4"
             />
           </>
         )}
@@ -242,17 +251,17 @@ export default function AdminEmpReports() {
           placeholder="Search by name"
           value={filters.search}
           onChange={handleFilterChange}
-          className="border p-2 rounded w-full md:w-1/4"
+          className="border text-black bg-white p-2 rounded w-full md:w-1/4"
         />
 
         <select
           name="sort"
           value={filters.sort}
           onChange={handleFilterChange}
-          className="border p-2 rounded w-full md:w-1/4 "
+          className="border text-black bg-white p-2 rounded w-full md:w-1/4"
         >
-          <option value="a-z"className="bg-gray-400">A-Z</option>
-          <option value="z-a"className="bg-gray-400">Z-A</option>
+          <option value="a-z">A-Z</option>
+          <option value="z-a">Z-A</option>
         </select>
 
         <button
@@ -261,12 +270,13 @@ export default function AdminEmpReports() {
         >
           Filter
         </button>
+
         <button
           onClick={downloadCSV}
           disabled={filtered.length === 0}
-          className={`px-4 py-2 rounded ${
+          className={`px-4 py-2 rounded transition-colors ${
             filtered.length === 0
-              ? "bg-gray-300"
+              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
               : "bg-green-600 hover:bg-green-700 text-white"
           }`}
         >
@@ -307,32 +317,28 @@ export default function AdminEmpReports() {
           {filtered.length > 0 ? (
             filtered.map((r, i) => (
               <tr key={i} className="border-b">
-                <td className="p-2 ">{r.user?.name || r.name}</td>
-                <td className="p-2">{r.user?.email || r.email}</td>
+                <td className="p-2">{r.name}</td>
+                <td className="p-2">{r.email}</td>
                 {filters.reportType === "attendance" && (
                   <>
-                    <td className="p-2">{new Date(r.date).toLocaleDateString()}</td>
-                    <td className="p-2">
-                      {r.checkIn ? new Date(r.checkIn).toLocaleTimeString() : "-"}
-                    </td>
-                    <td className="p-2">
-                      {r.checkOut ? new Date(r.checkOut).toLocaleTimeString() : "-"}
-                    </td>
+                    <td className="p-2">{r.date ? new Date(r.date).toLocaleDateString() : "-"}</td>
+                    <td className="p-2">{r.checkIn ? new Date(r.checkIn).toLocaleTimeString() : "-"}</td>
+                    <td className="p-2">{r.checkOut ? new Date(r.checkOut).toLocaleTimeString() : "-"}</td>
                     <td className="p-2">{r.totalHours || "0"}</td>
                   </>
                 )}
                 {filters.reportType === "employee" && (
                   <>
-                    <td className="p-2">{r.phone || "-"}</td>
-                    <td className="p-2">{r.position || "-"}</td>
-                    <td className="p-2">{r.salary || "-"}</td>
+                    <td className="p-2">{r.phone}</td>
+                    <td className="p-2">{r.position}</td>
+                    <td className="p-2">{r.salary}</td>
                   </>
                 )}
                 {filters.reportType === "salary" && (
                   <>
-                    <td className="p-2">{new Date(r.month).toLocaleDateString()}</td>
-                    <td className="p-2">{r.amount || "0"}</td>
-                    <td className="p-2">{r.status || "-"}</td>
+                    <td className="p-2">{r.month ? new Date(r.month).toLocaleDateString() : "-"}</td>
+                    <td className="p-2">{r.amount}</td>
+                    <td className="p-2">{r.status}</td>
                   </>
                 )}
               </tr>

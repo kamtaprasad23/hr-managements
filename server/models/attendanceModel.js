@@ -8,6 +8,7 @@ const attendanceSchema = new mongoose.Schema(
     checkOut: { type: Date },
     checkInLocation: { lat: Number, lng: Number, accuracy: Number },
     checkOutLocation: { lat: Number, lng: Number, accuracy: Number },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin", required: true },
     status: {
       type: String,
       enum: [
@@ -25,6 +26,7 @@ const attendanceSchema = new mongoose.Schema(
     login: { type: String },
     logout: { type: String },
   },
+  
   { timestamps: true }
 );
 

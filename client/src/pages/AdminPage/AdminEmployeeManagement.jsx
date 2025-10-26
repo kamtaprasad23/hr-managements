@@ -4,33 +4,35 @@ import API from "../../utils/api";
 import toast, { Toaster } from "react-hot-toast";
 import { BsThreeDotsVertical } from "react-icons/bs";
 
+const initialFormState = {
+  name: "",
+  email: "",
+  phone: "",
+  position: "",
+  salary: "",
+  password: "",
+  address: "",
+  department: "",
+  jobType: "",
+  emergencyName: "",
+  emergencyRelation: "",
+  emergencyNumber: "",
+  birthday: "",
+  image: "",
+  highestQualification: "",
+  yearOfPassing: "",
+  accountHolder: "",
+  accountNumber: "",
+  ifsc: "",
+  bankName: "",
+  idType: "",
+  idNumber: "",
+  alternateNumber: "",
+};
+
 export default function AdminEmpManagement() {
   const [employees, setEmployees] = useState([]);
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    position: "",
-    salary: "",
-    password: "",
-    address: "",
-    department: "",
-    jobType: "",
-    emergencyName: "",
-    emergencyRelation: "",
-    emergencyNumber: "",
-    birthday: "",
-    image: "",
-    highestQualification: "",
-    yearOfPassing: "",
-    accountHolder: "",
-    accountNumber: "",
-    ifsc: "",
-    bankName: "",
-    idType: "",
-    idNumber: "",
-    alternateNumber: "",
-  });
+  const [form, setForm] = useState(initialFormState);
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState("");
   const [dropdownId, setDropdownId] = useState(null);
@@ -39,11 +41,15 @@ export default function AdminEmpManagement() {
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [employeeToDeleteId, setEmployeeToDeleteId] = useState(null);
   const [countdown, setCountdown] = useState(5);
+  const isDarkMode = false; // 🐞 FIX: isDarkMode is not defined. Define it here. Ideally, this comes from a theme context.
 
   useEffect(() => {
     if (showConfirmationModal && countdown > 0) {
       const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
       return () => clearTimeout(timer);
+    }
+    if (!showConfirmationModal) {
+      setCountdown(5); // Reset countdown when modal is closed
     }
   }, [showConfirmationModal, countdown]);
 
@@ -91,31 +97,7 @@ export default function AdminEmpManagement() {
         console.log("✅ Employee added:", res.data);
         toast.success("Employee added successfully");
       }
-      setForm({
-        name: "",
-        email: "",
-        phone: "",
-        position: "",
-        salary: "",
-        password: "",
-        address: "",
-        department: "",
-        jobType: "",
-        emergencyName: "",
-        emergencyRelation: "",
-        emergencyNumber: "",
-        birthday: "",
-        image: "",
-        highestQualification: "",
-        yearOfPassing: "",
-        accountHolder: "",
-        accountNumber: "",
-        ifsc: "",
-        bankName: "",
-        idType: "",
-        idNumber: "",
-        alternateNumber: "",
-      });
+      setForm(initialFormState);
       setEditingId(null);
       fetchEmployees();
     } catch (err) {
@@ -156,109 +138,126 @@ export default function AdminEmpManagement() {
       )}
 
       <form
-        onSubmit={handleSubmit}
-        className="mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4  p-4 rounded-lg shadow"
-      >
-        <input
-          type="text"
-          name="name"
-          placeholder="Name"
-          value={form.name}
-          onChange={handleChange}
-          className="border border-gray-300 p-2 rounded-md"
-          required
-        />
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={form.email}
-          onChange={handleChange}
-          className="border border-gray-300 p-2 rounded-md"
-          required
-        />
-        <input
-          type="tel"
-          name="phone"
-          placeholder="Phone"
-          value={form.phone}
-          onChange={handleChange}
-          maxLength={10}
-          minLength={10}
-          className="border border-gray-300 p-2 rounded-md"
-          required
-        />
-        <select
-          name="position"
-          value={form.position}
-          onChange={handleChange}
-          className="border text-gray-700 border-gray-300 p-2 rounded-md"
-          required
-        >
-          <option value="">Select Position</option>
-          <option value="Full Stack">Full Stack</option>
-          <option value="MERN Stack">MERN Stack</option>
-          <option value="Frontend">Frontend</option>
-          <option value="Backend">Backend</option>
-          <option value="Digital Marketing">Digital Marketing</option>
-          <option value="UI/UX">UI/UX</option>
-          <option value="Graphic Design">Graphic Design</option>
-          <option value="Flutter">Floater</option>
-        </select>
+  onSubmit={handleSubmit}
+  className="mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-4 rounded-lg shadow"
+>
+  <input
+    type="text"
+    name="name"
+    placeholder="Name"
+    value={form.name}
+    onChange={handleChange}
+    className={`border p-2 rounded-md ${
+      isDarkMode ? "placeholder-gray-300" : " placeholder-gray-500"
+    }`}
+    required
+  />
 
-        <input
-          type="tel"
-          name="salary"
-          placeholder="Salary"
-          value={form.salary}
-          onChange={handleChange}
-          maxLength={6}
-          className="border border-gray-300 p-2 rounded-md"
-          required
-        />
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={form.password}
-          onChange={handleChange}
-          className="border border-gray-300 p-2 rounded-md"
-          required={!editingId} // Password is only required when creating a new employee
-        />
-        <button
-          type="submit"
-          className="bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700"
-        >
-          {editingId ? "Update Employee" : "Add Employee"}
-        </button>
-     
-      </form>
+  <input
+    type="email"
+    name="email"
+    placeholder="Email"
+    value={form.email}
+    onChange={handleChange}
+    className={`border p-2 rounded-md ${
+      isDarkMode ? "placeholder-gray-300" : "placeholder-gray-500"
+    }`}
+    required
+  />
+
+  <input
+    type="tel"
+    name="phone"
+    placeholder="Phone"
+    value={form.phone}
+    onChange={handleChange}
+    maxLength={10}
+    minLength={10}
+    className={`border p-2 rounded-md ${
+      isDarkMode ? " placeholder-gray-300" : " placeholder-gray-500"
+    }`}
+    required
+  />
+
+  <select
+    name="position"
+    value={form.position}
+    onChange={handleChange}
+    className={`border p-2 rounded-md text-black bg-white ${
+      isDarkMode ? "" : ""
+    }`}
+    required
+  >
+    <option value="">Select Position</option>
+    <option value="Full Stack">Full Stack</option>
+    <option value="MERN Stack">MERN Stack</option>
+    <option value="Frontend">Frontend</option>
+    <option value="Backend">Backend</option>
+    <option value="Digital Marketing">Digital Marketing</option>
+    <option value="UI/UX">UI/UX</option>
+    <option value="Graphic Design">Graphic Design</option>
+    <option value="Flutter">Flutter</option>
+  </select>
+
+  <input
+    type="tel"
+    name="salary"
+    placeholder="Salary"
+    value={form.salary}
+    onChange={handleChange}
+    maxLength={6}
+    className={`border p-2 rounded-md ${
+      isDarkMode ? "placeholder-gray-300" : " placeholder-gray-500"
+    }`}
+    required
+  />
+
+  <input
+    type="password"
+    name="password"
+    placeholder="Password"
+    value={form.password}
+    onChange={handleChange}
+    className={`border p-2 rounded-md ${
+      isDarkMode ? "placeholder-gray-300" : " placeholder-gray-500"
+    }`}
+    required={!editingId}
+  />
+
+  <button
+    type="submit"
+    className="bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700"
+  >
+    {editingId ? "Update Employee" : "Add Employee"}
+  </button>
+</form>
+
 
       <div className="overflow-x-auto rounded-lg shadow">
-        <table className="w-full border-collapse">
-          <thead className="bg-gray-300  ">
-            <tr>
-              <th className="p-3 text-left text-sm font-semibold text-black whitespace-nowrap">Name</th>
-              <th className="p-3 text-left text-sm font-semibold text-black whitespace-nowrap">Email</th>
-              <th className="p-3 text-left text-sm font-semibold text-black whitespace-nowrap">Phone</th>
-              <th className="p-3 text-left text-sm font-semibold text-black whitespace-nowrap">Position</th>
-              <th className="p-3 text-left text-sm font-semibold text-black whitespace-nowrap">Salary</th>
-              <th className="p-3 text-center text-sm font-semibold text-black whitespace-nowrap">Actions</th>
+        <table className="w-full bborder-collapse">
+          <thead className=" ">
+            <tr className="bg-gray-300 text-black">
+              <th className="p-3 text-left text-sm font-semibold  whitespace-nowrap">Name</th>
+              <th className="p-3 text-left text-sm font-semibold  whitespace-nowrap">Email</th>
+              <th className="p-3 text-left text-sm font-semibold  whitespace-nowrap">Phone</th>
+              <th className="p-3 text-left text-sm font-semibold  whitespace-nowrap">Position</th>
+              <th className="p-3 text-left text-sm font-semibold whitespace-nowrap">Salary</th>
+              <th className="p-3 text-center text-sm font-semibold whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody>
             {employees.length > 0 ? (
               employees.map((emp) => (
-                <tr key={emp._id} className="border-b hover:text-black border-gray-200 hover:bg-gray-300">
+                <tr key={emp._id} className="border-b hover:text-black hover:bg-gray-300">
                   <td className="p-3 whitespace-nowrap ">
                     <Link to={`/admin/dashboard/employee/${emp._id}`} className="text-blue-600 hover:underline font-medium">
                       {emp.name}
                     </Link>
                   </td>
-                  <td className="p-3 whitespace-nowrap text-gray-700 hover:text-black">{emp.email}</td>
-                  <td className="p-3 whitespace-nowrap text-gray-500 hover:text-black">{emp.phone}</td>
-                  <td className="p-3 whitespace-nowrap text-gray-500 hover:text-black">{emp.position}</td>
-                  <td className="p-3 whitespace-nowrap text-gray-500 hover:text-black">{emp.salary || "-"}</td>
+                  <td className="p-3 whitespace-nowrap  hover:text-black">{emp.email}</td>
+                  <td className="p-3 whitespace-nowrap  hover:text-black">{emp.phone}</td>
+                  <td className="p-3 whitespace-nowrap  hover:text-black">{emp.position}</td>
+                  <td className="p-3 whitespace-nowrap  hover:text-black">{emp.salary || "-"}</td>
                   <td className="p-3 text-center relative">
                     <button
                       onClick={() => toggleDropdown(emp._id)}
