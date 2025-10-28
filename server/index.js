@@ -99,10 +99,12 @@ app.use("/api/task", taskRoutes);
 app.use("/api/auth", userRoutes);
 app.use("/api/upload", uploadRoutes);
 
-app.use(express.static(path.join(__dirname, "../client/dist")));
+const frontendPath = path.join(__dirname, "../client/dist");
+app.use(express.static(frontendPath));
 
+// ✅ Catch-all route (MUST BE LAST)
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../client/dist/index.html"));
+  res.sendFile(path.join(frontendPath, "index.html"));
 });
 const PORT = port || process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
