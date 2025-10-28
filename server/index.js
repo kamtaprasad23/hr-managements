@@ -103,11 +103,9 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 
 const frontendPath = path.join(__dirname, "../client/dist");
-
-// serve static frontend files if the build folder exists
 app.use(express.static(frontendPath));
 
-app.get("/./*", (req, res) => {
+app.get("*", (req, res) => {
   res.sendFile(path.join(frontendPath, "index.html"));
 });
 

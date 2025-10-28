@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { setDarkMode } from "./features/auth/settingsSlice";
@@ -54,7 +54,7 @@ function App() {
 
   return (
    <div className="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen">
-      <BrowserRouter>
+      {/* <BrowserRouter> */}
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<LoginSelection />} />
@@ -102,7 +102,7 @@ function App() {
             <Route path="setting" element={<EmployeeSettings />} />
           </Route>
         </Routes>
-      </BrowserRouter>
+      {/* </BrowserRouter> */}
     </div>
   );
 }
