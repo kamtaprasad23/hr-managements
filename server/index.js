@@ -67,7 +67,13 @@ import uploadRoutes from "./routes/uploadRoutes.js";
 dotenv.config();
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "https://samprakshiinfinitysolution-hr-management.onrender.com", 
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
