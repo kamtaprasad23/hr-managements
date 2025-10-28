@@ -101,9 +101,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-
-const frontendPath = path.join(__dirname, "../client/dist");
-
+const frontendPath = path.join(__dirname, "");
 app.use(express.static(frontendPath));
 
 app.get("*", (req, res) => {
