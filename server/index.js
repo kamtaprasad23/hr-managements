@@ -52,8 +52,6 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
-import path from "path";
-import { fileURLToPath } from "url";
 import { port, mongourl } from "./config/config.js";
 
 import adminRoutes from "./routes/adminRoutes.js";
@@ -78,14 +76,9 @@ mongoose
   .then(() => console.log("✅ MongoDB Connected"))
   .catch((err) => console.error("❌ MongoDB Error:", err.message));
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+app.get("/", (req, res) => res.send("🚀 Attendance Management API Running"));
 
-// ✅ Serve Frontend
-const frontendPath = path.join(__dirname, "../client/dist");
-app.use(express.static(frontendPath));
-
-// ✅ APIs
+// API routes
 app.use("/api/admin", adminRoutes);
 app.use("/api", employeeRoutes);
 app.use("/api/attendance", attendanceRoutes);
@@ -95,11 +88,6 @@ app.use("/api/salary", salaryRoutes);
 app.use("/api/task", taskRoutes);
 app.use("/api/auth", userRoutes);
 app.use("/api/upload", uploadRoutes);
-
-// ✅ React Router fallback
-app.get("*", (req, res) => {
-  res.sendFile(path.join(frontendPath, "index.html"));
-});
 
 const PORT = port || process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
