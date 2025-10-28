@@ -63,6 +63,7 @@ import salaryRoutes from "./routes/salaryRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
+import path from "path";   
 import { fileURLToPath } from "url";
 
 dotenv.config();
@@ -83,12 +84,10 @@ mongoose
   .then(() => console.log("✅ MongoDB Connected"))
   .catch((err) => console.error("❌ MongoDB Error:", err.message));
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-app.get("/", (req, res) => res.send("🚀 Attendance Management API Running"));
-
-// API routes
-app.use("/api/admin", adminRoutes);
+  app.get("/", (req, res) => res.send("🚀 Attendance Management API Running"));
+  
+  // API routes
+  app.use("/api/admin", adminRoutes);
 app.use("/api", employeeRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/notifications", notificationRoutes);
@@ -99,6 +98,8 @@ app.use("/api/auth", userRoutes);
 app.use("/api/upload", uploadRoutes);
 
 app.use(express.static(path.join(__dirname, "../client/dist")));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "../client/dist/index.html"));
