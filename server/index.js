@@ -103,6 +103,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 
 const frontendPath = path.join(__dirname, "../client/dist");
+
 app.use(express.static(frontendPath));
 
 app.get("*", (req, res) => {
