@@ -57,7 +57,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { port, mongourl } from "./config/config.js";
 
-// ✅ Import all routes
+// routes
 import adminRoutes from "./routes/adminRoutes.js";
 import employeeRoutes from "./routes/employeeRoutes.js";
 import attendanceRoutes from "./routes/attendanceRoutes.js";
@@ -68,40 +68,24 @@ import taskRoutes from "./routes/taskRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
 
-// ✅ Load environment variables
 dotenv.config();
-
-// ✅ Initialize Express app FIRST
 const app = express();
 
-// ✅ Middlewares
+// middlewares
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ MongoDB Connection
+// MongoDB
 mongoose
   .connect(mongourl)
   .then(() => console.log("✅ MongoDB Connected"))
   .catch((err) => console.error("❌ MongoDB Error:", err.message));
 
-// ✅ Define Routes after app initialization
-const __dirname = path.resolve();
+// ----------------- Register API routes FIRST -----------------
+app.get("/", (req, res) => res.send("🚀 Attendance Management API Running"));
 
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "client", "dist"))); // vite build output folder
-
-  // ✅ Fallback route for React (important fix)
-  app.get("/*", (req, res) => {
-    res.sendFile(path.join(__dirname, "client", "dist", "index.html"));
-  });
-} else {
-  app.get("/", (req, res) => {
-    res.send("Attendance Management API Running 🚀");
-  });
-}
-
-// ✅ API Routes
+// API routes (keep these before the frontend static / fallback)
 app.use("/api/admin", adminRoutes);
 app.use("/api", employeeRoutes);
 app.use("/api/attendance", attendanceRoutes);
@@ -112,12 +96,21 @@ app.use("/api/task", taskRoutes);
 app.use("/api/auth", userRoutes);
 app.use("/api/upload", uploadRoutes);
 
-// ✅ Static uploads
+// static uploads (public files)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-app.use("/uploads", express.static(path.join(__dirname, "/uploads")));
 
+const frontendPath = path.join(__dirname, "../client/dist");
 
-// ✅ Start the server
-app.listen(port || 5000, () =>
-  console.log(`✅ Server running on port ${port || 5000}`)
-);
+// serve static frontend files if the build folder exists
+app.use(express.static(frontendPath));
+
+app.get("/./*", (req, res) => {
+  res.sendFile(path.join(frontendPath, "index.html"));
+});
+
+// ----------------- Start server -----------------
+const PORT = port || process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
