@@ -8,7 +8,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "build": "npm install --prefix ../client && cross-env NODE_OPTIONS=--max-old-space-size=460 npm run build --prefix ../client"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
@@ -16,7 +17,7 @@
     "cors": "^2.8.5",
     "dayjs": "^1.11.18",
     "dotenv": "^17.2.3",
-    "express": "^4.21.2",
+    "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.19.1",
     "multer": "^2.0.2",
@@ -24,6 +25,7 @@
     "nodemailer": "^7.0.9"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "nodemon": "^3.1.10"
   }
 }
