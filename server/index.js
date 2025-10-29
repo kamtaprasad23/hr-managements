@@ -2,7 +2,6 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
-
 import { fileURLToPath } from "url";
 
 import { port, mongourl } from "./config/config.js";
@@ -20,13 +19,22 @@ import uploadRoutes from "./routes/uploadRoutes.js";
 dotenv.config();
 const app = express();
 
-// ✅ Fix for __dirname
+// ✅ Fix for __dirname (needed in ESM)
 const __filename = fileURLToPath(import.meta.url);
 
-
 // ✅ CORS setup (allow both local + deployed frontend)
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173", // Local frontend
+      "https://samprakshiinfinitysolution-hr-management.onrender.com", // ✅ FIXED (removed typo & slash)
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
 
+// ✅ Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -47,8 +55,11 @@ app.use("/api/task", taskRoutes);
 app.use("/api/auth", userRoutes);
 app.use("/api/upload", uploadRoutes);
 
-
+// ✅ Health check route
+app.get("/", (req, res) => {
+  res.send("✅ HR Management Backend Running Successfully!");
+});
 
 // ✅ Start server
-const PORT = process.env.PORT || port || 5000;
+const PORT = process.env.PORT || port || 5002;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
