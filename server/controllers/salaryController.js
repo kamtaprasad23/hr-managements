@@ -59,12 +59,22 @@ export const sendSalarySlip = async (req, res) => {
     const netSalary = baseSalary - deduction;
 
     const employee = await Employee.findById(employeeId);
-    if (!employee) return res.status(404).json({ message: "Employee not found" });
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    // ✅ Determine the admin ID correctly
+    const adminId = employee.createdBy || req.user?.id;
+
+    if (!adminId) {
+      return res.status(400).json({ message: "Missing createdBy (admin) ID" });
+    }
 
     if (req.user.role === "admin" && employee.createdBy.toString() !== req.user.id) {
       return res.status(403).json({ message: "Unauthorized to send salary slip for this employee" });
     }
 
+    // ✅ Create salary slip
     const slip = new SalarySlip({
       employeeId,
       month,
@@ -73,24 +83,35 @@ export const sendSalarySlip = async (req, res) => {
       deduction,
       netSalary,
       remarks,
+      createdBy: adminId, // ✅ FIXED
     });
     await slip.save();
 
-    // Notification to employee
+    // ✅ Create notification
     const notification = new Notification({
       title: "Salary Slip Generated",
-      message: `Your salary slip for ${dayjs().month(month - 1).format("MMMM")} ${year} has been generated.`,
+      message: `Your salary slip for ${month}-${year} has been generated.`,
       type: "employee",
       userId: employeeId,
       priority: "Medium",
+      createdBy: adminId, // ✅ also fixed
     });
     await notification.save();
 
-    res.status(201).json({ message: "Salary slip sent successfully", slip });
+    res.status(201).json({
+      message: "Salary slip sent successfully",
+      slip,
+    });
   } catch (error) {
-    res.status(500).json({ message: "Error sending salary slip", error: error.message });
+    console.error("Error sending salary slip:", error);
+    res.status(500).json({
+      message: "Error sending salary slip",
+      error: error.message,
+    });
   }
 };
+
+
 
 // ===================== GET ALL SALARY SLIPS (ADMIN) =====================
 export const getSalarySlips = async (req, res) => {

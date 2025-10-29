@@ -14,11 +14,19 @@ export const createTask = async (req, res) => {
     const employee = await Employee.findById(assignedTo);
     if (!employee) return res.status(404).json({ message: "Employee not found" });
 
+    // ✅ Determine admin ID (the creator)
+    const adminId = req.user?.id || employee.createdBy;
+    if (!adminId) {
+      return res.status(400).json({ message: "Missing admin ID (createdBy)" });
+    }
+
+    // ✅ Create task (added createdBy)
     const task = new Task({
       title,
       description,
       assignedTo,
-      assignedBy: req.user.id,
+      assignedBy: adminId,
+      createdBy: adminId,
       dueDate: new Date(dueDate),
       priority: priority || "Medium",
       notes,
@@ -27,7 +35,7 @@ export const createTask = async (req, res) => {
 
     await task.save();
 
-    // Employee notification
+    // ✅ Employee notification
     await new Notification({
       title: "New Task Assigned",
       message: `You have been assigned a new task: "${title}". Due: ${task.dueDate.toDateString()}. Priority: ${task.priority}`,
@@ -37,16 +45,18 @@ export const createTask = async (req, res) => {
       userId: assignedTo,
       priority: task.priority,
       read: false,
+      createdBy: adminId,
     }).save();
 
-    // Admin notification
+    // ✅ Admin notification
     await new Notification({
       title: "Task Assigned",
       message: `Task "${title}" assigned to ${employee.name} successfully.`,
       type: "task",
       category: "task-assigned",
       taskId: task._id,
-      userId: req.user.id,
+      userId: adminId,
+      createdBy: adminId,
     }).save();
 
     res.status(201).json({ message: "Task created successfully", task });
@@ -119,19 +129,28 @@ export const updateTaskStatus = async (req, res) => {
 
     await task.save();
 
-    // Notify admin
+    // ✅ Notify admin
     await new Notification({
       title: `Task "${task.title}" Status Updated`,
-      message: status === "Rejected" ? `Task rejected by employee: ${rejectionReason || "No reason provided"}` : `Task updated to "${status}" by employee`,
+      message:
+        status === "Rejected"
+          ? `Task rejected by employee: ${rejectionReason || "No reason provided"}`
+          : `Task updated to "${status}" by employee`,
       type: "task",
-      category: status === "Completed" ? "task-completed" : status === "Rejected" ? "task-rejected" : "task-updated",
+      category:
+        status === "Completed"
+          ? "task-completed"
+          : status === "Rejected"
+          ? "task-rejected"
+          : "task-updated",
       taskId: task._id,
       userId: task.assignedBy,
       priority: task.priority,
       read: false,
+      createdBy: req.user.id, // ✅ added
     }).save();
 
-    // Notify employee
+    // ✅ Notify employee
     await new Notification({
       title: "Task Status Updated",
       message: `Your task "${task.title}" status is now "${status}".`,
@@ -141,6 +160,7 @@ export const updateTaskStatus = async (req, res) => {
       userId: task.assignedTo,
       priority: task.priority,
       read: false,
+      createdBy: req.user.id, // ✅ added
     }).save();
 
     res.json({ message: "Task status updated successfully", task });
@@ -158,9 +178,21 @@ export const deleteTask = async (req, res) => {
 
     if (!task) return res.status(404).json({ message: "Task not found" });
 
-    // Delete associated notifications
+    // ✅ Delete associated notifications
     await Notification.deleteMany({ taskId: id });
     await task.deleteOne();
+
+    // ✅ Notify admin about deletion
+    await new Notification({
+      title: "Task Deleted",
+      message: `Task "${task.title}" has been deleted.`,
+      type: "task",
+      category: "task-deleted",
+      taskId: id,
+      userId: req.user.id,
+      read: false,
+      createdBy: req.user.id, // ✅ added
+    }).save();
 
     res.json({ message: "Task and associated notifications deleted successfully" });
   } catch (error) {
@@ -189,8 +221,13 @@ export const getTaskNotifications = async (req, res) => {
 export const markNotificationAsRead = async (req, res) => {
   try {
     const { id } = req.params;
-    const notification = await Notification.findByIdAndUpdate(id, { read: true }, { new: true });
-    if (!notification) return res.status(404).json({ message: "Notification not found" });
+    const notification = await Notification.findByIdAndUpdate(
+      id,
+      { read: true },
+      { new: true }
+    );
+    if (!notification)
+      return res.status(404).json({ message: "Notification not found" });
 
     res.json({ message: "Notification marked as read", notification });
   } catch (error) {
