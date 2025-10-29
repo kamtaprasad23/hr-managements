@@ -2,7 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
-import path from "path";
+
 import { fileURLToPath } from "url";
 
 import { port, mongourl } from "./config/config.js";
@@ -22,19 +22,10 @@ const app = express();
 
 // ✅ Fix for __dirname
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+
 
 // ✅ CORS setup (allow both local + deployed frontend)
-app.use(
-  cors({
-    origin: [
-      "https://samprakshiinfinitysolution-hr-management.onrender.com",
-      "http://localhost:5173",
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-  })
-);
+app.use(cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -56,14 +47,7 @@ app.use("/api/task", taskRoutes);
 app.use("/api/auth", userRoutes);
 app.use("/api/upload", uploadRoutes);
 
-// ✅ Serve frontend build (Vite)
-const frontendPath = path.join(__dirname, "../client/dist");
-app.use(express.static(frontendPath));
 
-// ✅ Catch-all route for React Router
-app.get("*", (req, res) => {
-  res.sendFile(path.resolve(frontendPath, "index.html"));
-});
 
 // ✅ Start server
 const PORT = process.env.PORT || port || 5000;
