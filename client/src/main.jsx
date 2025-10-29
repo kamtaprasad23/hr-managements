@@ -5,14 +5,14 @@ import { store } from "./app/store";
 import App from "./App";
 import "./index.css";
 import { Toaster } from "react-hot-toast";
-import { BrowserRouter } from "react-router-dom";
+import {HashRouter} from "react-router-dom";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <Provider store={store}>
-    <BrowserRouter>
+    <HashRouter>
       <Toaster position="top-center" reverseOrder={false} />
       <App />
-    </BrowserRouter>
+    </HashRouter>
 
   </Provider>
 );
