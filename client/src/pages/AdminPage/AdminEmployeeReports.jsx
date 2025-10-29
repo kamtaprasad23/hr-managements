@@ -66,20 +66,20 @@ export default function AdminEmpReports() {
       // Map data to unified structure
       const formatted = dataToProcess.map((r) => ({
         id: r._id,
-        name: r.user?.name || r.employee?.name || r.name || "Unknown",
-        email: r.user?.email || r.employee?.email || r.email || "-",
+        name: r.employeeId?.name || r.user?.name || r.name || "Unknown",
+        email: r.employeeId?.email || r.user?.email || r.email || "-",
         Department: r.user?.department || r.employee?.department || r.department || "-",
         role: r.user?.position || r.employee?.position || r.role || "-",
         date: r.date,
         checkIn: r.checkIn,
         checkOut: r.checkOut,
         totalHours: r.totalHours || 0,
-        status: r.status || "Absent",
+        status: r.status || (r.sentAt ? "Sent" : "Pending"),
         phone: r.phone || "-",
         position: r.position || "-",
         salary: r.salary || "-",
-        month: r.month || "",
-        amount: r.amount || "0",
+        month: r.month ? `${r.month}/${r.year}` : "",
+        amount: r.netSalary || "0",
       }));
 
       setRecords(formatted);
@@ -162,8 +162,7 @@ export default function AdminEmpReports() {
       case "salary":
         headers = ["Name,Email,Month,Amount,Status"];
         rows = filtered.map((r) => {
-          const month = r.month ? new Date(r.month).toLocaleDateString() : "-";
-          return `${r.name},${r.email},${month},${r.amount},${r.status || "-"}`;
+          return `${r.name},${r.email},${r.month || "-"},${r.amount},${r.status || "-"}`;
         });
         break;
       default:
@@ -307,7 +306,7 @@ export default function AdminEmpReports() {
             {filters.reportType === "salary" && (
               <>
                 <th className="p-2 text-left">Month</th>
-                <th className="p-2 text-left">Amount</th>
+                <th className="p-2 text-left">Net Salary (Amount)</th>
                 <th className="p-2 text-left">Status</th>
               </>
             )}
@@ -336,7 +335,7 @@ export default function AdminEmpReports() {
                 )}
                 {filters.reportType === "salary" && (
                   <>
-                    <td className="p-2">{r.month ? new Date(r.month).toLocaleDateString() : "-"}</td>
+                    <td className="p-2">{r.month}</td>
                     <td className="p-2">{r.amount}</td>
                     <td className="p-2">{r.status}</td>
                   </>
