@@ -1,8 +1,9 @@
+// controllers/attendanceController.js
 import Attendance from "../models/attendanceModel.js";
 import dayjs from "dayjs";
 import Employee from "../models/employeeModel.js";
 
-// --- Utility: Determine attendance remark based on login/logout ---
+// Utility: determine attendance remark
 const getRemark = (login, logout) => {
   if (!login || !logout) return "Incomplete";
 
@@ -21,8 +22,19 @@ const getRemark = (login, logout) => {
 // ===================== CHECK-IN =====================
 export const checkIn = async (req, res) => {
   try {
-    const today = dayjs().startOf("day").toDate();
-    let att = await Attendance.findOne({ employee: req.user.id, attendanceDate: today });
+    const employeeId = req.user.id;
+    const employee = await Employee.findById(employeeId);
+    if (!employee) return res.status(404).json({ message: "Employee not found" });
+
+    const adminId = employee.createdBy; // ✅ from model
+    const todayStart = dayjs().startOf("day").toDate();
+    const tomorrowStart = dayjs(todayStart).add(1, "day").toDate();
+
+    // check existing attendance
+    let att = await Attendance.findOne({
+      user: employeeId,
+      date: { $gte: todayStart, $lt: tomorrowStart },
+    });
 
     if (att && att.checkIn) {
       return res.status(400).json({ message: "Already checked in today" });
@@ -33,8 +45,9 @@ export const checkIn = async (req, res) => {
 
     if (!att) {
       att = new Attendance({
-        employee: req.user.id,
-        attendanceDate: today,
+        user: employeeId,
+        createdBy: adminId,
+        date: todayStart,
         checkIn: now,
         login: timeStr,
       });
@@ -43,10 +56,10 @@ export const checkIn = async (req, res) => {
       att.login = timeStr;
     }
 
-    // Status logic based on login time
+    // Status logic
     const loginTime = dayjs(now);
-    const lateTime = loginTime.hour(10).minute(10).second(0);
-    const halfDayTime = loginTime.hour(11).minute(0).second(0);
+    const lateTime = dayjs(now).hour(10).minute(10);
+    const halfDayTime = dayjs(now).hour(11).minute(0);
 
     if (loginTime.isAfter(halfDayTime)) att.status = "Half Day";
     else if (loginTime.isAfter(lateTime)) att.status = "Late";
@@ -65,8 +78,14 @@ export const checkIn = async (req, res) => {
 // ===================== CHECK-OUT =====================
 export const checkOut = async (req, res) => {
   try {
-    const today = dayjs().startOf("day").toDate();
-    const att = await Attendance.findOne({ employee: req.user.id, attendanceDate: today });
+    const employeeId = req.user.id;
+    const todayStart = dayjs().startOf("day").toDate();
+    const tomorrowStart = dayjs(todayStart).add(1, "day").toDate();
+
+    const att = await Attendance.findOne({
+      user: employeeId,
+      date: { $gte: todayStart, $lt: tomorrowStart },
+    });
 
     if (!att || !att.checkIn) {
       return res.status(400).json({ message: "No check-in found for today" });
@@ -100,7 +119,7 @@ export const checkOut = async (req, res) => {
 // ===================== GET MY ATTENDANCE =====================
 export const getMyAttendance = async (req, res) => {
   try {
-    const records = await Attendance.find({ employee: req.user.id }).sort({ attendanceDate: -1 });
+    const records = await Attendance.find({ user: req.user.id }).sort({ date: -1 });
     res.json(records);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -112,13 +131,9 @@ export const getAllAttendance = async (req, res) => {
   try {
     if (req.user.role !== "admin") return res.status(403).json({ message: "Admin only" });
 
-    // Only show attendance of employees created by this admin
-    const employees = await Employee.find({ createdBy: req.user.id }).select("_id");
-    const empIds = employees.map(e => e._id);
-
-    const records = await Attendance.find({ employee: { $in: empIds } })
-      .populate("employee", "name email department position")
-      .sort({ attendanceDate: -1 });
+    const records = await Attendance.find({ createdBy: req.user.id })
+      .populate("user", "name email department position")
+      .sort({ date: -1 });
 
     res.json(records);
   } catch (err) {
@@ -132,19 +147,19 @@ export const getAttendanceSummary = async (req, res) => {
     if (req.user.role !== "admin") return res.status(403).json({ message: "Admin only" });
 
     const employees = await Employee.find({ createdBy: req.user.id }).select("_id");
-    const empIds = employees.map(e => e._id);
+    const empIds = employees.map((e) => e._id);
 
     const today = dayjs().startOf("day").toDate();
     const tomorrow = dayjs(today).add(1, "day").toDate();
 
     const attendance = await Attendance.find({
-      employee: { $in: empIds },
-      attendanceDate: { $gte: today, $lt: tomorrow },
+      user: { $in: empIds },
+      date: { $gte: today, $lt: tomorrow },
     });
 
     const totalEmployees = empIds.length;
-    const onTime = attendance.filter(a => a.status === "Present").length;
-    const late = attendance.filter(a => a.status === "Late" || a.status === "Late Login").length;
+    const onTime = attendance.filter((a) => a.status === "Present").length;
+    const late = attendance.filter((a) => a.status === "Late" || a.status === "Late Login").length;
     const absent = totalEmployees - attendance.length;
 
     res.json({ total: totalEmployees, onTime, late, absent });
@@ -162,13 +177,10 @@ export const getAttendance = async (req, res) => {
     const queryDate = date ? dayjs(date).startOf("day").toDate() : dayjs().startOf("day").toDate();
     const tomorrow = dayjs(queryDate).add(1, "day").toDate();
 
-    const employees = await Employee.find({ createdBy: req.user.id }).select("_id");
-    const empIds = employees.map(e => e._id);
-
     const attendance = await Attendance.find({
-      employee: { $in: empIds },
-      attendanceDate: { $gte: queryDate, $lt: tomorrow },
-    }).populate("employee", "name email department position");
+      createdBy: req.user.id,
+      date: { $gte: queryDate, $lt: tomorrow },
+    }).populate("user", "name email department position");
 
     res.json(attendance);
   } catch (err) {

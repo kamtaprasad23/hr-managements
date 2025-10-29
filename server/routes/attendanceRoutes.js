@@ -1,10 +1,6 @@
 // backend/routes/attendanceRoutes.js
 import express from "express";
-import {
-  verifyToken,
-  adminOnly,
-  employeeOnly,
-} from "../middleware/authMiddleware.js";
+import { verifyToken, adminOnly, employeeOnly } from "../middleware/authMiddleware.js";
 import {
   checkIn,
   checkOut,
@@ -16,14 +12,14 @@ import {
 
 const router = express.Router();
 
-// --- Employee Routes ---
+// Employee
 router.post("/checkin", verifyToken, employeeOnly, checkIn);
 router.post("/checkout", verifyToken, employeeOnly, checkOut);
 router.get("/me", verifyToken, employeeOnly, getMyAttendance);
 
-// --- Admin Routes ---
+// Admin
 router.get("/all", verifyToken, adminOnly, getAllAttendance);
 router.get("/summary", verifyToken, adminOnly, getAttendanceSummary);
-router.get("/", verifyToken, adminOnly, getAttendance); // Get attendance by date for admin view
+router.get("/", verifyToken, adminOnly, getAttendance);
 
 export default router;

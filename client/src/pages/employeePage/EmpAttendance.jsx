@@ -15,6 +15,14 @@ export default function EmpAttendance() {
     return `${y}-${m}-${day}`;
   };
 
+  // helper: get current time as HH:mm (24-hour format)
+  const get24HourTime = () => {
+    const d = new Date();
+    const h = String(d.getHours()).padStart(2, "0");
+    const m = String(d.getMinutes()).padStart(2, "0");
+    return `${h}:${m}`;
+  };
+
   // helper: normalize any date string/ISO from backend to local yyyy-mm-dd
   const toLocalDateStr = (dateLike) => {
     if (!dateLike) return null;
@@ -49,34 +57,73 @@ export default function EmpAttendance() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate]);
 
-  const fetchHistory = async () => {
-    try {
-      const res = await API.get("/attendance/me");
-      const arr = Array.isArray(res.data) ? res.data : [];
-      // sort by date descending (robust)
-      const sortedHistory = arr.sort((a, b) => new Date(b.date) - new Date(a.date));
-      setHistory(sortedHistory);
+  // const fetchHistory = async () => {
+  //   try {
+  //     const res = await API.get("/attendance/me");
+  //     const arr = Array.isArray(res.data) ? res.data : [];
+  //     // sort by date descending (robust)
+  //     const sortedHistory = arr.sort((a, b) => new Date(b.date) - new Date(a.date));
+  //     setHistory(sortedHistory);
 
-      // Find record matching selectedDate using local-normalized date
-      const todayRec = sortedHistory.find((r) => {
-        const rDate = toLocalDateStr(r.date);
-        return rDate === selectedDate;
-      });
+  //     // Find record matching selectedDate using local-normalized date
+  //     const todayRec = sortedHistory.find((r) => {
+  //       const rDate = toLocalDateStr(r.date);
+  //       return rDate === selectedDate;
+  //     });
 
-      if (todayRec) {
-        setLoginTime(todayRec.login || null);
-        setCheckoutTime(todayRec.logout || null);
-        setHasLoggedInToday(!!todayRec.login);
-      } else {
-        setLoginTime(null);
-        setCheckoutTime(null);
-        setHasLoggedInToday(false);
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Error fetching attendance records");
+  //     if (todayRec) {
+  //       setLoginTime(todayRec.login || null);
+  //       setCheckoutTime(todayRec.logout || null);
+  //       setHasLoggedInToday(!!todayRec.login);
+  //     } else {
+  //       setLoginTime(null);
+  //       setCheckoutTime(null);
+  //       setHasLoggedInToday(false);
+  //     }
+  //   } catch (err) {
+  //     console.error(err);
+  //     toast.error("Error fetching attendance records");
+  //   }
+  // };
+// inside EmpAttendance component, replace fetchHistory with this:
+const fetchHistory = async () => {
+  try {
+    const res = await API.get("/attendance/me");
+    const arr = Array.isArray(res.data) ? res.data : [];
+
+    // backend returns items with .date (ISO string), .login, .logout
+    const normalized = arr.map((r) => ({
+      ...r,
+      // backend gives date as ISO string from attendanceDate
+      date: r.date ? r.date : (r.attendanceDate ? r.attendanceDate : null),
+      login: r.login || r.checkIn || null,
+      logout: r.logout || r.checkOut || null,
+    }));
+
+    // sort by date descending (robust)
+    const sortedHistory = normalized.sort((a, b) => new Date(b.date) - new Date(a.date));
+    setHistory(sortedHistory);
+
+    // Find record matching selectedDate using local-normalized date
+    const todayRec = sortedHistory.find((r) => {
+      const rDate = toLocalDateStr(r.date);
+      return rDate === selectedDate;
+    });
+
+    if (todayRec) {
+      setLoginTime(todayRec.login || null);
+      setCheckoutTime(todayRec.logout || null);
+      setHasLoggedInToday(!!todayRec.login);
+    } else {
+      setLoginTime(null);
+      setCheckoutTime(null);
+      setHasLoggedInToday(false);
     }
-  };
+  } catch (err) {
+    console.error("fetchHistory error:", err);
+    toast.error("Error fetching attendance records");
+  }
+};
 
   const getRemark = (login, logout) => {
     if (!login || !logout) return "Incomplete";
@@ -111,7 +158,7 @@ export default function EmpAttendance() {
         return;
       }
 
-      const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      const timeStr = get24HourTime();
       setLoginTime(timeStr);
 
       await API.post("/attendance/checkin", { date: selectedDate, login: timeStr });
@@ -134,7 +181,7 @@ export default function EmpAttendance() {
       return;
     }
     try {
-      const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false });
+      const now = get24HourTime();
       setCheckoutTime(now);
 
       await API.post("/attendance/checkout", { date: selectedDate, logout: now });

@@ -19,16 +19,16 @@ const AttendanceTracker = () => {
       console.log("✅ Attendance Response:", res.data);
 
       const formatted = res.data.map((a) => ({
-        id: a.employee?._id || "",
-        name: a.employee?.name || "Unknown",
-        Department: a.employee?.department || "-",
-        role: a.employee?.role || "-",
-        joinDate: a.employee?.joinDate
-          ? dayjs(a.employee.joinDate).format("DD/MM/YYYY")
+        id: a.user?._id || "",
+        name: a.user?.name || "Unknown",
+        Department: a.user?.department || "-",
+        role: a.user?.position || "-",
+        joinDate: a.user?.joinDate
+          ? dayjs(a.user.joinDate).format("DD/MM/YYYY")
           : "-",
-        email: a.employee?.email || "-",
-        phone: a.employee?.phone || "-",
-        totalAttendance: a.employee?.totalAttendance || 0,
+        email: a.user?.email || "-",
+        phone: a.user?.phone || "-",
+        totalAttendance: a.user?.totalAttendance || 0,
         avgCheckIn: a.checkIn ? dayjs(a.checkIn).format("HH:mm") : "-",
         avgCheckOut: a.checkOut ? dayjs(a.checkOut).format("HH:mm") : "-",
         status: a.status || "Absent",

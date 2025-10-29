@@ -66,10 +66,10 @@ export default function AdminEmpReports() {
       // Map data to unified structure
       const formatted = dataToProcess.map((r) => ({
         id: r._id,
-        name: r.employee?.name || r.name || "Unknown",
-        email: r.employee?.email || r.email || "-",
-        Department: r.employee?.department || r.department || "-",
-        role: r.employee?.position || r.role || "-",
+        name: r.user?.name || r.employee?.name || r.name || "Unknown",
+        email: r.user?.email || r.employee?.email || r.email || "-",
+        Department: r.user?.department || r.employee?.department || r.department || "-",
+        role: r.user?.position || r.employee?.position || r.role || "-",
         date: r.date,
         checkIn: r.checkIn,
         checkOut: r.checkOut,
