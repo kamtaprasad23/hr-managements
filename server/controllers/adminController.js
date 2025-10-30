@@ -71,6 +71,7 @@ export const createEmployee = async (req, res) => {
       accountHolder, accountNumber, ifsc, bankName,
       idType, idNumber, alternateNumber,
       createdBy: req.user.id, // 👈 important
+      adminId: req.user.id, // ✅ Add adminId for consistency
     });
 
     await employee.save();
