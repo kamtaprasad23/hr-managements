@@ -122,7 +122,7 @@ export default function AdminEmployeeProfile() {
         <div className="flex gap-2">
           <button
             onClick={() => window.location.reload()}
-            className="flex items-center gap-1 px-3 py-2 rounded-lg hover:bg-gray-100 text-sm"
+            className="flex items-center gap-1 px-3 py-2 rounded-lg  text-sm"
           >
             <RefreshCcw size={16} /> Refresh
           </button>
@@ -330,7 +330,7 @@ function ProfileCard({ icon, title, fields, editing, form, employee, handleChang
     <div className=" rounded-2xl shadow-md p-6 border  border-gray-200">
       <div className="flex items-center gap-2 mb-4">
         {icon}
-        <h3 className="font-semibold text-gray-800">{title}</h3>
+        <h3 className="font-semibold ">{title}</h3>
       </div>
       
       <div className="space-y-3">
@@ -377,7 +377,7 @@ function ProfileCard({ icon, title, fields, editing, form, employee, handleChang
           ) : (
             <div key={key} className="py-2 border-b border-gray-100 last:border-b-0">
               <span className="text-sm block">{label}:</span>
-              <span className="font-medium text-gray-800">
+              <span className="font-medium">
                 {type === "date" && employee[key] 
                   ? new Date(employee[key]).toLocaleDateString() 
                   : employee[key] || "—"

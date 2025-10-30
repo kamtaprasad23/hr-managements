@@ -256,7 +256,7 @@ export default function AdminTask() {
                 {tasks.map((task) => (
                   <tr
                     key={task._id}
-                    className="block sm:table-row border-b sm:border-none mb-4 sm:mb-0 hover:bg-white hover:text-black dark:hover:text-white dark:hover:bg-black transition-colors"
+                    className="block sm:table-row border-b sm:border-none mb-4 sm:mb-0 hover:bg-gray-400 hover:text-white dark:hover:text-white dark:hover:bg-black transition-colors"
                   >
                     <td className="p-4 sm:px-6 sm:py-4">
                       <div className="font-medium">{task.title}</div>
@@ -371,14 +371,15 @@ function SelectField({ label, options, ...props }) {
       <label className="block text-sm font-medium mb-2 ">{label}</label>
       <select
         {...props}
-        className="w-full p-3 border text-black bg-gray-100 border-gray-300 dark:border-gray-600 rounded-lg  focus:ring-2 focus:ring-blue-500 outline-none"
+        className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg  focus:ring-2 focus:ring-blue-500 outline-none"
       >
-        <option value="">Select</option>
+        <option value="" className="text-black"
+        >Select</option>
         {options.map((opt) =>
           typeof opt === "string" ? (
-            <option key={opt}>{opt}</option>
+            <option key={opt} className="text-black">{opt}</option>
           ) : (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
+            <option key={opt.value} className="text-black" value={opt.value}>{opt.label}</option>
           )
         )}
       </select>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Sun, Moon, Bell, BellOff } from "lucide-react";
+import { Sun, Moon, Bell, BellOff, Eye, EyeOff } from "lucide-react";
 import { toast } from "react-hot-toast";
 import {
   toggleDarkMode,
@@ -19,6 +19,7 @@ export default function AdminSettings() {
   const [profileEmail, setProfileEmail] = useState("");
   const [profilePassword, setProfilePassword] = useState("");
   const [loadingProfile, setLoadingProfile] = useState(false);
+  const [showProfilePassword, setShowProfilePassword] = useState(false);
 
   // Employee management state
   const [empId, setEmpId] = useState("");
@@ -27,15 +28,32 @@ export default function AdminSettings() {
   const [empPassword, setEmpPassword] = useState("");
   const [loadingEmp, setLoadingEmp] = useState(false);
   const [employees, setEmployees] = useState([]);
+  const [showEmpPassword, setShowEmpPassword] = useState(false);
 
   // 🆕 Admin creation state
   const [newAdminName, setNewAdminName] = useState("");
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [newAdminPassword, setNewAdminPassword] = useState("");
   const [loadingAdminCreate, setLoadingAdminCreate] = useState(false);
+  const [showNewAdminPassword, setShowNewAdminPassword] = useState(false);
 
-  // ✅ Fetch employee list for dropdown
+
+   // 🌟 Fetch current admin profile & employees on load
   useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await API.get("/admin/me"); // ✅ backend should return { name, email }
+        const { name, email,password } = res.data;
+        setProfileName(name || "");
+        setProfileEmail(email || "");
+        setProfilePassword(password || "");
+
+      } catch (err) {
+        console.error("Failed to load admin profile:", err);
+        toast.error("Unable to load admin profile");
+      }
+    };
+
     const fetchEmployees = async () => {
       try {
         const res = await API.get("/admin/employees");
@@ -45,8 +63,33 @@ export default function AdminSettings() {
         toast.error("Unable to load employee list");
       }
     };
+
+    fetchProfile();
     fetchEmployees();
   }, []);
+
+
+
+
+
+  // ✅ Fetch employee list for dropdown
+// 🧩 Prefill selected employee details
+useEffect(() => {
+  if (empId) {
+    const selectedEmp = employees.find((emp) => emp._id === empId);
+    if (selectedEmp) {
+      setEmpName(selectedEmp.name || "");
+      setEmpEmail(selectedEmp.email || "");
+      setEmpPassword("");
+    }
+  } else {
+    // Agar user dropdown se "Select Employee" kare (empty value), to fields clear kar do
+    setEmpName("");
+    setEmpEmail("");
+    setEmpPassword("");
+  }
+}, [empId, employees]);
+
 
   // 🌙 Dark Mode toggle
   const handleDarkMode = () => {
@@ -198,14 +241,25 @@ export default function AdminSettings() {
           className="w-full p-2 rounded border dark:bg-gray-600 dark:border-gray-500 focus:outline-none"
           disabled={loadingProfile}
         />
-        <input
-          type="password"
-          placeholder="New Password"
-          value={profilePassword}
-          onChange={(e) => setProfilePassword(e.target.value)}
-          className="w-full p-2 rounded border dark:bg-gray-600 dark:border-gray-500 focus:outline-none"
-          disabled={loadingProfile}
-        />
+        <div className="relative">
+          <input
+            type={showProfilePassword ? "text" : "password"}
+            placeholder="New Password"
+            value={profilePassword}
+            onChange={(e) => setProfilePassword(e.target.value)}
+            className="w-full p-2 rounded border dark:bg-gray-600 dark:border-gray-500 focus:outline-none pr-10"
+            disabled={loadingProfile}
+          />
+          <button
+            type="button"
+            onClick={() => setShowProfilePassword(!showProfilePassword)}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+            aria-label="Toggle password visibility"
+          >
+            {showProfilePassword ? <EyeOff size={20} /> : <Eye size={20} />}
+          </button>
+        </div>
+
         <button
           onClick={handleProfileUpdate}
           disabled={loadingProfile}
@@ -270,17 +324,26 @@ export default function AdminSettings() {
     disabled={loadingEmp}
   />
 
-  <input
-    type="password"
-    placeholder="New Employee Password"
-    value={empPassword}
-    onChange={(e) => setEmpPassword(e.target.value)}
-    className="w-full p-2 rounded border dark:bg-gray-600 dark:border-gray-500 
-               focus:outline-none hover:border-green-500 dark:hover:border-green-400 
-               focus:border-green-500 dark:focus:border-green-400 
-               transition duration-200"
-    disabled={loadingEmp}
-  />
+  <div className="relative">
+    <input
+      type={showEmpPassword ? "text" : "password"}
+      placeholder="New Employee Password"
+      value={empPassword}
+      onChange={(e) => setEmpPassword(e.target.value)}
+      className="w-full p-2 rounded border dark:bg-gray-600 dark:border-gray-500 
+                 focus:outline-none hover:border-green-500 dark:hover:border-green-400 
+                 focus:border-green-500 dark:focus:border-green-400 
+                 transition duration-200 pr-10"
+      disabled={loadingEmp}
+    />
+    <button
+      type="button"
+      onClick={() => setShowEmpPassword(!showEmpPassword)}
+      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+    >
+      {showEmpPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+    </button>
+  </div>
 
   <button
     onClick={handleEmployeeUpdate}
@@ -316,14 +379,24 @@ export default function AdminSettings() {
           className="w-full p-2 rounded border dark:bg-gray-600 dark:border-gray-500 focus:outline-none"
           disabled={loadingAdminCreate}
         />
-        <input
-          type="password"
-          placeholder="Admin Password"
-          value={newAdminPassword}
-          onChange={(e) => setNewAdminPassword(e.target.value)}
-          className="w-full p-2 rounded border dark:bg-gray-600 dark:border-gray-500 focus:outline-none"
-          disabled={loadingAdminCreate}
-        />
+        <div className="relative">
+          <input
+            type={showNewAdminPassword ? "text" : "password"}
+            placeholder="Admin Password"
+            value={newAdminPassword}
+            onChange={(e) => setNewAdminPassword(e.target.value)}
+            className="w-full p-2 rounded border dark:bg-gray-600 dark:border-gray-500 focus:outline-none pr-10"
+            disabled={loadingAdminCreate}
+          />
+          <button
+            type="button"
+            onClick={() => setShowNewAdminPassword(!showNewAdminPassword)}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+          >
+            {showNewAdminPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+          </button>
+        </div>
+
         <button
           onClick={handleAdminCreate}
           disabled={loadingAdminCreate}

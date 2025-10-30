@@ -55,8 +55,11 @@ export default function AdminNavbar({ toggleSidebar }) {
 
   // ✅ Logout admin
   const handleLogout = () => {
+        toast.success("Logout successfully");
+
     localStorage.removeItem("token");
     localStorage.removeItem("role");
+    
     navigate("/");
   };
 

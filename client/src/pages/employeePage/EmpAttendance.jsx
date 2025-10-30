@@ -28,7 +28,6 @@ export default function EmpAttendance() {
     if (!dateLike) return null;
     const d = new Date(dateLike);
     if (isNaN(d)) {
-      // if it's already date-only like "2025-10-19", try to return it directly
       const maybe = String(dateLike).split("T")[0];
       return maybe;
     }
@@ -48,82 +47,56 @@ export default function EmpAttendance() {
   const navigate = useNavigate();
   const { user, token } = useSelector((state) => state.auth);
 
+  // ✅ FIXED: prevent redirect on refresh using localStorage check
   useEffect(() => {
-    if (!user && !token) navigate("/employee-login");
-  }, [user, token, navigate]);
+    const storedToken = localStorage.getItem("token");
+    const storedRole = localStorage.getItem("role");
+
+    if (!storedToken || storedRole !== "employee") {
+      navigate("/employee-login");
+    }
+  }, [navigate]);
 
   useEffect(() => {
     fetchHistory();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate]);
 
-  // const fetchHistory = async () => {
-  //   try {
-  //     const res = await API.get("/attendance/me");
-  //     const arr = Array.isArray(res.data) ? res.data : [];
-  //     // sort by date descending (robust)
-  //     const sortedHistory = arr.sort((a, b) => new Date(b.date) - new Date(a.date));
-  //     setHistory(sortedHistory);
+  // Fetch Attendance History
+  const fetchHistory = async () => {
+    try {
+      const res = await API.get("/attendance/me");
+      const arr = Array.isArray(res.data) ? res.data : [];
 
-  //     // Find record matching selectedDate using local-normalized date
-  //     const todayRec = sortedHistory.find((r) => {
-  //       const rDate = toLocalDateStr(r.date);
-  //       return rDate === selectedDate;
-  //     });
+      const normalized = arr.map((r) => ({
+        ...r,
+        date: r.date ? r.date : r.attendanceDate ? r.attendanceDate : null,
+        login: r.login || r.checkIn || null,
+        logout: r.logout || r.checkOut || null,
+      }));
 
-  //     if (todayRec) {
-  //       setLoginTime(todayRec.login || null);
-  //       setCheckoutTime(todayRec.logout || null);
-  //       setHasLoggedInToday(!!todayRec.login);
-  //     } else {
-  //       setLoginTime(null);
-  //       setCheckoutTime(null);
-  //       setHasLoggedInToday(false);
-  //     }
-  //   } catch (err) {
-  //     console.error(err);
-  //     toast.error("Error fetching attendance records");
-  //   }
-  // };
-// inside EmpAttendance component, replace fetchHistory with this:
-const fetchHistory = async () => {
-  try {
-    const res = await API.get("/attendance/me");
-    const arr = Array.isArray(res.data) ? res.data : [];
+      const sortedHistory = normalized.sort((a, b) => new Date(b.date) - new Date(a.date));
+      setHistory(sortedHistory);
 
-    // backend returns items with .date (ISO string), .login, .logout
-    const normalized = arr.map((r) => ({
-      ...r,
-      // backend gives date as ISO string from attendanceDate
-      date: r.date ? r.date : (r.attendanceDate ? r.attendanceDate : null),
-      login: r.login || r.checkIn || null,
-      logout: r.logout || r.checkOut || null,
-    }));
+      const todayRec = sortedHistory.find((r) => {
+        const rDate = toLocalDateStr(r.date);
+        return rDate === selectedDate;
+      });
 
-    // sort by date descending (robust)
-    const sortedHistory = normalized.sort((a, b) => new Date(b.date) - new Date(a.date));
-    setHistory(sortedHistory);
-
-    // Find record matching selectedDate using local-normalized date
-    const todayRec = sortedHistory.find((r) => {
-      const rDate = toLocalDateStr(r.date);
-      return rDate === selectedDate;
-    });
-
-    if (todayRec) {
-      setLoginTime(todayRec.login || null);
-      setCheckoutTime(todayRec.logout || null);
-      setHasLoggedInToday(!!todayRec.login);
-    } else {
-      setLoginTime(null);
-      setCheckoutTime(null);
-      setHasLoggedInToday(false);
+      if (todayRec) {
+        setLoginTime(todayRec.login || null);
+        setCheckoutTime(todayRec.logout || null);
+        setHasLoggedInToday(!!todayRec.login);
+      } else {
+        setLoginTime(null);
+        setCheckoutTime(null);
+        setHasLoggedInToday(false);
+      }
+    } catch (err) {
+      console.error("fetchHistory error:", err);
+      toast.error("Error fetching attendance records");
     }
-  } catch (err) {
-    console.error("fetchHistory error:", err);
-    toast.error("Error fetching attendance records");
-  }
-};
+  };
 
   const getRemark = (login, logout) => {
     if (!login || !logout) return "Incomplete";
@@ -165,7 +138,6 @@ const fetchHistory = async () => {
       toast.success(`✅ Logged in successfully at ${timeStr}`);
       setHasLoggedInToday(true);
 
-      // Refresh history to sync with backend
       await fetchHistory();
     } catch (err) {
       console.error(err);
@@ -190,13 +162,11 @@ const fetchHistory = async () => {
       else if (remark === "Early Checkout") toast("⚠️ Early checkout before 5:45 PM", { icon: "🕔" });
       else toast.success(`🕒 Checked out successfully at ${now}`);
 
-      // Optimistically update local history and then re-fetch
       setHistory((prev) => {
         const todayRecordExists = prev.some(r => toLocalDateStr(r.date) === selectedDate);
         const newHistory = todayRecordExists
           ? prev.map(r => toLocalDateStr(r.date) === selectedDate ? { ...r, logout: now } : r)
           : [{ date: selectedDate, login: loginTime, logout: now }, ...prev];
-        // The sort is already happening in fetchHistory, but keeping it here ensures optimistic UI is also sorted.
         return newHistory.sort((a, b) => new Date(b.date) - new Date(a.date));
       });
 
@@ -207,8 +177,6 @@ const fetchHistory = async () => {
     }
   };
 
-  if (!user && !token) return null;
-
   return (
     <div className="flex justify-center items-start w-full">
       <Toaster />
@@ -216,7 +184,9 @@ const fetchHistory = async () => {
         <div className="flex flex-col items-center mb-6">
           <UserStar className="text-green-500 w-12 h-12 mb-2" />
           <h1 className="text-3xl font-bold text-center">Attendance Tracker</h1>
-          <p className="text-gray-600 dark:text-gray-300 text-sm text-center mt-1">Mark your login & checkout time every day.</p>
+          <p className="text-gray-600 dark:text-gray-300 text-sm text-center mt-1">
+            Mark your login & checkout time every day.
+          </p>
         </div>
 
         <div className="mb-6">
@@ -225,7 +195,7 @@ const fetchHistory = async () => {
           </label>
           <input
             type="date"
-            className="w-full border  rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#007fff] focus:outline-none"
+            className="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#007fff] focus:outline-none"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
             max={getLocalDate()}
@@ -236,27 +206,45 @@ const fetchHistory = async () => {
           <button
             onClick={handleLogin}
             disabled={!!loginTime}
-            className={`flex-1 flex items-center justify-center gap-2 px-5 py-2 rounded-lg font-semibold text-white transition ${loginTime ? "bg-green-400 dark:bg-green-700 cursor-not-allowed" : "bg-green-500 hover:bg-green-600"}`}
+            className={`flex-1 flex items-center justify-center gap-2 px-5 py-2 rounded-lg font-semibold text-white transition ${
+              loginTime
+                ? "bg-green-400 dark:bg-green-700 cursor-not-allowed"
+                : "bg-green-500 hover:bg-green-600"
+            }`}
           >
             <LogIn size={20} /> {loginTime ? "Logged In" : "Login"}
           </button>
           <button
             onClick={handleCheckout}
             disabled={!loginTime || !!checkoutTime}
-            className={`flex-1 flex items-center justify-center gap-2 px-5 py-2 rounded-lg font-semibold text-white transition ${!loginTime || checkoutTime ? "bg-red-400 dark:bg-red-800 cursor-not-allowed" : "bg-red-500 hover:bg-red-600"}`}
+            className={`flex-1 flex items-center justify-center gap-2 px-5 py-2 rounded-lg font-semibold text-white transition ${
+              !loginTime || checkoutTime
+                ? "bg-red-400 dark:bg-red-800 cursor-not-allowed"
+                : "bg-red-500 hover:bg-red-600"
+            }`}
           >
             <LogOut size={20} /> {checkoutTime ? "Checked Out" : "Checkout"}
           </button>
         </div>
 
-        <div className=" rounded-xl p-4 mb-6">
-          <h2 className="text-lg font-semibold  mb-3 flex items-center gap-2">
+        <div className="rounded-xl p-4 mb-6">
+          <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
             <Check className="text-green-600" /> Today’s Summary
           </h2>
           <div className="space-y-2 ">
-            <p><span className="font-semibold">Date:</span> {selectedDate}</p>
-            <p><span className="font-semibold">Login Time:</span> <span className={loginTime ? "text-green-600 font-medium" : ""}>{loginTime || "-"}</span></p>
-            <p><span className="font-semibold">Checkout Time:</span> <span className={checkoutTime ? "text-red-600 font-medium" : ""}>{checkoutTime || "-"}</span></p>
+            <p>
+              <span className="font-semibold">Date:</span> {selectedDate}
+            </p>
+            <p>
+              <span className="font-semibold">Login Time:</span>{" "}
+              <span className={loginTime ? "text-green-600 font-medium" : ""}>{loginTime || "-"}</span>
+            </p>
+            <p>
+              <span className="font-semibold">Checkout Time:</span>{" "}
+              <span className={checkoutTime ? "text-red-600 font-medium" : ""}>
+                {checkoutTime || "-"}
+              </span>
+            </p>
           </div>
         </div>
 
@@ -273,7 +261,7 @@ const fetchHistory = async () => {
           <div className="fixed inset-0 flex items-start justify-center bg-black bg-opacity-50 z-50 pt-20 px-4 overflow-auto">
             <div className="w-full max-w-md bg-gray-500 sm:max-w-lg rounded-xl shadow-xl p-6 relative">
               <h2 className="text-2xl font-bold mb-2">Attendance Summary</h2>
-              <p className=" mb-4">Last 10 Days Overview</p>
+              <p className="mb-4">Last 10 Days Overview</p>
               {history.length === 0 ? (
                 <p className="text-center ">No records yet</p>
               ) : (
@@ -295,7 +283,7 @@ const fetchHistory = async () => {
                         key={i}
                         className="flex justify-between items-center border-b border-gray-200 dark:border-gray-700 py-2 px-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition text-sm sm:text-base"
                       >
-                        <span className="font-medium  w-1/3">{toLocalDateStr(r.date)}</span>
+                        <span className="font-medium w-1/3">{toLocalDateStr(r.date)}</span>
                         <span className="text-green-600 font-semibold w-1/4">{r.login || "-"}</span>
                         <span className="text-red-600 font-semibold w-1/4">{r.logout || "-"}</span>
                         <span className={`font-semibold w-1/3 ${color}`}>{remark}</span>

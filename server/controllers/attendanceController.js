@@ -1,6 +1,7 @@
 import Attendance from "../models/attendanceModel.js";
 import Employee from "../models/employeeModel.js";
 import dayjs from "dayjs";
+import moment from "moment-timezone"; // ✅ added
 
 // ===================== UTIL: REMARK LOGIC =====================
 const getRemark = (login, logout) => {
@@ -26,20 +27,18 @@ export const checkIn = async (req, res) => {
     if (!employee) return res.status(404).json({ message: "Employee not found" });
 
     const adminId = employee.createdBy;
-    const now = dayjs();
-    const dateOnly = new Date(dayjs().format("YYYY-MM-DD")); // timezone safe
+
+    // ✅ Use IST timezone
+    const now = moment().tz("Asia/Kolkata");
+    const dateOnly = new Date(now.format("YYYY-MM-DD"));
+    const timeStr = now.format("HH:mm");
 
     // Check existing attendance for today
-    let att = await Attendance.findOne({
-      user: employeeId,
-      date: dateOnly,
-    });
+    let att = await Attendance.findOne({ user: employeeId, date: dateOnly });
 
     if (att && att.checkIn) {
       return res.status(400).json({ message: "Already checked in today" });
     }
-
-    const timeStr = now.format("HH:mm");
 
     if (!att) {
       att = new Attendance({
@@ -56,7 +55,6 @@ export const checkIn = async (req, res) => {
 
     // Determine status
     const loginTime = now.hour() * 60 + now.minute();
-
     if (loginTime > 11 * 60) att.status = "Half Day";
     else if (loginTime > 10 * 60 + 10) att.status = "Late";
     else att.status = "Present";
@@ -75,13 +73,9 @@ export const checkIn = async (req, res) => {
 export const checkOut = async (req, res) => {
   try {
     const employeeId = req.user.id;
-    const dateOnly = new Date(dayjs().format("YYYY-MM-DD"));
+    const dateOnly = new Date(moment().tz("Asia/Kolkata").format("YYYY-MM-DD"));
 
-    const att = await Attendance.findOne({
-      user: employeeId,
-      date: dateOnly,
-    });
-
+    const att = await Attendance.findOne({ user: employeeId, date: dateOnly });
     if (!att || !att.checkIn) {
       return res.status(400).json({ message: "No check-in found for today" });
     }
@@ -89,7 +83,8 @@ export const checkOut = async (req, res) => {
       return res.status(400).json({ message: "Already checked out today" });
     }
 
-    const now = dayjs();
+    // ✅ Use IST timezone
+    const now = moment().tz("Asia/Kolkata");
     const timeStr = now.format("HH:mm");
 
     att.checkOut = now.toDate();
@@ -114,11 +109,11 @@ export const checkOut = async (req, res) => {
 // ===================== AUTO CHECKOUT (6 PM) =====================
 export const autoCheckOut = async () => {
   try {
-    const now = dayjs();
-    const sixPM = now.hour(18).minute(0).second(0);
+    const now = moment().tz("Asia/Kolkata"); // ✅ use IST timezone
+    const sixPM = now.clone().hour(18).minute(0).second(0);
     if (now.isBefore(sixPM)) return; // Run only after 6 PM
 
-    const today = new Date(dayjs().format("YYYY-MM-DD"));
+    const today = new Date(now.format("YYYY-MM-DD"));
 
     // Find all employees who checked in but not checked out
     const pending = await Attendance.find({
@@ -178,7 +173,7 @@ export const getAttendanceSummary = async (req, res) => {
     const employees = await Employee.find({ createdBy: req.user.id }).select("_id");
     const empIds = employees.map((e) => e._id);
 
-    const today = new Date(dayjs().format("YYYY-MM-DD"));
+    const today = new Date(moment().tz("Asia/Kolkata").format("YYYY-MM-DD"));
     const attendance = await Attendance.find({ user: { $in: empIds }, date: today });
 
     const totalEmployees = empIds.length;
@@ -198,7 +193,7 @@ export const getAttendance = async (req, res) => {
     if (req.user.role !== "admin") return res.status(403).json({ message: "Admin only" });
 
     const { date } = req.query;
-    const queryDate = date ? dayjs(date) : dayjs();
+    const queryDate = date ? moment(date).tz("Asia/Kolkata") : moment().tz("Asia/Kolkata");
     const start = queryDate.startOf("day").toDate();
     const end = queryDate.endOf("day").toDate();
 

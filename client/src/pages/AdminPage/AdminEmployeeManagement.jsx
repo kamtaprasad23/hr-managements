@@ -183,7 +183,7 @@ export default function AdminEmpManagement() {
     name="position"
     value={form.position}
     onChange={handleChange}
-    className={`border p-2 rounded-md text-black bg-white ${
+    className={`border p-2 rounded-md text-gray-500 ${
       isDarkMode ? "" : ""
     }`}
     required
@@ -308,7 +308,7 @@ export default function AdminEmpManagement() {
 
       {selectedEmployee && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+          <div className="bg-white text-black p-6 rounded-lg shadow-lg max-w-md w-full">
             <h2 className="text-xl font-bold mb-4">Employee Details</h2>
             <p><strong>Name:</strong> {selectedEmployee.name}</p>
             <p><strong>Email:</strong> {selectedEmployee.email}</p>
