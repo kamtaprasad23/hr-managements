@@ -100,8 +100,10 @@ export const getAdminDashboardData = async (req, res) => {
   try {
     const adminId = req.user.id;
 
+    const date = req.query.date ? dayjs(req.query.date) : dayjs();
+
     const totalEmployees = await Employee.countDocuments({ createdBy: adminId });
-    const today = dayjs().startOf("day").toDate();
+    const today = date.startOf("day").toDate();
     const tomorrow = dayjs(today).add(1, "day").toDate();
 
     const todayAttendance = await Attendance.find({

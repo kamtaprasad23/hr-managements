@@ -104,10 +104,9 @@ export const verifyToken = (req, res, next) => {
     const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, jwtSecret);
 
-    // Be tolerant to different token payload shapes
-    // token should ideally be created like: { id: user._id, role: user.role }
+    // Extract user info safely
     const userId = decoded.id || decoded._id || decoded.userId;
-    const role = decoded.role || decoded.roles || decoded.userRole;
+    const role = (decoded.role || decoded.roles || decoded.userRole || "").toLowerCase();
 
     if (!userId) {
       console.error("verifyToken: token missing user id payload", decoded);
@@ -122,9 +121,10 @@ export const verifyToken = (req, res, next) => {
   }
 };
 
+// ✅ Case-insensitive role check
 export const adminOnly = (req, res, next) => {
   if (!req.user) return res.status(401).json({ message: "Not authenticated" });
-  if (req.user.role !== "admin") {
+  if ((req.user.role || "").toLowerCase() !== "admin") {
     return res.status(403).json({ message: "Admin access required" });
   }
   next();
@@ -132,13 +132,13 @@ export const adminOnly = (req, res, next) => {
 
 export const employeeOnly = (req, res, next) => {
   if (!req.user) return res.status(401).json({ message: "Not authenticated" });
-  if (req.user.role !== "employee") {
+  if ((req.user.role || "").toLowerCase() !== "employee") {
     return res.status(403).json({ message: "Employee access required" });
   }
   next();
 };
 
-// Ownership middleware left unchanged (optional)
+// Optional ownership middleware unchanged
 export const verifyOwnership = (model, paramId = "id", userField = "createdBy") => {
   return async (req, res, next) => {
     try {

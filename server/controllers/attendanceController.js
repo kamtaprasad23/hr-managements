@@ -1,9 +1,8 @@
-// controllers/attendanceController.js
 import Attendance from "../models/attendanceModel.js";
-import dayjs from "dayjs";
 import Employee from "../models/employeeModel.js";
+import dayjs from "dayjs";
 
-// Utility: determine attendance remark
+// ===================== UTIL: REMARK LOGIC =====================
 const getRemark = (login, logout) => {
   if (!login || !logout) return "Incomplete";
 
@@ -26,48 +25,45 @@ export const checkIn = async (req, res) => {
     const employee = await Employee.findById(employeeId);
     if (!employee) return res.status(404).json({ message: "Employee not found" });
 
-    const adminId = employee.createdBy; // ✅ from model
-    const todayStart = dayjs().startOf("day").toDate();
-    const tomorrowStart = dayjs(todayStart).add(1, "day").toDate();
+    const adminId = employee.createdBy;
+    const now = dayjs();
+    const dateOnly = new Date(dayjs().format("YYYY-MM-DD")); // timezone safe
 
-    // check existing attendance
+    // Check existing attendance for today
     let att = await Attendance.findOne({
       user: employeeId,
-      date: { $gte: todayStart, $lt: tomorrowStart },
+      date: dateOnly,
     });
 
     if (att && att.checkIn) {
       return res.status(400).json({ message: "Already checked in today" });
     }
 
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const timeStr = now.format("HH:mm");
 
     if (!att) {
       att = new Attendance({
         user: employeeId,
         createdBy: adminId,
-        date: todayStart,
-        checkIn: now,
+        date: dateOnly,
+        checkIn: now.toDate(),
         login: timeStr,
       });
     } else {
-      att.checkIn = now;
+      att.checkIn = now.toDate();
       att.login = timeStr;
     }
 
-    // Status logic
-    const loginTime = dayjs(now);
-    const lateTime = dayjs(now).hour(10).minute(10);
-    const halfDayTime = dayjs(now).hour(11).minute(0);
+    // Determine status
+    const loginTime = now.hour() * 60 + now.minute();
 
-    if (loginTime.isAfter(halfDayTime)) att.status = "Half Day";
-    else if (loginTime.isAfter(lateTime)) att.status = "Late";
+    if (loginTime > 11 * 60) att.status = "Half Day";
+    else if (loginTime > 10 * 60 + 10) att.status = "Late";
     else att.status = "Present";
 
     att.remark = att.status;
-
     await att.save();
+
     res.json({ message: "Checked in successfully", att });
   } catch (err) {
     console.error("Check-in error:", err);
@@ -79,12 +75,11 @@ export const checkIn = async (req, res) => {
 export const checkOut = async (req, res) => {
   try {
     const employeeId = req.user.id;
-    const todayStart = dayjs().startOf("day").toDate();
-    const tomorrowStart = dayjs(todayStart).add(1, "day").toDate();
+    const dateOnly = new Date(dayjs().format("YYYY-MM-DD"));
 
     const att = await Attendance.findOne({
       user: employeeId,
-      date: { $gte: todayStart, $lt: tomorrowStart },
+      date: dateOnly,
     });
 
     if (!att || !att.checkIn) {
@@ -94,17 +89,17 @@ export const checkOut = async (req, res) => {
       return res.status(400).json({ message: "Already checked out today" });
     }
 
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const now = dayjs();
+    const timeStr = now.format("HH:mm");
 
-    att.checkOut = now;
+    att.checkOut = now.toDate();
     att.logout = timeStr;
 
     // Total hours
     const diffMs = new Date(att.checkOut) - new Date(att.checkIn);
     att.totalHours = Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100;
 
-    // Status/remark
+    // Status / remark update
     att.remark = getRemark(att.login, att.logout);
     att.status = att.remark;
 
@@ -113,6 +108,40 @@ export const checkOut = async (req, res) => {
   } catch (err) {
     console.error("Check-out error:", err);
     res.status(500).json({ message: err.message });
+  }
+};
+
+// ===================== AUTO CHECKOUT (6 PM) =====================
+export const autoCheckOut = async () => {
+  try {
+    const now = dayjs();
+    const sixPM = now.hour(18).minute(0).second(0);
+    if (now.isBefore(sixPM)) return; // Run only after 6 PM
+
+    const today = new Date(dayjs().format("YYYY-MM-DD"));
+
+    // Find all employees who checked in but not checked out
+    const pending = await Attendance.find({
+      date: today,
+      checkIn: { $exists: true },
+      checkOut: { $exists: false },
+    });
+
+    for (const att of pending) {
+      att.checkOut = sixPM.toDate();
+      att.logout = sixPM.format("HH:mm");
+
+      const diffMs = new Date(att.checkOut) - new Date(att.checkIn);
+      att.totalHours = Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100;
+
+      att.remark = getRemark(att.login, att.logout);
+      att.status = att.remark;
+      await att.save();
+    }
+
+    console.log(`✅ Auto checkout completed for ${pending.length} employees`);
+  } catch (err) {
+    console.error("Auto checkout error:", err);
   }
 };
 
@@ -149,13 +178,8 @@ export const getAttendanceSummary = async (req, res) => {
     const employees = await Employee.find({ createdBy: req.user.id }).select("_id");
     const empIds = employees.map((e) => e._id);
 
-    const today = dayjs().startOf("day").toDate();
-    const tomorrow = dayjs(today).add(1, "day").toDate();
-
-    const attendance = await Attendance.find({
-      user: { $in: empIds },
-      date: { $gte: today, $lt: tomorrow },
-    });
+    const today = new Date(dayjs().format("YYYY-MM-DD"));
+    const attendance = await Attendance.find({ user: { $in: empIds }, date: today });
 
     const totalEmployees = empIds.length;
     const onTime = attendance.filter((a) => a.status === "Present").length;
@@ -174,12 +198,13 @@ export const getAttendance = async (req, res) => {
     if (req.user.role !== "admin") return res.status(403).json({ message: "Admin only" });
 
     const { date } = req.query;
-    const queryDate = date ? dayjs(date).startOf("day").toDate() : dayjs().startOf("day").toDate();
-    const tomorrow = dayjs(queryDate).add(1, "day").toDate();
+    const queryDate = date ? dayjs(date) : dayjs();
+    const start = queryDate.startOf("day").toDate();
+    const end = queryDate.endOf("day").toDate();
 
     const attendance = await Attendance.find({
       createdBy: req.user.id,
-      date: { $gte: queryDate, $lt: tomorrow },
+      date: { $gte: start, $lte: end },
     }).populate("user", "name email department position");
 
     res.json(attendance);
