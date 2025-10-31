@@ -11,11 +11,11 @@ export default function AdminSidebar({ isOpen }) {
   const menuItems = [
     { name: "Home", icon: <FaHome size={20} />, path: "/admin/dashboard" },
     { name: "Employee Management", icon: <FaUsers size={20} />, path: "/admin/dashboard/emp-management" },
-    { name: "Reports", icon: <FaChartBar size={20} />, path: "/admin/dashboard/reports" },
-    { name: "Task", icon: <MdTaskAlt size={20} />, path: "/admin/dashboard/task" },
-    { name: "Leave", icon: <FaCalendarAlt size={20} />, path: "/admin/dashboard/leave" },
     { name: "Attendance", icon: <AccessTimeIcon style={{ fontSize: 20 }} />, path: "/admin/dashboard/attendance" },
+    { name: "Leave", icon: <FaCalendarAlt size={20} />, path: "/admin/dashboard/leave" },
+    { name: "Task", icon: <MdTaskAlt size={20} />, path: "/admin/dashboard/task" },
     { name: "Salary", icon: <AttachMoneyIcon style={{ fontSize: 20 }} />, path: "/admin/dashboard/salary" },
+    { name: "Reports", icon: <FaChartBar size={20} />, path: "/admin/dashboard/reports" },
     { name: "Settings", icon: <MdSettings size={20} />, path: "/admin/dashboard/settings" },
   ];
 

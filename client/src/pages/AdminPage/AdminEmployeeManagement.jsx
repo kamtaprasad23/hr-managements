@@ -179,25 +179,17 @@ export default function AdminEmpManagement() {
     required
   />
 
-  <select
+  <input
+    type="text"
     name="position"
+    placeholder="Position"
     value={form.position}
     onChange={handleChange}
-    className={`border p-2 rounded-md text-gray-500 ${
-      isDarkMode ? "" : ""
+    className={`border p-2 rounded-md ${
+      isDarkMode ? "placeholder-gray-300" : " placeholder-gray-500"
     }`}
     required
-  >
-    <option value="">Select Position</option>
-    <option value="Full Stack">Full Stack</option>
-    <option value="MERN Stack">MERN Stack</option>
-    <option value="Frontend">Frontend</option>
-    <option value="Backend">Backend</option>
-    <option value="Digital Marketing">Digital Marketing</option>
-    <option value="UI/UX">UI/UX</option>
-    <option value="Graphic Design">Graphic Design</option>
-    <option value="Flutter">Flutter</option>
-  </select>
+  />
 
   <input
     type="tel"
@@ -209,7 +201,6 @@ export default function AdminEmpManagement() {
     className={`border p-2 rounded-md ${
       isDarkMode ? "placeholder-gray-300" : " placeholder-gray-500"
     }`}
-    required
   />
 
   <input
@@ -224,6 +215,28 @@ export default function AdminEmpManagement() {
     required={!editingId}
   />
 
+  <input
+    type="text"
+    name="department"
+    placeholder="Department"
+    value={form.department}
+    onChange={handleChange}
+    className={`border p-2 rounded-md ${
+      isDarkMode ? "placeholder-gray-300" : " placeholder-gray-500"
+    }`}
+  />
+
+  <input
+    type="text"
+    name="jobType"
+    placeholder="Job Type"
+    value={form.jobType}
+    onChange={handleChange}
+    className={`border p-2 rounded-md ${
+      isDarkMode ? "placeholder-gray-300" : " placeholder-gray-500"
+    }`}
+  />
+
   <button
     type="submit"
     className="bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700"
@@ -233,30 +246,36 @@ export default function AdminEmpManagement() {
 </form>
 
 
-      <div className="overflow-x-auto rounded-lg shadow">
+      <div className="overflow-auto rounded-lg shadow max-h-[60vh]">
         <table className="w-full bborder-collapse">
           <thead className=" ">
-            <tr className="bg-gray-300 text-black">
+            <tr className="bg-gray-300 text-black sticky top-0 z-10">
+              <th className="p-3 text-left text-sm font-semibold  whitespace-nowrap">ID</th>
               <th className="p-3 text-left text-sm font-semibold  whitespace-nowrap">Name</th>
               <th className="p-3 text-left text-sm font-semibold  whitespace-nowrap">Email</th>
               <th className="p-3 text-left text-sm font-semibold  whitespace-nowrap">Phone</th>
               <th className="p-3 text-left text-sm font-semibold  whitespace-nowrap">Position</th>
+              <th className="p-3 text-left text-sm font-semibold  whitespace-nowrap">Department</th>
+              <th className="p-3 text-left text-sm font-semibold  whitespace-nowrap">Job Type</th>
               <th className="p-3 text-left text-sm font-semibold whitespace-nowrap">Salary</th>
               <th className="p-3 text-center text-sm font-semibold whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody>
             {employees.length > 0 ? (
-              employees.map((emp) => (
+              employees.map((emp, index) => (
                 <tr key={emp._id} className="border-b hover:text-black hover:bg-gray-300">
+                  <td className="p-3 whitespace-nowrap text-sm text-gray-500">{`EMP${String(index + 1).padStart(3, '0')}`}</td>
                   <td className="p-3 whitespace-nowrap ">
-                    <Link to={`/admin/dashboard/employee/${emp._id}`} className="text-blue-600 hover:underline font-medium">
+                    <Link to={`/admin/dashboard/employee/${emp._id}`} className="hover:underline font-medium">
                       {emp.name}
                     </Link>
                   </td>
                   <td className="p-3 whitespace-nowrap  hover:text-black">{emp.email}</td>
                   <td className="p-3 whitespace-nowrap  hover:text-black">{emp.phone}</td>
                   <td className="p-3 whitespace-nowrap  hover:text-black">{emp.position}</td>
+                  <td className="p-3 whitespace-nowrap  hover:text-black">{emp.department || "-"}</td>
+                  <td className="p-3 whitespace-nowrap  hover:text-black">{emp.jobType || "-"}</td>
                   <td className="p-3 whitespace-nowrap  hover:text-black">{emp.salary || "-"}</td>
                   <td className="p-3 text-center relative">
                     <button
@@ -297,7 +316,7 @@ export default function AdminEmpManagement() {
               ))
             ) : (
               <tr>
-                <td colSpan="6" className="text-center p-4 text-gray-500">
+                <td colSpan="9" className="text-center p-4 text-gray-500">
                   No employees found
                 </td>
               </tr>
@@ -314,6 +333,8 @@ export default function AdminEmpManagement() {
             <p><strong>Email:</strong> {selectedEmployee.email}</p>
             <p><strong>Phone:</strong> {selectedEmployee.phone}</p>
             <p><strong>Position:</strong> {selectedEmployee.position}</p>
+            <p><strong>Department:</strong> {selectedEmployee.department || "-"}</p>
+            <p><strong>Job Type:</strong> {selectedEmployee.jobType || "-"}</p>
             <p><strong>Salary:</strong> {selectedEmployee.salary || "-"}</p>
             <div className="mt-6 flex justify-end gap-2">
               <button
