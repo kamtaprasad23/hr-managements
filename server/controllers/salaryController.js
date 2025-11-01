@@ -1,21 +1,33 @@
+
 import SalarySlip from "../models/salarySlipModel.js";
 import Employee from "../models/employeeModel.js";
 import Notification from "../models/notificationModel.js";
 import Attendance from "../models/attendanceModel.js";
+import Admin from "../models/adminModel.js";
 import dayjs from "dayjs";
 
-// ===================== CALCULATE SALARY =====================
+// CALCULATE SALARY
 export const calculateSalary = async (req, res) => {
   try {
     const { employeeId, month, year } = req.body;
+    const { id: userId, role, isMainAdmin } = req.user;
 
-    const employee = await Employee.findById(employeeId);
-    if (!employee) return res.status(404).json({ message: "Employee not found" });
-
-    // Admin can only calculate salary for employees they created
-    if (req.user.role === "admin" && employee.createdBy.toString() !== req.user.id) {
-      return res.status(403).json({ message: "Unauthorized to calculate salary for this employee" });
+    let empQuery;
+    if (isMainAdmin) {
+      const subAdmins = await Admin.find({ createdBy: userId }).select("_id");
+      const adminIds = [userId, ...subAdmins.map(a => a._id)];
+      empQuery = { _id: employeeId, createdBy: { $in: adminIds } };
+    } else if (["hr", "manager"].includes(role)) {
+      const mainAdminId = req.user.createdBy;
+      const orgAdminIds = await Admin.find({ createdBy: mainAdminId }).select("_id");
+      const allTeamIds = [mainAdminId, userId, ...orgAdminIds.map(a => a._id)];
+      empQuery = { _id: employeeId, createdBy: { $in: allTeamIds } };
+    } else {
+      empQuery = { _id: employeeId, createdBy: userId };
     }
+
+    const employee = await Employee.findOne(empQuery);
+    if (!employee) return res.status(404).json({ message: "Employee not found or unauthorized" });
 
     const baseSalary = employee.salary || 0;
     const startDate = dayjs(`${year}-${month}-01`).startOf("month").toDate();
@@ -23,7 +35,7 @@ export const calculateSalary = async (req, res) => {
 
     const attendance = await Attendance.find({
       user: employeeId,
-      date: { $gte: startDate, $lte: endDate }
+      date: { $gte: startDate, $lte: endDate },
     });
 
     let absentDays = 0;
@@ -48,33 +60,34 @@ export const calculateSalary = async (req, res) => {
       remarks: absentDays + lateDays > 0 ? remarks : "No deductions",
     });
   } catch (error) {
-    res.status(500).json({ message: "Error calculating salary", error: error.message });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// ===================== SEND SALARY SLIP =====================
+// SEND SALARY SLIP
 export const sendSalarySlip = async (req, res) => {
   try {
     const { employeeId, month, year, baseSalary, deduction, remarks } = req.body;
     const netSalary = baseSalary - deduction;
+    const { id: userId, role, isMainAdmin } = req.user;
 
-    const employee = await Employee.findById(employeeId);
-    if (!employee) {
-      return res.status(404).json({ message: "Employee not found" });
+    let empQuery;
+    if (isMainAdmin) {
+      const subAdmins = await Admin.find({ createdBy: userId }).select("_id");
+      const adminIds = [userId, ...subAdmins.map(a => a._id)];
+      empQuery = { _id: employeeId, createdBy: { $in: adminIds } };
+    } else if (["hr", "manager"].includes(role)) {
+      const mainAdminId = req.user.createdBy;
+      const orgAdminIds = await Admin.find({ createdBy: mainAdminId }).select("_id");
+      const allTeamIds = [mainAdminId, userId, ...orgAdminIds.map(a => a._id)];
+      empQuery = { _id: employeeId, createdBy: { $in: allTeamIds } };
+    } else {
+      empQuery = { _id: employeeId, createdBy: userId };
     }
 
-    // ✅ Determine the admin ID correctly
-    const adminId = employee.createdBy || req.user?.id;
+    const employee = await Employee.findOne(empQuery);
+    if (!employee) return res.status(404).json({ message: "Employee not found or unauthorized" });
 
-    if (!adminId) {
-      return res.status(400).json({ message: "Missing createdBy (admin) ID" });
-    }
-
-    if (req.user.role === "admin" && employee.createdBy.toString() !== req.user.id) {
-      return res.status(403).json({ message: "Unauthorized to send salary slip for this employee" });
-    }
-
-    // ✅ Create salary slip
     const slip = new SalarySlip({
       employeeId,
       month,
@@ -83,62 +96,64 @@ export const sendSalarySlip = async (req, res) => {
       deduction,
       netSalary,
       remarks,
-      createdBy: adminId, // ✅ FIXED
+      createdBy: userId,
     });
     await slip.save();
 
-    // ✅ Create notification
     const notification = new Notification({
       title: "Salary Slip Generated",
       message: `Your salary slip for ${month}-${year} has been generated.`,
       type: "employee",
       userId: employeeId,
       priority: "Medium",
-      createdBy: adminId, // ✅ also fixed
+      createdBy: userId,
+      link: "/employee/dashboard/salary-slip",
     });
     await notification.save();
 
-    res.status(201).json({
-      message: "Salary slip sent successfully",
-      slip,
-    });
+    res.status(201).json({ message: "Salary slip sent", slip });
   } catch (error) {
-    console.error("Error sending salary slip:", error);
-    res.status(500).json({
-      message: "Error sending salary slip",
-      error: error.message,
-    });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-
-
-// ===================== GET ALL SALARY SLIPS (ADMIN) =====================
+// GET ALL SALARY SLIPS (Admin/HR/Manager)
 export const getSalarySlips = async (req, res) => {
   try {
-    if (req.user.role !== "admin") return res.status(403).json({ message: "Admin access required" });
+    const { id: userId, role, isMainAdmin } = req.user;
 
-    // Only show slips of employees created by this admin
-    const employees = await Employee.find({ createdBy: req.user.id }).select("_id");
-    const employeeIds = employees.map(emp => emp._id);
+    let empQuery;
+    if (isMainAdmin) {
+      const subAdmins = await Admin.find({ createdBy: userId }).select("_id");
+      const adminIds = [userId, ...subAdmins.map(a => a._id)];
+      empQuery = { createdBy: { $in: adminIds } };
+    } else if (["hr", "manager"].includes(role)) {
+      const mainAdminId = req.user.createdBy;
+      const orgAdminIds = await Admin.find({ createdBy: mainAdminId }).select("_id");
+      const allTeamIds = [mainAdminId, userId, ...orgAdminIds.map(a => a._id)];
+      empQuery = { createdBy: { $in: allTeamIds } };
+    } else {
+      empQuery = { createdBy: userId };
+    }
+    const employeeIds = await Employee.find(empQuery).distinct("_id");
 
     const slips = await SalarySlip.find({ employeeId: { $in: employeeIds } })
       .populate("employeeId", "name email")
       .sort({ year: -1, month: -1 });
 
-    res.status(200).json(slips);
+    res.json(slips);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching salary slips", error: error.message });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// ===================== GET MY SALARY SLIPS (EMPLOYEE) =====================
+// GET MY SALARY SLIPS (Employee)
 export const getEmployeeSalarySlips = async (req, res) => {
   try {
     const slips = await SalarySlip.find({ employeeId: req.user.id })
       .sort({ year: -1, month: -1 });
-    res.status(200).json(slips);
+    res.json(slips);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching your salary slips", error: error.message });
+    res.status(500).json({ message: "Server error" });
   }
 };

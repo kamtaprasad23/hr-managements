@@ -1,12 +1,16 @@
+
+// pages/AdminDashboard.jsx
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import API from "../utils/api";
-import { Gift, Cake, CalendarDays } from "lucide-react";
+import { Cake } from "lucide-react";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
 
 export default function AdminHome() {
   const isDarkMode = useSelector((state) => state.settings.isDarkMode);
+  const user = useSelector((state) => state.auth.user);
+  const role = (user?.role || "").toLowerCase();
 
   const [dashboard, setDashboard] = useState({
     totalEmployees: 0,
@@ -17,7 +21,6 @@ export default function AdminHome() {
   const [loading, setLoading] = useState(true);
   const [wishesLoading, setWishesLoading] = useState({});
   const [error, setError] = useState("");
-  const user = useSelector((state) => state.auth.user);
 
   const attendanceGrid = Array(20)
     .fill("")
@@ -39,10 +42,7 @@ export default function AdminHome() {
         setLoading(false);
       }
     };
-
     fetchDashboardData();
-    const interval = setInterval(fetchDashboardData, 30000);
-    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -80,6 +80,9 @@ export default function AdminHome() {
     <main className={`mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6`}>
       <h2 className={`col-span-full text-2xl font-bold ${isDarkMode ? "text-white" : "text-gray-800"}`}>
         {greeting}, {user?.name || "Admin"}
+        <p className="text-sm text-gray-400 mt-1">
+          Role: {role.toUpperCase()}
+        </p>
       </h2>
 
       {error && (
@@ -107,42 +110,60 @@ export default function AdminHome() {
 
           {/* Leave Reports */}
           <div className={`p-6 rounded-lg shadow-md ${isDarkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"}`}>
-            <h3 className="text-lg font-medium">Leave Reports</h3>
+            <h3 className="text-lg font-medium">Pending Leave Requests</h3>
             <p className="text-3xl font-bold mt-4">{dashboard.leaveReports}</p>
             <Link to="/admin/dashboard/leave">
               <button className="mt-6 w-full bg-[#007fff] text-white py-2 rounded hover:bg-blue-700">
-                View Details
+                Review Leaves
               </button>
             </Link>
           </div>
 
           {/* Attendance Tracker */}
-          <div className={`p-6 rounded-lg shadow-md ${isDarkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"}`}>
+          <div
+            className={`p-6 rounded-lg shadow-md transition-all duration-300 ${isDarkMode ? "bg-gray-800 text-white" : "bg-white text-gray-900"
+              }`}
+          >
             <h3 className="text-lg font-medium mb-4">Attendance Report</h3>
+
+            {/* Summary Section */}
             <div className="grid grid-cols-4 gap-2">
               {["total", "onTime", "absent", "late"].map((key) => (
                 <div key={key} className="text-center">
                   <p className="text-2xl font-bold">{dashboard.attendance[key]}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{key === "onTime" ? "On Time" : key.charAt(0).toUpperCase() + key.slice(1)}</p>
+                  <p
+                    className={`text-sm ${isDarkMode ? "text-gray-400" : "text-gray-500"
+                      }`}
+                  >
+                    {key === "onTime"
+                      ? "On Time"
+                      : key.charAt(0).toUpperCase() + key.slice(1)}
+                  </p>
                 </div>
               ))}
             </div>
 
-            <div className="grid grid-cols-10 gap-1 mt-4">
+            {/* Heatmap/Tracker Grid */}
+            <div className="grid grid-cols-10 gap-1 mt-6">
               {attendanceGrid.map((val, idx) => (
                 <div
                   key={idx}
-                  className="h-6 w-6 rounded"
+                  className="h-6 w-6 rounded transition-all duration-300"
                   style={{
-                    backgroundColor: `rgb(0, 127, ${Math.min(255, Math.floor((val / 200) * 255))})`,
+                    backgroundColor: `rgb(0, 127, ${Math.min(
+                      255,
+                      Math.floor((val / 200) * 255)
+                    )})`,
                   }}
                 ></div>
               ))}
             </div>
           </div>
-
           {/* Birthday Events */}
-          <div className={`col-span-full p-6 rounded-2xl shadow-lg ${isDarkMode ? "bg-gray-800 text-white" : "bg-gradient-to-br from-pink-50 to-yellow-50 text-gray-900"}`}>
+          <div className={`col-span-full p-6 rounded-2xl shadow-lg ${isDarkMode
+              ? "bg-gray-800 text-white"
+              : "bg-gradient-to-br from-pink-50 to-yellow-50 text-gray-900"
+            }`}>
             <h1 className="text-2xl font-bold mb-4 flex items-center gap-2">
               <Cake /> Birthday Events
             </h1>
@@ -155,7 +176,11 @@ export default function AdminHome() {
                     key={b._id}
                     className={`p-4 rounded-lg shadow ${isDarkMode ? "bg-gray-700 text-white" : "bg-white text-gray-900"}`}
                   >
-                    <img src={b.image || "https://i.pravatar.cc/150"} alt={b.name} className="w-24 h-24 rounded-full mx-auto mb-2 object-cover" />
+                    <img
+                      src={b.image || "https://i.pravatar.cc/150"}
+                      alt={b.name}
+                      className="w-24 h-24 rounded-full mx-auto mb-2 object-cover"
+                    />
                     <h2 className="text-lg font-semibold">{b.name}</h2>
                     <p className="text-sm">{b.date}</p>
                     <button

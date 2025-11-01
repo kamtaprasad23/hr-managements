@@ -1,8 +1,9 @@
+
+// App.jsx
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { setDarkMode } from "./features/auth/settingsSlice";
-
 import ProtectedRoute from "./components/ProtectedRoute";
 
 // Admin pages
@@ -21,6 +22,7 @@ import SalaryManagement from "./pages/AdminPage/SalaryManagement";
 import AdminSettings from "./pages/AdminPage/AdminSettings";
 import Notification from "./pages/AdminPage/Notification";
 import AdminEmployeeProfile from "./pages/AdminPage/AdminEmployeeProfile";
+import AdminForgotPassword from "./pages/AdminForgotPassword";
 
 // Employee pages
 import EmployeeLayout from "./Layout/EmployeeLayout";
@@ -31,78 +33,91 @@ import EmpLeave from "./pages/employeePage/EmpLeave";
 import EmpProfile from "./pages/employeePage/EmpProfile";
 import EmpSalaryslip from "./pages/employeePage/EmpSalaryslip";
 import EmployeeSettings from "./pages/employeePage/EmpSetting";
-import AdminForgotPassword from "./pages/AdminForgotPassword";
+// ... all imports
 
 function App() {
- const dispatch = useDispatch();
+  const dispatch = useDispatch();
   const isDarkMode = useSelector((state) => state.settings.isDarkMode);
 
-  // Load saved dark mode from localStorage
   useEffect(() => {
     const savedMode = localStorage.getItem("isDarkMode");
     if (savedMode !== null) dispatch(setDarkMode(savedMode === "true"));
   }, [dispatch]);
 
-  // Apply dark class to the HTML element
   useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
+    document.documentElement.classList.toggle("dark", isDarkMode);
   }, [isDarkMode]);
 
   return (
-   <div className="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen">
-      {/* <BrowserRouter> */}
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<LoginSelection />} />
-          <Route path="/admin-login" element={<AdminLogin />} />
-          <Route path="/admin-register" element={<AdminRegister />} />
-          <Route path="/employee-login" element={<EmployeeLogin />} />
-          <Route path="/admin/forgot-password" element={<AdminForgotPassword/>} />
+    <div className="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen">
+      <Routes>
+        {/* Public */}
+        <Route path="/" element={<LoginSelection />} />
+        <Route path="/admin-login" element={<AdminLogin />} />
+        <Route path="/admin-register" element={<AdminRegister />} />
+        <Route path="/employee-login" element={<EmployeeLogin />} />
+        <Route path="/admin/forgot-password" element={<AdminForgotPassword />} />
 
-          {/* Admin Routes */}
+        {/* Admin Dashboard */}
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedRoute role={["admin", "hr", "manager"]}>
+              <AdminDashboardLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<AdminHome />} />
+          <Route path="emp-management" element={<AdminEmpManagement />} />
+          <Route path="employee/:id" element={<AdminEmployeeProfile />} />
+          <Route path="reports" element={<AdminEmpReports />} />
+
+          {/* Task Page - HR Blocked */}
           <Route
-            path="/admin/dashboard"
+            path="task"
             element={
-              <ProtectedRoute role="admin">
-                <AdminDashboardLayout />
+              <ProtectedRoute role={["admin", "manager"]} feature="task">
+                <AdminTask />
               </ProtectedRoute>
             }
-          >
-            <Route index element={<AdminHome />} />
-            <Route path="emp-management" element={<AdminEmpManagement />} />
-            <Route path="employee/:id" element={<AdminEmployeeProfile />} />
-            <Route path="reports" element={<AdminEmpReports />} />
-            <Route path="task" element={<AdminTask />} />
-            <Route path="leave" element={<AdminLeaveManagement />} />
-            <Route path="attendance" element={<AttendanceTracker />} />
-            <Route path="salary" element={<SalaryManagement />} />
-            <Route path="settings" element={<AdminSettings />} />
-            <Route path="notification" element={<Notification />} />
-          </Route>
+          />
 
-          {/* Employee Routes */}
+          {/* Salary Page - Manager Blocked */}
           <Route
-            path="/employee"
+            path="salary"
             element={
-              <ProtectedRoute role="employee">
-                <EmployeeLayout />
+              <ProtectedRoute role={["admin", "hr"]} feature="salary">
+                <SalaryManagement />
               </ProtectedRoute>
             }
-          >
-            <Route index element={<EmployeeDashboard />} />
-            <Route path="attendance" element={<EmpAttendance />} />
-            <Route path="tasks" element={<EmpTask />} />
-            <Route path="leave" element={<EmpLeave />} />
-            <Route path="profile" element={<EmpProfile />} />
-            <Route path="salary-slip" element={<EmpSalaryslip />} />
-            <Route path="setting" element={<EmployeeSettings />} />
-          </Route>
-        </Routes>
-      {/* </BrowserRouter> */}
+          />
+
+          <Route path="leave" element={<AdminLeaveManagement />} />
+          <Route path="attendance" element={<AttendanceTracker />} />
+          <Route path="notification" element={<Notification />} />
+
+          {/* Settings - All can access */}
+          <Route path="settings" element={<AdminSettings />} />
+        </Route>
+
+        {/* Employee Routes */}
+        <Route
+          path="/employee"
+          element={
+            <ProtectedRoute role="employee">
+              <EmployeeLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<EmployeeDashboard />} />
+          <Route path="attendance" element={<EmpAttendance />} />
+          <Route path="tasks" element={<EmpTask />} />
+          <Route path="leave" element={<EmpLeave />} />
+          <Route path="profile" element={<EmpProfile />} />
+          <Route path="salary-slip" element={<EmpSalaryslip />} />
+          <Route path="setting" element={<EmployeeSettings />} />
+        </Route>
+      </Routes>
     </div>
   );
 }

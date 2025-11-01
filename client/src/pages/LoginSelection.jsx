@@ -3,9 +3,11 @@ import { Link } from "react-router-dom";
 function LoginSelection() {
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gradient-to-br from-purple-500 via-pink-500 to-red-500 animate-gradient-x">
-      <h1 className="text-4xl font-bold text-white mb-10 drop-shadow-lg">
+      <div className="flex text-center text-2xl md:text-4xl">
+       <h1 className="font-bold text-white mb-10 drop-shadow-lg">
         HR - Management System
       </h1>
+     </div>
 
       <div className="bg-white p-10 rounded-3xl shadow-2xl w-80 text-center transform hover:scale-105 transition-transform duration-300">
         <h2 className="text-2xl mb-6 font-semibold text-gray-700">Login As</h2>

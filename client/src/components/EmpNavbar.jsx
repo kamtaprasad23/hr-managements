@@ -60,7 +60,7 @@ export default function EmpNavbar({ toggleSidebar }) {
     } catch (err) {
       console.error("Failed to delete notification:", err);
 
-      fetchNotifications();
+      fetchNotifications(); // Re-fetch on error
     }
   };
 

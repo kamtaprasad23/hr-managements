@@ -1,6 +1,6 @@
-// backend/routes/attendanceRoutes.js
+
 import express from "express";
-import { verifyToken, adminOnly, employeeOnly } from "../middleware/authMiddleware.js";
+import { verifyToken, allowAdminHrManager, employeeOnly } from "../middleware/authMiddleware.js";
 import {
   checkIn,
   checkOut,
@@ -17,9 +17,9 @@ router.post("/checkin", verifyToken, employeeOnly, checkIn);
 router.post("/checkout", verifyToken, employeeOnly, checkOut);
 router.get("/me", verifyToken, employeeOnly, getMyAttendance);
 
-// Admin
-router.get("/all", verifyToken, adminOnly, getAllAttendance);
-router.get("/summary", verifyToken, adminOnly, getAttendanceSummary);
-router.get("/", verifyToken, adminOnly, getAttendance);
+// Admin/HR/Manager
+router.get("/all", verifyToken, allowAdminHrManager, getAllAttendance);
+router.get("/summary", verifyToken, allowAdminHrManager, getAttendanceSummary);
+router.get("/", verifyToken, allowAdminHrManager, getAttendance);
 
 export default router;

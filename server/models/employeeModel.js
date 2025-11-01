@@ -1,9 +1,10 @@
+
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
 const employeeSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true, lowercase: true },
   password: { type: String, required: true },
   phone: { type: String, required: true },
   position: { type: String, required: true },
@@ -24,14 +25,15 @@ const employeeSchema = new mongoose.Schema({
   bankName: { type: String },
   idType: { type: String },
   idNumber: { type: String },
-  fullName: {type : String}, // Added for EmployeeProfile
-  contact: {type : String},
-verified: { type: Boolean, default: false },
-editCount: { type: Number, default: 0 },
-status: { type: String, default: "Verified" }, // Verified, Pending, Rejected
-pendingUpdates: { type: Object },
+  fullName: { type: String },
+  contact: { type: String },
+  verified: { type: Boolean, default: false },
+  editCount: { type: Number, default: 0 },
+  status: { type: String, default: "Verified" },
+  pendingUpdates: { type: Object },
   alternateNumber: { type: String },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin", required: true },
+  adminId: { type: mongoose.Schema.Types.ObjectId, ref: "Admin" },
 }, { timestamps: true });
 
 employeeSchema.pre("save", async function (next) {

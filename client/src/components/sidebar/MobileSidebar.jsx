@@ -10,9 +10,13 @@ import {
 } from "react-icons/fa";
 import { MdAttachMoney, MdAccessTime } from "react-icons/md";
 import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 const MobileSidebarRow = () => {
-  const menuItems = [
+  const user = useSelector((state) => state.auth.user);
+  const role = (user?.role || "").toLowerCase();
+
+  const baseMenu = [
     {
       name: "Home",
       icon: <FaHome />,
@@ -63,11 +67,18 @@ const MobileSidebarRow = () => {
     },
   ];
 
+  // Filter Menu by Role
+  const menuItems = baseMenu.filter(item => {
+    if (role === "hr" && item.name === "Task") return false;
+    if (role === "manager" && item.name === "Salary") return false;
+    return true;
+  });
+
   return (
     <div className="bg-blue-600 dark:bg-gray-800 text-white md:hidden ">
       {/* Icons Row */}
       <div className="flex justify-around py-2 border-b border-blue-500 dark:border-gray-700 ">
-        {menuItems.map((item) => (
+        {menuItems.map((item) => ( // Use the filtered menuItems
           <Link
             key={item.name}
             to={item.path}

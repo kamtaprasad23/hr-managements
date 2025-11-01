@@ -1,3 +1,4 @@
+
 import mongoose from "mongoose";
 
 const attendanceSchema = new mongoose.Schema(
@@ -26,7 +27,6 @@ const attendanceSchema = new mongoose.Schema(
     login: { type: String },
     logout: { type: String },
   },
-  
   { timestamps: true }
 );
 

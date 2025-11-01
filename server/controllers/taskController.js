@@ -1,32 +1,41 @@
+
 import Task from "../models/taskModel.js";
 import Notification from "../models/notificationModel.js";
 import Employee from "../models/employeeModel.js";
+import Admin from "../models/adminModel.js";
 
-// ===================== CREATE TASK =====================
+// CREATE TASK
 export const createTask = async (req, res) => {
   try {
     const { title, description, assignedTo, dueDate, priority, notes, attachments } = req.body;
 
-    if (!title || !description || !assignedTo || !dueDate) {
-      return res.status(400).json({ message: "Title, description, assignee, and due date are required" });
-    }
-
     const employee = await Employee.findById(assignedTo);
     if (!employee) return res.status(404).json({ message: "Employee not found" });
 
-    // ✅ Determine admin ID (the creator)
-    const adminId = req.user?.id || employee.createdBy;
-    if (!adminId) {
-      return res.status(400).json({ message: "Missing admin ID (createdBy)" });
+    const { id: userId, role, isMainAdmin } = req.user;
+
+    let empQuery;
+    if (isMainAdmin) {
+      const subAdmins = await Admin.find({ createdBy: userId }).select("_id");
+      const adminIds = [userId, ...subAdmins.map(a => a._id)];
+      empQuery = { _id: assignedTo, createdBy: { $in: adminIds } };
+    } else if (["hr", "manager"].includes(role)) {
+      const mainAdminId = req.user.createdBy;
+      const orgAdminIds = await Admin.find({ createdBy: mainAdminId }).select("_id");
+      const allTeamIds = [mainAdminId, userId, ...orgAdminIds.map(a => a._id)];
+      empQuery = { _id: assignedTo, createdBy: { $in: allTeamIds } };
+    } else {
+      empQuery = { _id: assignedTo, createdBy: userId };
     }
 
-    // ✅ Create task (added createdBy)
+    if (!await Employee.findOne(empQuery)) return res.status(403).json({ message: "Unauthorized" });
+
     const task = new Task({
       title,
       description,
       assignedTo,
-      assignedBy: adminId,
-      createdBy: adminId,
+      assignedBy: userId,
+      createdBy: userId,
       dueDate: new Date(dueDate),
       priority: priority || "Medium",
       notes,
@@ -35,203 +44,145 @@ export const createTask = async (req, res) => {
 
     await task.save();
 
-    // ✅ Employee notification
+    // Notify employee
     await new Notification({
       title: "New Task Assigned",
-      message: `You have been assigned a new task: "${title}". Due: ${task.dueDate.toDateString()}. Priority: ${task.priority}`,
+      message: `You have a new task: "${title}". Due: ${task.dueDate.toDateString()}.`,
       type: "task",
-      category: "new-task",
-      taskId: task._id,
       userId: assignedTo,
-      priority: task.priority,
-      read: false,
-      createdBy: adminId,
+      createdBy: userId,
+      link: "/employee/dashboard/tasks", // Link for employee to view their tasks
     }).save();
 
-    // ✅ Admin notification
-    await new Notification({
-      title: "Task Assigned",
-      message: `Task "${title}" assigned to ${employee.name} successfully.`,
-      type: "task",
-      category: "task-assigned",
-      taskId: task._id,
-      userId: adminId,
-      createdBy: adminId,
-    }).save();
-
-    res.status(201).json({ message: "Task created successfully", task });
+    res.status(201).json({ message: "Task created", task });
   } catch (error) {
-    console.error("Create task error:", error);
-    res.status(500).json({ message: "Error creating task", error: error.message });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// ===================== GET ADMIN TASKS =====================
+// GET ADMIN TASKS
 export const getAdminTasks = async (req, res) => {
   try {
-    const tasks = await Task.find({ assignedBy: req.user.id })
+    const { id: userId, role, isMainAdmin } = req.user;
+
+    let empQuery;
+    if (isMainAdmin) {
+      const subAdmins = await Admin.find({ createdBy: userId }).select("_id");
+      const adminIds = [userId, ...subAdmins.map(a => a._id)];
+      empQuery = { createdBy: { $in: adminIds } };
+    } else if (["hr", "manager"].includes(role)) {
+      const mainAdminId = req.user.createdBy;
+      const orgAdminIds = await Admin.find({ createdBy: mainAdminId }).select("_id");
+      const allTeamIds = [mainAdminId, userId, ...orgAdminIds.map(a => a._id)];
+      empQuery = { createdBy: { $in: allTeamIds } };
+    } else {
+      empQuery = { createdBy: userId };
+    }
+    const employeeIds = await Employee.find(empQuery).distinct("_id");
+
+    const tasks = await Task.find({ assignedTo: { $in: employeeIds } })
       .populate("assignedTo", "name position")
-      .sort({ dueDate: 1 })
-      .lean();
+      .sort({ dueDate: 1 });
 
-    const today = new Date();
-    const tasksWithStatus = tasks.map(task => ({
-      ...task,
-      isOverdue: new Date(task.dueDate) < today && task.status !== "Completed",
-      rejectionReason: task.rejectionReason || "",
-    }));
-
-    res.json(tasksWithStatus);
+    res.json(tasks);
   } catch (error) {
-    console.error("Get admin tasks error:", error);
-    res.status(500).json({ message: "Error fetching tasks", error: error.message });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// ===================== GET EMPLOYEE TASKS =====================
+// GET EMPLOYEE TASKS
 export const getEmployeeTasks = async (req, res) => {
   try {
     const tasks = await Task.find({ assignedTo: req.user.id })
       .populate("assignedBy", "name")
-      .sort({ dueDate: 1 })
-      .lean();
+      .sort({ dueDate: 1 });
 
-    const today = new Date();
-    const tasksWithStatus = tasks.map(task => ({
-      ...task,
-      isOverdue: new Date(task.dueDate) < today && task.status !== "Completed",
-    }));
-
-    res.json(tasksWithStatus);
+    res.json(tasks);
   } catch (error) {
-    console.error("Get employee tasks error:", error);
-    res.status(500).json({ message: "Error fetching tasks", error: error.message });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// ===================== UPDATE TASK STATUS =====================
+// UPDATE TASK STATUS
 export const updateTaskStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, notes, rejectionReason } = req.body;
+    const { status } = req.body;
 
     const task = await Task.findById(id);
     if (!task) return res.status(404).json({ message: "Task not found" });
 
-    if (task.assignedTo.toString() !== req.user.id.toString()) {
-      return res.status(403).json({ message: "You can only update your own tasks" });
+    if (task.assignedTo.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Unauthorized" });
     }
 
     task.status = status;
-    if (notes) task.notes = notes;
-    if (status === "Rejected" && rejectionReason) task.rejectionReason = rejectionReason;
-    if (status === "Completed") task.completionDate = new Date();
-
     await task.save();
 
-    // ✅ Notify admin
+    // Notify admin about the status update
     await new Notification({
-      title: `Task "${task.title}" Status Updated`,
-      message:
-        status === "Rejected"
-          ? `Task rejected by employee: ${rejectionReason || "No reason provided"}`
-          : `Task updated to "${status}" by employee`,
+      title: `Task Status Updated: ${task.title}`,
+      message: `Employee updated task status to "${status}".`,
       type: "task",
-      category:
-        status === "Completed"
-          ? "task-completed"
-          : status === "Rejected"
-          ? "task-rejected"
-          : "task-updated",
-      taskId: task._id,
-      userId: task.assignedBy,
-      priority: task.priority,
-      read: false,
-      createdBy: req.user.id, // ✅ added
+      userId: task.assignedBy, // Notify the admin who assigned it
+      createdBy: req.user.id,
+      link: "/admin/dashboard/task-management", // Link for admin to view tasks
     }).save();
 
-    // ✅ Notify employee
-    await new Notification({
-      title: "Task Status Updated",
-      message: `Your task "${task.title}" status is now "${status}".`,
-      type: "task",
-      category: "task-status-update",
-      taskId: task._id,
-      userId: task.assignedTo,
-      priority: task.priority,
-      read: false,
-      createdBy: req.user.id, // ✅ added
-    }).save();
-
-    res.json({ message: "Task status updated successfully", task });
+    res.json({ message: "Status updated", task });
   } catch (error) {
-    console.error("Update task status error:", error);
-    res.status(500).json({ message: "Error updating task status", error: error.message });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// ===================== DELETE TASK =====================
+// DELETE TASK
 export const deleteTask = async (req, res) => {
   try {
     const { id } = req.params;
-    const task = await Task.findById(id);
+    const { id: userId, role, isMainAdmin } = req.user;
 
-    if (!task) return res.status(404).json({ message: "Task not found" });
+    let query = { _id: id };
+    if (isMainAdmin) {
+      query = { _id: id };
+    } else if (["hr", "manager"].includes(role)) {
+      const mainAdmin = await Admin.findOne({ isMainAdmin: true });
+      query = { _id: id, createdBy: { $in: [userId, mainAdmin?._id] } };
+    } else {
+      query = { _id: id, createdBy: userId };
+    }
 
-    // ✅ Delete associated notifications
+    const task = await Task.findOneAndDelete(query);
+    if (!task) return res.status(404).json({ message: "Task not found or unauthorized" });
+
     await Notification.deleteMany({ taskId: id });
-    await task.deleteOne();
 
-    // ✅ Notify admin about deletion
-    await new Notification({
-      title: "Task Deleted",
-      message: `Task "${task.title}" has been deleted.`,
-      type: "task",
-      category: "task-deleted",
-      taskId: id,
-      userId: req.user.id,
-      read: false,
-      createdBy: req.user.id, // ✅ added
-    }).save();
-
-    res.json({ message: "Task and associated notifications deleted successfully" });
+    res.json({ message: "Task deleted" });
   } catch (error) {
-    console.error("Delete task error:", error);
-    res.status(500).json({ message: "Error deleting task", error: error.message });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// ===================== GET TASK NOTIFICATIONS =====================
+// GET TASK NOTIFICATIONS
 export const getTaskNotifications = async (req, res) => {
   try {
     const notifications = await Notification.find({ userId: req.user.id, type: "task" })
-      .sort({ createdAt: -1 })
-      .limit(20)
-      .populate("taskId", "title status dueDate")
-      .lean();
+      .sort({ createdAt: -1 });
 
     res.json(notifications);
   } catch (error) {
-    console.error("Get task notifications error:", error);
-    res.status(500).json({ message: "Error fetching notifications", error: error.message });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// ===================== MARK NOTIFICATION AS READ =====================
+// MARK AS READ
 export const markNotificationAsRead = async (req, res) => {
   try {
     const { id } = req.params;
-    const notification = await Notification.findByIdAndUpdate(
-      id,
-      { read: true },
-      { new: true }
-    );
-    if (!notification)
-      return res.status(404).json({ message: "Notification not found" });
+    const notification = await Notification.findByIdAndUpdate(id, { read: true }, { new: true });
+    if (!notification) return res.status(404).json({ message: "Not found" });
 
-    res.json({ message: "Notification marked as read", notification });
+    res.json({ message: "Marked as read", notification });
   } catch (error) {
-    console.error("Mark notification error:", error);
-    res.status(500).json({ message: "Error marking notification as read", error: error.message });
+    res.status(500).json({ message: "Server error" });
   }
 };

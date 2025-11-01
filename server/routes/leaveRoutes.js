@@ -1,3 +1,4 @@
+
 import express from "express";
 import {
   getAllLeaves,
@@ -5,17 +6,20 @@ import {
   deleteLeave,
   createLeave,
   getLeaveSummary,
-  getMyLeaves, // ✅ Import getMyLeaves
+  getMyLeaves,
 } from "../controllers/leaveController.js";
-import { verifyToken, adminOnly, employeeOnly } from "../middleware/authMiddleware.js";
+import { verifyToken, allowAdminHrManager, employeeOnly } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+// Employee
 router.post("/", verifyToken, employeeOnly, createLeave);
-router.get("/me", verifyToken, employeeOnly, getMyLeaves); // ✅ Add route for employee to get their own leaves
+router.get("/me", verifyToken, employeeOnly, getMyLeaves);
 router.get("/summary", verifyToken, employeeOnly, getLeaveSummary);
-router.get("/", verifyToken, adminOnly, getAllLeaves); // Admin gets all leaves
-router.put("/:id", verifyToken, adminOnly, updateLeave);
-router.delete("/:id", verifyToken, adminOnly, deleteLeave);
+
+// Admin/HR/Manager
+router.get("/", verifyToken, allowAdminHrManager, getAllLeaves);
+router.put("/:id", verifyToken, allowAdminHrManager, updateLeave);
+router.delete("/:id", verifyToken, allowAdminHrManager, deleteLeave);
 
 export default router;

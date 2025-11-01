@@ -1,3 +1,4 @@
+
 import mongoose from "mongoose";
 
 const leaveSchema = new mongoose.Schema(
@@ -15,9 +16,10 @@ const leaveSchema = new mongoose.Schema(
       enum: ["Pending", "Approved", "Rejected"],
       default: "Pending",
     },
-     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin", required: true },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin", required: true },
   },
   { timestamps: true }
 );
 
-export default mongoose.model("Leave", leaveSchema);
+const Leave = mongoose.models.Leave || mongoose.model("Leave", leaveSchema);
+export default Leave;

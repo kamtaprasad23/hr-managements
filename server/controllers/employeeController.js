@@ -1,51 +1,48 @@
+
 import Employee from "../models/employeeModel.js";
-import Attendance from "../models/attendanceModel.js";
+import Admin from "../models/adminModel.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { jwtSecret } from "../config/config.js";
 
-// --- Authentication ---
+// LOGIN EMPLOYEE
 export const loginEmployee = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const employee = await Employee.findOne({ email });
+    const employee = await Employee.findOne({ email: email.toLowerCase() });
     if (!employee) return res.status(400).json({ message: "Employee not found" });
 
     const isMatch = await bcrypt.compare(password, employee.password);
     if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-    const token = jwt.sign(
-      { id: employee._id, role: "employee", adminId: employee.adminId }, // ✅ include adminId
-      jwtSecret,
-      { expiresIn: "1d" }
-    );
+    const token = jwt.sign({
+      id: employee._id,
+      role: "employee",
+      adminId: employee.adminId,
+    }, jwtSecret, { expiresIn: "7d" });
 
     res.json({
       token,
       employee: { id: employee._id, name: employee.name, email, adminId: employee.adminId },
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// --- Employee Profile Management (for the logged-in user) ---
+// GET PROFILE (Employee)
 export const getProfile = async (req, res) => {
-  console.log("Fetching profile for user ID:", req.user.id);
   try {
     const profile = await Employee.findById(req.user.id).select("-password");
-    if (!profile) {
-      console.log("Employee not found for ID:", req.user.id);
-      return res.status(404).json({ message: "Employee not found" });
-    }
+    if (!profile) return res.status(404).json({ message: "Employee not found" });
+
     res.json(profile);
   } catch (err) {
-    console.error("Profile fetch error:", err);
-    res.status(500).json({ message: "Error fetching profile", error: err.message });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// --- Employee requests profile update (limited to 2 attempts) ---
+// UPDATE PROFILE (Employee)
 export const updateProfile = async (req, res) => {
   try {
     const employeeId = req.user.id;
@@ -64,9 +61,7 @@ export const updateProfile = async (req, res) => {
     ];
     const updates = {};
     for (const field of allowedFields) {
-      if (req.body[field] !== undefined) {
-        updates[field] = req.body[field];
-      }
+      if (req.body[field] !== undefined) updates[field] = req.body[field];
     }
 
     employee.pendingUpdates = updates;
@@ -74,13 +69,22 @@ export const updateProfile = async (req, res) => {
     employee.editCount = (employee.editCount || 0) + 1;
     await employee.save();
 
-    res.json({ message: "Profile update request sent for admin verification", employee });
+    // Notify admin about the update request
+    await new Notification({
+      title: "Profile Update Request",
+      message: `${employee.name} has requested to update their profile.`,
+      type: "alert",
+      userId: employee.createdBy,
+      link: `/admin/dashboard/employee/${employeeId}`,
+    }).save();
+
+    res.json({ message: "Update request sent", employee });
   } catch (error) {
-    res.status(500).json({ message: "Error updating profile", error: error.message });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// --- Upload & Delete Profile Image ---
+// UPLOAD PROFILE IMG
 export const uploadProfileImg = async (req, res) => {
   try {
     const updated = await Employee.findByIdAndUpdate(
@@ -88,12 +92,13 @@ export const uploadProfileImg = async (req, res) => {
       { image: req.file.path },
       { new: true }
     ).select("-password");
-    res.json({ message: "Profile image uploaded", employee: updated });
+    res.json({ message: "Image uploaded", employee: updated });
   } catch (err) {
-    res.status(500).json({ message: "Error uploading image", error: err.message });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
+// DELETE PROFILE IMG
 export const deleteProfileImg = async (req, res) => {
   try {
     const updated = await Employee.findByIdAndUpdate(
@@ -101,26 +106,57 @@ export const deleteProfileImg = async (req, res) => {
       { image: null },
       { new: true }
     ).select("-password");
-    res.json({ message: "Profile image deleted", employee: updated });
+    res.json({ message: "Image deleted", employee: updated });
   } catch (err) {
-    res.status(500).json({ message: "Error deleting image", error: err.message });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// --- Admin Employee Management ---
+// GET EMPLOYEES (Admin/HR/Manager)
 export const getEmployees = async (req, res) => {
   try {
-    // ✅ Only show employees created by this admin
-    const employees = await Employee.find({ createdBy: req.user.id });
+    const { id: userId, role, isMainAdmin } = req.user;
+
+    let query;
+    if (isMainAdmin) {
+      const subAdmins = await Admin.find({ createdBy: userId }).select("_id");
+      const adminIds = [userId, ...subAdmins.map(a => a._id)];
+      query = { createdBy: { $in: adminIds } };
+    } else if (["hr", "manager"].includes(role)) {
+      const mainAdminId = req.user.createdBy; // Use createdBy from token
+      const orgAdminIds = await Admin.find({ createdBy: mainAdminId }).select("_id");
+      const allTeamIds = [mainAdminId, ...orgAdminIds.map(a => a._id)];
+      query = { createdBy: { $in: allTeamIds } };
+    } else {
+      query = { createdBy: userId };
+    }
+
+    const employees = await Employee.find(query);
     res.json(employees);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
+// UPDATE EMPLOYEE (Admin/HR/Manager)
 export const updateEmployee = async (req, res) => {
   try {
     const { id } = req.params;
+    const { id: userId, role, isMainAdmin } = req.user;
+
+    let query;
+    if (isMainAdmin) {
+      const subAdmins = await Admin.find({ createdBy: userId }).select("_id");
+      const adminIds = [userId, ...subAdmins.map(a => a._id)];
+      query = { _id: id, createdBy: { $in: adminIds } };
+    } else if (["hr", "manager"].includes(role)) {
+      const creatorAdmin = await Admin.findById(req.user.createdBy);
+      const orgAdminIds = await Admin.find({ createdBy: creatorAdmin._id }).select("_id");
+      const allTeamIds = [creatorAdmin._id, ...orgAdminIds.map(a => a._id)];
+      query = { _id: id, createdBy: { $in: allTeamIds } };
+    } else {
+      query = { _id: id, createdBy: userId };
+    }
 
     const allowedFields = [
       "name", "email", "phone", "position", "salary", "address",
@@ -140,89 +176,110 @@ export const updateEmployee = async (req, res) => {
       updates.password = await bcrypt.hash(updates.password, salt);
     }
 
-    // ✅ Ensure only creator admin can update this employee
-    const employee = await Employee.findOneAndUpdate(
-      { _id: id, createdBy: req.user.id },
-      updates,
-      { new: true, runValidators: true }
-    ).select("-password");
+    const employee = await Employee.findOneAndUpdate(query, updates, { new: true }).select("-password");
+    if (!employee) return res.status(404).json({ message: "Employee not found or unauthorized" });
 
-    if (!employee)
-      return res.status(404).json({ message: "Employee not found or unauthorized" });
-
-    res.json({ message: "Employee updated successfully", employee });
+    res.json({ message: "Employee updated", employee });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
+// DELETE EMPLOYEE
 export const deleteEmployee = async (req, res) => {
   try {
     const { id } = req.params;
+    const { id: userId, role, isMainAdmin } = req.user;
 
-    // ✅ Only creator admin can delete
-    const employee = await Employee.findOneAndDelete({
-      _id: id,
-      createdBy: req.user.id,
-    });
+    let query;
+    if (isMainAdmin) {
+      const subAdmins = await Admin.find({ createdBy: userId }).select("_id");
+      const adminIds = [userId, ...subAdmins.map(a => a._id)];
+      query = { _id: id, createdBy: { $in: adminIds } };
+    } else if (["hr", "manager"].includes(role)) {
+      const creatorAdmin = await Admin.findById(req.user.createdBy);
+      const orgAdminIds = await Admin.find({ createdBy: creatorAdmin._id }).select("_id");
+      const allTeamIds = [creatorAdmin._id, ...orgAdminIds.map(a => a._id)];
+      query = { _id: id, createdBy: { $in: allTeamIds } };
+    } else {
+      query = { _id: id, createdBy: userId };
+    }
 
-    if (!employee)
-      return res.status(404).json({ message: "Employee not found or unauthorized" });
+    const employee = await Employee.findOneAndDelete(query);
+    if (!employee) return res.status(404).json({ message: "Employee not found or unauthorized" });
 
-    res.json({ message: "Employee deleted successfully" });
+    res.json({ message: "Employee deleted" });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
+// GET EMPLOYEE BY ID
 export const getEmployeeById = async (req, res) => {
   try {
-    console.log("🔍 Backend: Fetching employee with ID:", req.params.id);
+    const { id } = req.params;
+    const { id: userId, role, isMainAdmin } = req.user;
 
-    // ✅ Ensure this admin owns this employee
-    const employee = await Employee.findOne({
-      _id: req.params.id,
-      createdBy: req.user.id,
-    }).select("-password");
+    let query;
+    if (isMainAdmin) {
+      const subAdmins = await Admin.find({ createdBy: userId }).select("_id");
+      const adminIds = [userId, ...subAdmins.map(a => a._id)];
+      query = { _id: id, createdBy: { $in: adminIds } };
+    } else if (["hr", "manager"].includes(role)) {
+      const creatorAdmin = await Admin.findById(req.user.createdBy);
+      const orgAdminIds = await Admin.find({ createdBy: creatorAdmin._id }).select("_id");
+      const allTeamIds = [creatorAdmin._id, ...orgAdminIds.map(a => a._id)];
+      query = { _id: id, createdBy: { $in: allTeamIds } };
+    } else {
+      query = { _id: id, createdBy: userId };
+    }
 
-    if (!employee)
-      return res.status(404).json({ message: "Employee not found or unauthorized" });
+    const employee = await Employee.findOne(query).select("-password");
+    if (!employee) return res.status(404).json({ message: "Employee not found or unauthorized" });
 
     res.json(employee);
   } catch (err) {
-    console.error("❌ Backend Error:", err);
-    res.status(500).json({ message: "Error fetching employee", error: err.message });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
+// VERIFY EMPLOYEE
 export const verifyEmployee = async (req, res) => {
   try {
     const { id } = req.params;
+    const { id: userId, role, isMainAdmin } = req.user;
 
-    // ✅ Verify only if employee belongs to this admin
-    const employee = await Employee.findOne({ _id: id, adminId: req.user.id });
-    if (!employee)
-      return res.status(404).json({ message: "Employee not found or unauthorized" });
+    let query;
+    if (isMainAdmin) {
+      const subAdmins = await Admin.find({ createdBy: userId }).select("_id");
+      const adminIds = [userId, ...subAdmins.map(a => a._id)];
+      query = { _id: id, createdBy: { $in: adminIds } };
+    } else if (["hr", "manager"].includes(role)) {
+      const creatorAdmin = await Admin.findById(req.user.createdBy);
+      const orgAdminIds = await Admin.find({ createdBy: creatorAdmin._id }).select("_id");
+      const allTeamIds = [creatorAdmin._id, ...orgAdminIds.map(a => a._id)];
+      query = { _id: id, createdBy: { $in: allTeamIds } };
+    } else {
+      query = { _id: id, createdBy: userId };
+    }
+
+    const employee = await Employee.findOne(query);
+    if (!employee) return res.status(404).json({ message: "Employee not found or unauthorized" });
 
     employee.verified = true;
     await employee.save();
 
-    res.status(200).json({
-      success: true,
-      message: "Employee verified successfully",
-      employee,
-    });
+    res.status(200).json({ message: "Employee verified", employee });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// --- Employee-specific Data Fetching ---
+// GET EMPLOYEE PROFILE
 export const getEmployeeProfile = async (req, res) => {
   try {
     const empId = req.params.id;
 
-    // ✅ Restrict employee to own data
     if (req.user.role === "employee" && req.user.id !== empId) {
       return res.status(403).json({ message: "Access denied" });
     }
@@ -232,22 +289,21 @@ export const getEmployeeProfile = async (req, res) => {
 
     res.json(employee);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
-// --- Employee Dashboard (Attendance) ---
+// EMPLOYEE DASHBOARD
 export const getEmployeeDashboard = async (req, res) => {
   try {
     const employeeId = req.user.id;
     const today = new Date();
     const attendance = await Attendance.find({
-      employee: employeeId,
-      adminId: req.user.adminId, // ✅ ensure same admin
+      user: employeeId,
       date: today,
     });
     res.json({ attendance });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: "Server error" });
   }
 };

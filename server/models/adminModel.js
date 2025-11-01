@@ -1,10 +1,18 @@
+
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
 const adminSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true, lowercase: true },
   password: { type: String, required: true },
+  role: {
+    type: String,
+    enum: ["admin", "hr", "manager"],
+    default: "admin",
+  },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin" },
+  isMainAdmin: { type: Boolean, default: false },
 });
 
 adminSchema.pre("save", async function (next) {

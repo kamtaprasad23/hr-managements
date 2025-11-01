@@ -267,7 +267,7 @@ export default function AdminEmpManagement() {
                 <tr key={emp._id} className="border-b hover:text-black hover:bg-gray-300">
                   <td className="p-3 whitespace-nowrap text-sm text-gray-500">{`EMP${String(index + 1).padStart(3, '0')}`}</td>
                   <td className="p-3 whitespace-nowrap ">
-                    <Link to={`/admin/dashboard/employee/${emp._id}`} className="hover:underline font-medium">
+                    <Link to={`/admin/dashboard/employee/${emp._id}`} className="hover:underline font-medium text-blue-500 hover:text-blue-700">
                       {emp.name}
                     </Link>
                   </td>

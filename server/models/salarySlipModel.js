@@ -1,3 +1,4 @@
+
 import mongoose from "mongoose";
 
 const salarySlipSchema = new mongoose.Schema({
@@ -9,7 +10,7 @@ const salarySlipSchema = new mongoose.Schema({
   netSalary: { type: Number, required: true },
   remarks: { type: String },
   sentAt: { type: Date, default: Date.now },
-   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin", required: true },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin", required: true },
 });
 
 export default mongoose.model("SalarySlip", salarySlipSchema);

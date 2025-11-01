@@ -1,3 +1,5 @@
+
+
 import mongoose from "mongoose";
 
 const taskSchema = new mongoose.Schema({
@@ -18,7 +20,7 @@ const taskSchema = new mongoose.Schema({
     enum: ["Pending", "In Progress", "Completed", "Rejected"], 
     default: "Pending" 
   },
-   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin", required: true },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin", required: true },
   dueDate: { type: Date, required: true },
   priority: { 
     type: String, 
@@ -26,17 +28,10 @@ const taskSchema = new mongoose.Schema({
     default: "Medium" 
   },
   notes: { type: String },
-rejectionReason: { type: String }, // 🔥 New field to store rejection reason
-attachments: [{ type: String }],
-
-  completionDate: { type: Date },
-  notes: { type: String },
+  rejectionReason: { type: String },
   attachments: [{ type: String }],
-},
-
-{ timestamps: true });
-
-
+  completionDate: { type: Date },
+}, { timestamps: true });
 
 taskSchema.index({ assignedTo: 1, status: 1 });
 taskSchema.index({ dueDate: 1 });

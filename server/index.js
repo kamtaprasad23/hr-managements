@@ -27,7 +27,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173", // Local frontend
-      "https://samprakshiinfinitysolution-hr-management.onrender.com", // ✅ FIXED (removed typo & slash)
+      "https://samprakshiinfinitysolution-hr-management.onrender.com", 
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,

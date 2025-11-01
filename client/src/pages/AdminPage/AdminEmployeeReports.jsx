@@ -179,178 +179,192 @@ export default function AdminEmpReports() {
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">📊 Reports</h1>
-      <p className=" mb-6">Filter and download reports for attendance, employees, or salaries.</p>
+   <div className="p-4 sm:p-6 max-w-6xl mx-auto">
+  <h1 className="text-xl sm:text-2xl font-bold mb-4">📊 Reports</h1>
+  <p className="text-sm sm:text-base mb-6">
+    Filter and download reports for attendance, employees, or salaries.
+  </p>
 
-      {error && (
-        <div className=" border border-red-200 rounded-lg p-4 mb-4">
-          <p className="text-red-600 font-medium">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-2 bg-red-500 px-4 py-1 rounded hover:bg-red-600"
-          >
-            Retry
-          </button>
-        </div>
-      )}
+  {error && (
+    <div className="border border-red-200 rounded-lg p-4 mb-4">
+      <p className="text-red-600 font-medium">{error}</p>
+      <button
+        onClick={() => window.location.reload()}
+        className="mt-2 bg-red-500 text-white px-4 py-1 rounded hover:bg-red-600"
+      >
+        Retry
+      </button>
+    </div>
+  )}
 
-      <div className="flex flex-col md:flex-row gap-4 mb-6 p-4 rounded-lg shadow transition-colors">
-        <select
-          name="reportType"
-          value={filters.reportType}
-          onChange={handleFilterChange}
-          className="border text-black bg-white p-2 rounded w-full md:w-1/4"
-        >
-          <option value="attendance">Attendance</option>
-          <option value="employee">Employee</option>
-          <option value="salary">Salary</option>
-        </select>
+  {/* Filter Controls */}
+  <div className="flex flex-col md:flex-row flex-wrap gap-3 sm:gap-4 mb-6 p-4 rounded-lg shadow bg-white">
+    <select
+      name="reportType"
+      value={filters.reportType}
+      onChange={handleFilterChange}
+      className="border text-black bg-white p-2 rounded w-full md:w-1/5"
+    >
+      <option value="attendance">Attendance</option>
+      <option value="employee">Employee</option>
+      <option value="salary">Salary</option>
+    </select>
 
-        <select
-          name="dateType"
-          value={filters.dateType}
-          onChange={handleFilterChange}
-          className="border text-black bg-white p-2 rounded w-full md:w-1/4"
-        >
-          <option value="month">Month</option>
-          <option value="range">Custom Range</option>
-        </select>
+    <select
+      name="dateType"
+      value={filters.dateType}
+      onChange={handleFilterChange}
+      className="border text-black bg-white p-2 rounded w-full md:w-1/5"
+    >
+      <option value="month">Month</option>
+      <option value="range">Custom Range</option>
+    </select>
 
-        {filters.dateType === "month" ? (
-          <input
-            type="month"
-            name="month"
-            value={filters.month}
-            onChange={handleFilterChange}
-            className="border text-black bg-white p-2 rounded w-full md:w-1/4"
-          />
-        ) : (
-          <>
-            <input
-              type="date"
-              name="startDate"
-              value={filters.startDate}
-              onChange={handleFilterChange}
-              className="border text-black bg-white p-2 rounded w-full md:w-1/4"
-            />
-            <input
-              type="date"
-              name="endDate"
-              value={filters.endDate}
-              onChange={handleFilterChange}
-              className="border text-black bg-white p-2 rounded w-full md:w-1/4"
-            />
-          </>
-        )}
-
+    {filters.dateType === "month" ? (
+      <input
+        type="month"
+        name="month"
+        value={filters.month}
+        onChange={handleFilterChange}
+        className="border text-black bg-white p-2 rounded w-full md:w-1/5"
+      />
+    ) : (
+      <>
         <input
-          type="text"
-          name="search"
-          placeholder="Search by name"
-          value={filters.search}
+          type="date"
+          name="startDate"
+          value={filters.startDate}
           onChange={handleFilterChange}
-          className="border text-black bg-white p-2 rounded w-full md:w-1/4"
+          className="border text-black bg-white p-2 rounded w-full md:w-1/5"
         />
-
-        <select
-          name="sort"
-          value={filters.sort}
+        <input
+          type="date"
+          name="endDate"
+          value={filters.endDate}
           onChange={handleFilterChange}
-          className="border text-black bg-white p-2 rounded w-full md:w-1/4"
-        >
-          <option value="a-z">A-Z</option>
-          <option value="z-a">Z-A</option>
-        </select>
+          className="border text-black bg-white p-2 rounded w-full md:w-1/5"
+        />
+      </>
+    )}
 
-        <button
-          onClick={handleFilter}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Filter
-        </button>
+    <input
+      type="text"
+      name="search"
+      placeholder="Search by name"
+      value={filters.search}
+      onChange={handleFilterChange}
+      className="border text-black bg-white p-2 rounded w-full md:w-1/5"
+    />
 
-        <button
-          onClick={downloadCSV}
-          disabled={filtered.length === 0}
-          className={`px-4 py-2 rounded transition-colors ${
-            filtered.length === 0
-              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-              : "bg-green-600 hover:bg-green-700 text-white"
-          }`}
-        >
-          Download CSV
-        </button>
-      </div>
+    <select
+      name="sort"
+      value={filters.sort}
+      onChange={handleFilterChange}
+      className="border text-black bg-white p-2 rounded w-full md:w-1/5"
+    >
+      <option value="a-z">A-Z</option>
+      <option value="z-a">Z-A</option>
+    </select>
 
-      <table className="w-full border border-gray-300 rounded-lg">
-        <thead className="bg-gray-300 text-black">
-          <tr>
-            <th className="p-2 text-left">Name</th>
-            <th className="p-2 text-left">Email</th>
-            {filters.reportType === "attendance" && (
-              <>
-                <th className="p-2 text-left">Date</th>
-                <th className="p-2 text-left">Check In</th>
-                <th className="p-2 text-left">Check Out</th>
-                <th className="p-2 text-left">Hours</th>
-              </>
-            )}
-            {filters.reportType === "employee" && (
-              <>
-                <th className="p-2 text-left">Phone</th>
-                <th className="p-2 text-left">Position</th>
-                <th className="p-2 text-left">Salary</th>
-              </>
-            )}
-            {filters.reportType === "salary" && (
-              <>
-                <th className="p-2 text-left">Month</th>
-                <th className="p-2 text-left">Net Salary (Amount)</th>
-                <th className="p-2 text-left">Status</th>
-              </>
-            )}
-          </tr>
-        </thead>
-        <tbody>
-          {filtered.length > 0 ? (
-            filtered.map((r, i) => (
-              <tr key={i} className="border-b">
-                <td className="p-2">{r.name}</td>
-                <td className="p-2">{r.email}</td>
-                {filters.reportType === "attendance" && (
-                  <>
-                    <td className="p-2">{r.date ? new Date(r.date).toLocaleDateString() : "-"}</td>
-                    <td className="p-2">{r.checkIn ? new Date(r.checkIn).toLocaleTimeString() : "-"}</td>
-                    <td className="p-2">{r.checkOut ? new Date(r.checkOut).toLocaleTimeString() : "-"}</td>
-                    <td className="p-2">{r.totalHours || "0"}</td>
-                  </>
-                )}
-                {filters.reportType === "employee" && (
-                  <>
-                    <td className="p-2">{r.phone}</td>
-                    <td className="p-2">{r.position}</td>
-                    <td className="p-2">{r.salary}</td>
-                  </>
-                )}
-                {filters.reportType === "salary" && (
-                  <>
-                    <td className="p-2">{r.month}</td>
-                    <td className="p-2">{r.amount}</td>
-                    <td className="p-2">{r.status}</td>
-                  </>
-                )}
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan={filters.reportType === "attendance" ? 6 : 5} className="text-center p-4">
-                No records match the filters
-              </td>
-            </tr>
+    <div className="flex flex-wrap gap-2 w-full md:w-auto">
+      <button
+        onClick={handleFilter}
+        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 w-full sm:w-auto"
+      >
+        Filter
+      </button>
+
+      <button
+        onClick={downloadCSV}
+        disabled={filtered.length === 0}
+        className={`px-4 py-2 rounded transition-colors w-full sm:w-auto ${
+          filtered.length === 0
+            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+            : "bg-green-600 hover:bg-green-700 text-white"
+        }`}
+      >
+        Download CSV
+      </button>
+    </div>
+  </div>
+
+  {/* Responsive Table */}
+  <div className="overflow-x-auto rounded-lg shadow">
+    <div className="max-h-[60vh] overflow-y-auto">
+      <table className="w-full min-w-max border border-gray-300 text-sm sm:text-base">
+        <thead className="bg-gray-300 text-black sticky top-0">
+        <tr>
+          <th className="p-2 text-left">Name</th>
+          <th className="p-2 text-left">Email</th>
+          {filters.reportType === "attendance" && (
+            <>
+              <th className="p-2 text-left">Date</th>
+              <th className="p-2 text-left">Check In</th>
+              <th className="p-2 text-left">Check Out</th>
+              <th className="p-2 text-left">Hours</th>
+            </>
           )}
-        </tbody>
+          {filters.reportType === "employee" && (
+            <>
+              <th className="p-2 text-left">Phone</th>
+              <th className="p-2 text-left">Position</th>
+              <th className="p-2 text-left">Salary</th>
+            </>
+          )}
+          {filters.reportType === "salary" && (
+            <>
+              <th className="p-2 text-left">Month</th>
+              <th className="p-2 text-left">Net Salary</th>
+              <th className="p-2 text-left">Status</th>
+            </>
+          )}
+        </tr>
+      </thead>
+      <tbody>
+        {filtered.length > 0 ? (
+          filtered.map((r, i) => (
+            <tr key={i} className="border-b hover:bg-gray-100 hover:text-gray-950">
+              <td className="p-2">{r.name}</td>
+              <td className="p-2">{r.email}</td>
+              {filters.reportType === "attendance" && (
+                <>
+                  <td className="p-2">{r.date ? new Date(r.date).toLocaleDateString() : "-"}</td>
+                  <td className="p-2">{r.checkIn ? new Date(r.checkIn).toLocaleTimeString() : "-"}</td>
+                  <td className="p-2">{r.checkOut ? new Date(r.checkOut).toLocaleTimeString() : "-"}</td>
+                  <td className="p-2">{r.totalHours || "0"}</td>
+                </>
+              )}
+              {filters.reportType === "employee" && (
+                <>
+                  <td className="p-2">{r.phone}</td>
+                  <td className="p-2">{r.position}</td>
+                  <td className="p-2">{r.salary}</td>
+                </>
+              )}
+              {filters.reportType === "salary" && (
+                <>
+                  <td className="p-2">{r.month}</td>
+                  <td className="p-2">{r.amount}</td>
+                  <td className="p-2">{r.status}</td>
+                </>
+              )}
+            </tr>
+          ))
+        ) : (
+          <tr>
+            <td
+              colSpan={filters.reportType === "attendance" ? 6 : 5}
+              className="text-center p-4"
+            >
+              No records match the filters
+            </td>
+          </tr>
+        )}
+      </tbody>
       </table>
     </div>
+  </div>
+</div>
+
   );
 }
