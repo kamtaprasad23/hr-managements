@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import API from "../../utils/api";
 
-
 export const verifyUser = createAsyncThunk(
   "auth/verifyUser",
   async (_, { rejectWithValue }) => {
@@ -9,16 +8,24 @@ export const verifyUser = createAsyncThunk(
     if (!token) {
       return rejectWithValue("No token found");
     }
-    try {
-   
-      const response = await API.get("/admin/me");
-      return response.data;
-    } catch (error) {
-  
-      localStorage.removeItem("token");
-      localStorage.removeItem("role");
-      return rejectWithValue("Token is invalid or expired");
+
+    // try several endpoints that might return logged-in user
+    const endpoints = ["/profile", "/admin/profile", "/admin/me", "/auth/me"];
+    for (const ep of endpoints) {
+      try {
+        const response = await API.get(ep);
+        // return user data + role (prefer stored role if present)
+        return { ...response.data, role: localStorage.getItem("role") || response.data.role };
+      } catch (err) {
+        // try next endpoint
+        continue;
+      }
     }
+
+    // all attempts failed -> clear token and reject
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    return rejectWithValue("Token invalid or endpoints missing");
   }
 );
 
@@ -28,7 +35,7 @@ const authSlice = createSlice({
     user: null,
     isAuthenticated: false,
     role: null,
-    loading: true, 
+    loading: false, // <- set false initially
     error: null,
   },
   reducers: {
@@ -56,7 +63,7 @@ const authSlice = createSlice({
       .addCase(verifyUser.fulfilled, (state, action) => {
         state.isAuthenticated = true;
         state.user = action.payload;
-        state.role = action.payload.role;
+        state.role = action.payload.role || localStorage.getItem("role");
         state.loading = false;
       })
       .addCase(verifyUser.rejected, (state) => {

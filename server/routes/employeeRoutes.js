@@ -7,6 +7,7 @@ import {
   loginEmployee,
   getEmployeeProfile,
   getEmployeeDashboard,
+  changeEmployeePassword,
 } from "../controllers/employeeController.js";
 import {
   verifyToken,
@@ -22,6 +23,7 @@ router.post("/login", loginEmployee);
 router.get("/dashboard", verifyToken, employeeOnly, getEmployeeDashboard);
 router.get("/profile", verifyToken, employeeOnly, getProfile);
 router.put("/profile", verifyToken, employeeOnly, updateProfile);
+router.put("/profile/change-password", verifyToken, employeeOnly, changeEmployeePassword);
 router.delete("/profile-img", verifyToken, employeeOnly, deleteProfileImg);
 router.get("/profile/:id", verifyToken, employeeOnly, getEmployeeProfile);
 
