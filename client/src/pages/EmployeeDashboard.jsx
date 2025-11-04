@@ -120,10 +120,10 @@ function Card({ icon, color, title, text, path }) {
   return (
     <Link to={path} className="w-full">
       <div
-        className={`rounded-xl shadow-md p-5 flex items-center gap-4 border-l-4 transition-all duration-300 hover:shadow-xl hover:scale-105 cursor-pointer  dark:bg-gray-800 dark:text-white ${colorMap[color].split(" ")[0]} dark:border-gray-600  dark:hover:bg-gray-700`}
+        className={`rounded-xl shadow-md p-5 flex items-center gap-4 border-l-4 transition-all duration-300 hover:shadow-xl hover:scale-105 cursor-pointer ${colorMap[color].split(" ")[0]} `}
       >
         <div
-          className={`p-3 rounded-full  dark:bg-gray-700 ${colorMap[color].split(" ")[1]} dark:text-white`}
+          className={`p-3 rounded-full   ${colorMap[color].split(" ")[1]}`}
         >
           {icon}
         </div>

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { Eye, EyeOff } from "lucide-react"; // 👈 added
+import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { loginSuccess } from "../features/auth/authSlice";
 import API from "../utils/api";
 import Loader from "../components/Laoder"
@@ -13,7 +13,7 @@ function EmployeeLogin() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); // 👈 added
+  const [showPassword, setShowPassword] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -56,81 +56,90 @@ function EmployeeLogin() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-500 via-pink-500 to-indigo-600 animate-gradient-x">
+    <div className="min-h-screen w-full lg:grid lg:grid-cols-2">
       {loading && <Loader />}
-
-      <form
-        onSubmit={handleLogin}
-        className="text-black bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md transform hover:scale-105 transition-transform duration-300"
-      >
-        <h2 className="text-3xl font-bold mb-8 text-center text-blue-600 drop-shadow-lg">
-          Employee Login
-        </h2>
-
-        {error && (
-          <p className="text-red-600 text-center mb-4 bg-red-100 p-2 rounded">
-            {error}
-          </p>
-        )}
-        {success && (
-          <p className="text-green-600 text-center mb-4 bg-green-100 p-2 rounded">
-            {success}
-          </p>
-        )}
-
-        <div className="mb-4">
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={form.email}
-            onChange={handleChange}
-            required
-            disabled={loading}
-            className="w-full p-4 border text-black border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        {/* 👇 password field with toggle */}
-        <div className="mb-6 relative">
-          <input
-            type={showPassword ? "text" : "password"}
-            name="password"
-            placeholder="Password"
-            value={form.password}
-            onChange={handleChange}
-            required
-            disabled={loading}
-            className="w-full p-4 text-black border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 pr-10"
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600"
-          >
-            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-          </button>
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className={`w-full py-3 rounded-xl text-white shadow-lg transition-all duration-200 ${
-            loading
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
-          }`}
-        >
-          {loading ? "Logging in..." : "Login"}
-        </button>
-
-        <p className="mt-4 text-center text-black">
-          Back to{" "}
-          <Link to="/" className="text-yellow-500 hover:underline">
-            Login Selection
-          </Link>
+      <div className="hidden lg:flex flex-col items-center justify-center bg-gray-800 text-white p-12 text-center">
+        <h1 className="text-4xl font-bold mb-4">Welcome, Employee!</h1>
+        <p className="text-lg text-gray-300">
+          Access your dashboard, tasks, and attendance records.
         </p>
-      </form>
+        <div className="mt-8 w-full max-w-xs h-64 bg-gray-700 rounded-lg"></div>
+      </div>
+
+      <div className="flex items-center justify-center p-6 sm:p-12 bg-gray-100 dark:bg-gray-900">
+        <form
+          onSubmit={handleLogin}
+          className="bg-white dark:bg-gray-800 text-black dark:text-white p-8 rounded-2xl shadow-lg w-full max-w-md"
+        >
+          <h2 className="text-3xl font-bold mb-2 text-center text-gray-800 dark:text-white">
+            Employee Login
+          </h2>
+          <p className="text-center text-gray-500 dark:text-gray-400 mb-8">
+            Sign in to continue
+          </p>
+
+          {error && (
+            <p className="text-red-500 text-center mb-4 bg-red-100 dark:bg-red-900/30 p-3 rounded-lg">
+              {error}
+            </p>
+          )}
+          {success && (
+            <p className="text-green-500 text-center mb-4 bg-green-100 dark:bg-green-900/30 p-3 rounded-lg">
+              {success}
+            </p>
+          )}
+
+          <div className="mb-4 relative">
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={form.email}
+              onChange={handleChange}
+              required
+              disabled={loading}
+              className="w-full p-4 pl-12 text-black dark:text-white bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="mb-6 relative">
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              placeholder="Password"
+              value={form.password}
+              onChange={handleChange}
+              required
+              disabled={loading}
+              className="w-full p-4 pl-12 border text-black dark:text-white bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pr-12"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400"
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold shadow-lg hover:bg-blue-700 transition-all disabled:bg-blue-400 disabled:cursor-not-allowed"
+          >
+            {loading ? "Logging in..." : "Login"}
+          </button>
+
+          <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
+            Back to{" "}
+            <Link to="/" className="font-semibold text-blue-600 hover:underline">
+              Login Selection
+            </Link>
+          </p>
+        </form>
+      </div>
     </div>
   );
 }

@@ -242,3 +242,89 @@ export const getAttendance = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// ADMIN/HR/MANAGER CHECK-IN
+export const adminCheckIn = async (req, res) => {
+  try {
+    const adminId = req.user.id; // Middleware से ID प्राप्त करें
+    const now = moment().tz("Asia/Kolkata");
+    const dateOnly = new Date(now.format("YYYY-MM-DD"));
+    const timeStr = now.format("HH:mm");
+
+    let att = await Attendance.findOne({ user: adminId, date: dateOnly });
+
+    if (att && att.checkIn) {
+      return res.status(400).json({ message: "Already checked in today" });
+    }
+
+    if (!att) {
+      att = new Attendance({
+        user: adminId,
+        userModel: 'Admin', // मॉडल का प्रकार सेट करें
+        date: dateOnly,
+        checkIn: now.toDate(),
+        login: timeStr,
+      });
+    } else {
+      att.checkIn = now.toDate();
+      att.login = timeStr;
+    }
+
+    const loginTime = now.hour() * 60 + now.minute();
+    if (loginTime > 10 * 60 + 10) att.status = "Late";
+    else att.status = "Present";
+
+    await att.save();
+
+    res.json({ message: "Checked in successfully", att });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ADMIN/HR/MANAGER CHECK-OUT
+export const adminCheckOut = async (req, res) => {
+  try {
+    const adminId = req.user.id;
+    const dateOnly = new Date(moment().tz("Asia/Kolkata").format("YYYY-MM-DD"));
+
+    const att = await Attendance.findOne({ user: adminId, date: dateOnly });
+    if (!att || !att.checkIn) {
+      return res.status(400).json({ message: "No check-in found for today" });
+    }
+    if (att.checkOut) {
+      return res.status(400).json({ message: "Already checked out today" });
+    }
+
+    const now = moment().tz("Asia/Kolkata");
+    att.checkOut = now.toDate();
+    att.logout = now.format("HH:mm");
+
+    const diffMs = new Date(att.checkOut) - new Date(att.checkIn);
+    att.totalHours = Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100;
+    att.status = getRemark(att.login, att.logout);
+
+    await att.save();
+    res.json({ message: "Checked out successfully", att });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// GET ALL SUB-ADMINS' ATTENDANCE (For Main Admin)
+export const getSubAdminAttendance = async (req, res) => {
+  try {
+    // 1. Find all sub-admins created by the current main admin
+    const subAdmins = await Admin.find({ createdBy: req.user.id }).select('_id');
+    const subAdminIds = subAdmins.map(admin => admin._id);
+
+    // 2. Find attendance records only for those sub-admins
+    const records = await Attendance.find({ user: { $in: subAdminIds }, userModel: 'Admin' })
+      .populate("user", "name email role")
+      .sort({ date: -1 });
+
+    res.json(records);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+};

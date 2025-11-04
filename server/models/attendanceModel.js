@@ -1,31 +1,29 @@
-
 import mongoose from "mongoose";
 
-const attendanceSchema = new mongoose.Schema(
+const { Schema } = mongoose;
+
+const attendanceSchema = new Schema(
   {
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "Employee", required: true },
-    date: { type: Date, required: true },
+    user: {
+      type: Schema.Types.ObjectId,
+      // dynamic ref: will refer to "Employee" or "Admin" depending on userModel
+      refPath: "userModel",
+      required: true,
+    },
+    userModel: {
+      type: String,
+      enum: ["Employee", "Admin"],
+      default: "Employee",
+    },
+    createdBy: { type: Schema.Types.ObjectId, ref: "Admin" }, // who created / owns this record
+    date: { type: Date, required: true }, // day-only (store as YYYY-MM-DD at 00:00)
     checkIn: { type: Date },
     checkOut: { type: Date },
-    checkInLocation: { lat: Number, lng: Number, accuracy: Number },
-    checkOutLocation: { lat: Number, lng: Number, accuracy: Number },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "Admin", required: true },
-    status: {
-      type: String,
-      enum: [
-        "Present",
-        "Absent",
-        "Late",
-        "Half Day",
-        "Late Login",
-        "Early Checkout",
-        "Incomplete",
-      ],
-      default: "Present",
-    },
-    totalHours: { type: Number, default: 0 },
-    login: { type: String },
-    logout: { type: String },
+    login: { type: String }, // HH:mm
+    logout: { type: String }, // HH:mm
+    totalHours: { type: Number },
+    status: { type: String }, // Present / Late / Absent / etc.
+    remark: { type: String },
   },
   { timestamps: true }
 );

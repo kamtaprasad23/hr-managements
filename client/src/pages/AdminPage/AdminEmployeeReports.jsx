@@ -64,23 +64,39 @@ export default function AdminEmpReports() {
       }
 
       // Map data to unified structure
-      const formatted = dataToProcess.map((r) => ({
-        id: r._id,
-        name: r.employeeId?.name || r.user?.name || r.name || "Unknown",
-        email: r.employeeId?.email || r.user?.email || r.email || "-",
-        Department: r.user?.department || r.employee?.department || r.department || "-",
-        role: r.user?.position || r.employee?.position || r.role || "-",
-        date: r.date,
-        checkIn: r.checkIn,
-        checkOut: r.checkOut,
-        totalHours: r.totalHours || 0,
-        status: r.status || (r.sentAt ? "Sent" : "Pending"),
-        phone: r.phone || "-",
-        position: r.position || "-",
-        salary: r.salary || "-",
-        month: r.month ? `${r.month}/${r.year}` : "",
-        amount: r.netSalary || "0",
-      }));
+      const formatted = dataToProcess.map((r) => {
+        // helper to safely read populated or raw id fields
+        const getName = (rec) => {
+          if (!rec) return "Unknown";
+          if (rec.user && typeof rec.user === "object") return rec.user.name || "Unknown";
+          if (rec.employeeId && typeof rec.employeeId === "object") return rec.employeeId.name || "Unknown";
+          return rec.name || (rec.user && typeof rec.user === "string" ? "Unknown" : "Unknown");
+        };
+        const getEmail = (rec) => {
+          if (!rec) return "-";
+          if (rec.user && typeof rec.user === "object") return rec.user.email || "-";
+          if (rec.employeeId && typeof rec.employeeId === "object") return rec.employeeId.email || "-";
+          return rec.email || "-";
+        };
+
+        return {
+          id: r._id,
+          name: getName(r),
+          email: getEmail(r),
+          Department: r.user?.department || r.employee?.department || r.department || "-",
+          role: r.user?.position || r.employee?.position || r.role || "-",
+          date: r.date,
+          checkIn: r.checkIn,
+          checkOut: r.checkOut,
+          totalHours: r.totalHours || 0,
+          status: r.status || (r.sentAt ? "Sent" : "Pending"),
+          phone: r.phone || "-",
+          position: r.position || "-",
+          salary: r.salary || "-",
+          month: r.month ? `${r.month}/${r.year}` : "",
+          amount: r.netSalary || "0",
+        };
+      });
 
       setRecords(formatted);
       applyFilters(formatted);
@@ -198,26 +214,26 @@ export default function AdminEmpReports() {
   )}
 
   {/* Filter Controls */}
-  <div className="flex flex-col md:flex-row flex-wrap gap-3 sm:gap-4 mb-6 p-4 rounded-lg shadow bg-white">
+  <div className="flex flex-col md:flex-row flex-wrap gap-3 sm:gap-4 mb-6 p-4 rounded-lg shadow bg">
     <select
       name="reportType"
       value={filters.reportType}
       onChange={handleFilterChange}
-      className="border text-black bg-white p-2 rounded w-full md:w-1/5"
+      className="border  p-2 rounded w-full md:w-1/5"
     >
-      <option value="attendance">Attendance</option>
-      <option value="employee">Employee</option>
-      <option value="salary">Salary</option>
+      <option value="attendance"className="text-gray-950">Attendance</option>
+      <option value="employee"className="text-gray-950">Employee</option>
+      <option value="salary"className="text-gray-950">Salary</option>
     </select>
 
     <select
       name="dateType"
       value={filters.dateType}
       onChange={handleFilterChange}
-      className="border text-black bg-white p-2 rounded w-full md:w-1/5"
+      className="border p-2 rounded w-full md:w-1/5"
     >
-      <option value="month">Month</option>
-      <option value="range">Custom Range</option>
+      <option value="month"className="text-gray-950">Month</option>
+      <option value="range"className="text-gray-950">Custom Range</option>
     </select>
 
     {filters.dateType === "month" ? (
@@ -226,7 +242,7 @@ export default function AdminEmpReports() {
         name="month"
         value={filters.month}
         onChange={handleFilterChange}
-        className="border text-black bg-white p-2 rounded w-full md:w-1/5"
+        className="border p-2 rounded w-full md:w-1/5"
       />
     ) : (
       <>
@@ -235,14 +251,14 @@ export default function AdminEmpReports() {
           name="startDate"
           value={filters.startDate}
           onChange={handleFilterChange}
-          className="border text-black bg-white p-2 rounded w-full md:w-1/5"
+          className="border p-2 rounded w-full md:w-1/5"
         />
         <input
           type="date"
           name="endDate"
           value={filters.endDate}
           onChange={handleFilterChange}
-          className="border text-black bg-white p-2 rounded w-full md:w-1/5"
+          className="border p-2 rounded w-full md:w-1/5"
         />
       </>
     )}
@@ -253,17 +269,17 @@ export default function AdminEmpReports() {
       placeholder="Search by name"
       value={filters.search}
       onChange={handleFilterChange}
-      className="border text-black bg-white p-2 rounded w-full md:w-1/5"
+      className="border p-2 rounded w-full md:w-1/5"
     />
 
     <select
       name="sort"
       value={filters.sort}
       onChange={handleFilterChange}
-      className="border text-black bg-white p-2 rounded w-full md:w-1/5"
+      className="border  p-2 rounded w-full md:w-1/5"
     >
-      <option value="a-z">A-Z</option>
-      <option value="z-a">Z-A</option>
+      <option value="a-z"className="text-gray-950">A-Z</option>
+      <option value="z-a"className="text-gray-950">Z-A</option>
     </select>
 
     <div className="flex flex-wrap gap-2 w-full md:w-auto">

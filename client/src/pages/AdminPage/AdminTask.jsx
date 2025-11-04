@@ -256,7 +256,8 @@ export default function AdminTask() {
                 {tasks.map((task) => (
                   <tr
                     key={task._id}
-                    className="block sm:table-row border-b sm:border-none mb-4 sm:mb-0 hover:bg-gray-400 hover:text-white dark:hover:text-white dark:hover:bg-black transition-colors"
+                 
+                  className="bg-gray-300 text-black sticky top-0 z-10"
                   >
                     <td className="p-4 sm:px-6 sm:py-4">
                       <div className="font-medium">{task.title}</div>
@@ -312,41 +313,52 @@ export default function AdminTask() {
 
       {/* Task Modal */}
       {showModal && selectedTask && (
-        <Modal onClose={closeModal}>
-          <h2 className="text-xl font-bold mb-2">{selectedTask.title}</h2>
-          <p className="text-sm mb-2">{selectedTask.description}</p>
-          <p><strong>Assigned To:</strong> {selectedTask.assignedTo?.name}</p>
-          <p><strong>Due Date:</strong> {new Date(selectedTask.dueDate).toLocaleDateString()}</p>
-          <p><strong>Priority:</strong> {selectedTask.priority}</p>
-          <p><strong>Status:</strong> {selectedTask.status}</p>
-        </Modal>
+        <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50 p-4 bg-black/50">
+          <div className="rounded-lg p-6 max-w-md w-full bg-white text-black dark:bg-gray-800 dark:text-white">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Task Details</h2>
+              <button onClick={closeModal} className="hover:text-gray-700">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="space-y-3">
+              <p><strong>Title:</strong> {selectedTask.title}</p>
+              <p><strong>Description:</strong> {selectedTask.description}</p>
+              <p><strong>Assigned To:</strong> {selectedTask.assignedTo?.name}</p>
+              <p><strong>Due Date:</strong> {new Date(selectedTask.dueDate).toLocaleDateString()}</p>
+              <p><strong>Priority:</strong> {selectedTask.priority}</p>
+              <p><strong>Status:</strong> {selectedTask.status}</p>
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button onClick={closeModal} className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500">Close</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <Modal onClose={closeDeleteModal} >
-          <h2 className="text-lg font-bold mb-4">Confirm Delete</h2>
-          <p className="mb-4">Are you sure you want to delete this task? This action cannot be undone.</p>
-          <div className="flex justify-end gap-4">
-            <button
-              onClick={closeDeleteModal}
-              className="px-4 py-2 rounded-lg bg-gray-100 text-black  dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleDeleteTask}
-              disabled={countdown > 0}
-              className={`px-4 py-2 rounded-lg text-white ${
-                countdown > 0
-                  ? "bg-red-300 dark:bg-red-800 cursor-not-allowed"
-                  : "bg-red-600 dark:bg-red-500 hover:bg-red-700 dark:hover:bg-red-600"
-              }`}
-            >
-              {countdown > 0 ? `Delete (${countdown})` : "Delete"}
-            </button>
+        <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50 p-4 bg-black/50">
+          <div className="rounded-lg p-6 max-w-md w-full bg-white text-black dark:bg-gray-800 dark:text-white">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Confirm Deletion</h2>
+              <button onClick={closeDeleteModal} className="hover:text-gray-700">
+                <X size={20} />
+              </button>
+            </div>
+            <p className="mb-6">Are you sure you want to delete this task? This action cannot be undone.</p>
+            <div className="flex justify-end gap-4">
+              <button onClick={closeDeleteModal} className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500">Cancel</button>
+              <button
+                onClick={handleDeleteTask}
+                disabled={countdown > 0}
+                className={`px-4 py-2 rounded-lg text-white transition ${countdown > 0 ? "bg-red-400 cursor-not-allowed" : "bg-red-600 hover:bg-red-700"}`}
+              >
+                {countdown > 0 ? `Delete (${countdown})` : "Delete"}
+              </button>
+            </div>
           </div>
-        </Modal>
+        </div>
       )}
     </div>
   );

@@ -35,7 +35,7 @@ export default function EmpSidebar({ isOpen }) {
             to={item.path}
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-2 rounded-lg transition-colors duration-200 ${
-                isActive ? "bg-blue-600 text-white" : " dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-white"
+                isActive ? "bg-blue-600" : "  hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-600 dark:hover:text-white"
               } ${!isOpen && "justify-center"}`
             }
           >

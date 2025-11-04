@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   FileText,
   Calendar,
@@ -22,11 +22,29 @@ export default function SalaryManagement() {
   const [slips, setSlips] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [selectedSlip, setSelectedSlip] = useState(null);
+  const slipModalRef = useRef(null);
 
   useEffect(() => {
     fetchEmployees();
     fetchSlips();
   }, []);
+
+  // Click outside to close modal
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (slipModalRef.current && !slipModalRef.current.contains(event.target)) {
+        setSelectedSlip(null);
+      }
+    };
+
+    if (selectedSlip) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [selectedSlip]);
+
 
   const fetchEmployees = async () => {
     try {
@@ -92,6 +110,10 @@ export default function SalaryManagement() {
     }
   };
 
+  const handleViewSlip = (slip) => {
+    setSelectedSlip(slip);
+  };
+
   return (
     <div className="min-h-screen p-6">
       <Toaster />
@@ -118,10 +140,9 @@ export default function SalaryManagement() {
                 value={selectedEmployee}
                 onChange={(e) => setSelectedEmployee(e.target.value)}
                 className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 
-               hover:border-blue-500 transition duration-200 cursor-pointer 
-               dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+               hover:border-blue-500 transition duration-200 cursor-pointer"
               >
-                <option value="" className="text-gray-500 dark:text-gray-400">
+                <option value="" className=" text-black">
                   Select Employee
                 </option>
 
@@ -129,8 +150,7 @@ export default function SalaryManagement() {
                   <option
                     key={emp._id}
                     value={emp._id}
-                    className="bg-white text-black hover:bg-blue-100 
-                   dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-blue-600 
+                    className="bg-white text-black hover:bg-blue-100 dark:hover:bg-blue-600 
                    cursor-pointer transition-colors duration-150"
                   >
                     {emp.name} - {emp.position}
@@ -267,7 +287,7 @@ export default function SalaryManagement() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
-                          onClick={() => console.log("View slip:", slip._id)}
+                          onClick={() => handleViewSlip(slip)}
                           className="hover:text-blue-900"
                         >
                           <Eye size={16} />
@@ -280,6 +300,39 @@ export default function SalaryManagement() {
             </div>
           )}
         </div>
+
+        {/* View Slip Modal */}
+        {selectedSlip && (
+          <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50 p-4 bg-black/50">
+            <div ref={slipModalRef} className="rounded-lg p-6 max-w-md w-full bg-white text-black dark:bg-gray-800 dark:text-white">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Salary Slip Details</h2>
+                <button onClick={() => setSelectedSlip(null)} className="hover:text-gray-700">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="space-y-3">
+                <p><strong>Employee:</strong> {selectedSlip.employeeId?.name || "N/A"}</p>
+                <p><strong>Month/Year:</strong> {selectedSlip.month}/{selectedSlip.year}</p>
+                <p><strong>Base Salary:</strong> ₹{selectedSlip.baseSalary}</p>
+                <p><strong>Deductions:</strong> ₹{selectedSlip.deduction}</p>
+                <p className="font-bold"><strong>Net Salary:</strong> ₹{selectedSlip.netSalary}</p>
+                <p><strong>Remarks:</strong> {selectedSlip.remarks || "-"}</p>
+                <p className="text-xs text-gray-500">
+                  <strong>Sent On:</strong> {new Date(selectedSlip.sentAt).toLocaleString()}
+                </p>
+              </div>
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setSelectedSlip(null)}
+                  className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

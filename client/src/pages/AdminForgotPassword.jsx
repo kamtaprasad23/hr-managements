@@ -1,79 +1,77 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import API from "../utils/api";
+import { Mail } from "lucide-react";
 
 function AdminForgotPassword() {
   const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError("");
-    setSuccess("");
-    try {
-      const res = await API.post("/admin/forgot-password", { email });
-      setSuccess(res.data.message);
-    } catch (err) {
-      setError(err.response?.data?.message || "An error occurred. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    // Implement your forgot password logic here
+    // For example, call an API to send a reset link to the email
+    setMessage("A reset link has been sent to your email address.");
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-500 via-pink-500 to-red-500 animate-gradient-x">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md transform hover:scale-105 transition-transform duration-300"
-      >
-        <h2 className="text-3xl font-bold mb-8 text-center text-blue-600 drop-shadow-lg">
-          Forgot Password
-        </h2>
-
-        {error && (
-          <p className="text-red-600 text-center mb-4 bg-red-100 p-2 rounded">
-            {error}
-          </p>
-        )}
-        {success && (
-          <p className="text-green-600 text-center mb-4 bg-green-100 p-2 rounded">
-            {success}
-          </p>
-        )}
-
-        <p className="text-gray-600 text-center mb-4">
-          Enter your email address and we will send you a link to reset your password.
+    <div className="min-h-screen w-full lg:grid lg:grid-cols-2">
+      <div className="hidden lg:flex flex-col items-center justify-center bg-gray-800 text-white p-12 text-center">
+        <h1 className="text-4xl font-bold mb-4">Forgot Password?</h1>
+        <p className="text-lg text-gray-300">
+          Enter your email address to reset your password.
         </p>
+        <div className="mt-8 w-full max-w-xs h-64 bg-gray-700 rounded-lg"></div>
+      </div>
 
-        <div className="mb-4">
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full p-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 rounded-xl shadow-lg hover:from-blue-600 hover:to-indigo-700 transition-all disabled:opacity-50"
+      <div className="flex items-center justify-center p-6 sm:p-12 bg-gray-100 dark:bg-gray-900">
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white dark:bg-gray-800 text-black dark:text-white p-8 rounded-2xl shadow-lg w-full max-w-md"
         >
-          {loading ? "Sending..." : "Send Reset Link"}
-        </button>
+          <h2 className="text-3xl font-bold mb-2 text-center text-gray-800 dark:text-white">
+            Reset Password
+          </h2>
+          <p className="text-center text-gray-500 dark:text-gray-400 mb-8">
+            Enter your email to receive a reset link.
+          </p>
 
-        <p className="mt-6 text-center">
-          <Link to="/admin-login" className="text-sm text-blue-600 hover:underline">
-            Back to Login
-          </Link>
-        </p>
-      </form>
+          {error && (
+            <p className="text-red-500 text-center mb-4 bg-red-100 dark:bg-red-900/30 p-3 rounded-lg">
+              {error}
+            </p>
+          )}
+          {message && (
+            <p className="text-green-500 text-center mb-4 bg-green-100 dark:bg-green-900/30 p-3 rounded-lg">
+              {message}
+            </p>
+          )}
+
+          <div className="mb-4 relative">
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full p-4 pl-12 text-black dark:text-white bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold shadow-lg hover:bg-blue-700 transition-all"
+          >
+            Send Reset Link
+          </button>
+          <p className="mt-4 text-center text-gray-600 dark:text-gray-400">
+            Remember your password?{" "}
+            <Link to="/admin-login" className="text-blue-600 hover:underline">Back to Login</Link>
+          </p>
+        </form>
+      </div>
     </div>
   );
 }

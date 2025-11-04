@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import API from "../utils/api";
+import { User, Mail, Lock } from "lucide-react";
 
 function AdminRegister() {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
@@ -24,63 +25,87 @@ function AdminRegister() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-500 via-pink-500 to-red-500 animate-gradient-x">
-      <form
-        onSubmit={handleRegister}
-        className="bg-white text-black p-10 rounded-3xl shadow-2xl w-full max-w-md transform hover:scale-105 transition-transform duration-300"
-      >
-        <h2 className="text-3xl font-bold mb-8 text-center text-green-600 drop-shadow-lg">
-          Admin Register
-        </h2>
-
-        {error && (
-          <p className="text-red-600 text-center mb-4 bg-red-100 p-2 rounded">
-            {error}
-          </p>
-        )}
-
-        <input
-          type="text"
-          name="name"
-          placeholder="Full Name"
-          value={form.name}
-          onChange={handleChange}
-          required
-          className="w-full mb-4 p-4 text-black border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
-        />
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={form.email}
-          onChange={handleChange}
-          required
-          className="w-full mb-4 p-4 text-black border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
-        />
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={form.password}
-          onChange={handleChange}
-          required
-          className="w-full mb-6 p-4 text-black border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500"
-        />
-
-        <button
-          type="submit"
-          className="w-full bg-gradient-to-r from-green-500 to-teal-500 text-white py-3 rounded-xl shadow-lg hover:from-green-600 hover:to-teal-600 transition-all mb-5"
-        >
-          Register
-        </button>
-
-        <p className="mt-4 text-center text-gray-600">
-          Already have an account?{" "}
-          <Link to="/admin-login" className="text-blue-600 hover:underline">
-            Login
-          </Link>
+    <div className="min-h-screen w-full lg:grid lg:grid-cols-2">
+      <div className="hidden lg:flex flex-col items-center justify-center bg-gray-800 text-white p-12 text-center">
+        <h1 className="text-4xl font-bold mb-4">Join Our Team</h1>
+        <p className="text-lg text-gray-300">
+          Register as a new administrator to get started.
         </p>
-      </form>
+        <div className="mt-8 w-full max-w-xs h-64 bg-gray-700 rounded-lg"></div>
+      </div>
+
+      <div className="flex items-center justify-center p-6 sm:p-12 bg-gray-100 dark:bg-gray-900">
+        <form
+          onSubmit={handleRegister}
+          className="bg-white dark:bg-gray-800 text-black dark:text-white p-8 rounded-2xl shadow-lg w-full max-w-md"
+        >
+          <h2 className="text-3xl font-bold mb-2 text-center text-gray-800 dark:text-white">
+            Create an Account
+          </h2>
+          <p className="text-center text-gray-500 dark:text-gray-400 mb-8">
+            Enter your details to register.
+          </p>
+
+          {error && (
+            <p className="text-red-500 text-center mb-4 bg-red-100 dark:bg-red-900/30 p-3 rounded-lg">
+              {error}
+            </p>
+          )}
+
+          <div className="mb-4 relative">
+            <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="text"
+              name="name"
+              placeholder="Full Name"
+              value={form.name}
+              onChange={handleChange}
+              required
+              className="w-full p-4 pl-12 text-black dark:text-white bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="mb-4 relative">
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={form.email}
+              onChange={handleChange}
+              required
+              className="w-full p-4 pl-12 text-black dark:text-white bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="mb-6 relative">
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="password"
+              name="password"
+              placeholder="Password"
+              value={form.password}
+              onChange={handleChange}
+              required
+              className="w-full p-4 pl-12 text-black dark:text-white bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold shadow-lg hover:bg-blue-700 transition-all"
+          >
+            Register
+          </button>
+
+          <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
+            Already have an account?{" "}
+            <Link to="/admin-login" className="font-semibold text-blue-600 hover:underline">
+              Login
+            </Link>
+          </p>
+        </form>
+      </div>
     </div>
   );
 }

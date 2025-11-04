@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { LogIn, LogOut, Calendar, UserStar, Check } from "lucide-react";
+import { LogIn, LogOut, Calendar, UserStar, Check, X } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -258,12 +258,17 @@ export default function EmpAttendance() {
         </div>
 
         {isSummaryOpen && (
-          <div className="fixed inset-0 flex items-start justify-center bg-black bg-opacity-50 z-50 pt-20 px-4 overflow-auto">
-            <div className="w-full max-w-md bg-gray-500 sm:max-w-lg rounded-xl shadow-xl p-6 relative">
-              <h2 className="text-2xl font-bold mb-2">Attendance Summary</h2>
-              <p className="mb-4">Last 10 Days Overview</p>
+          <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50 p-4 bg-black/50">
+            <div className="rounded-lg p-6 max-w-lg w-full bg-white text-black dark:bg-gray-800 dark:text-white">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Attendance Summary</h2>
+                <button onClick={() => setIsSummaryOpen(false)} className="hover:text-gray-700">
+                  <X size={20} />
+                </button>
+              </div>
+              <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">Last 10 Days Overview</p>
               {history.length === 0 ? (
-                <p className="text-center ">No records yet</p>
+                <p className="text-center py-4">No records yet</p>
               ) : (
                 <div className="space-y-2 overflow-x-auto">
                   {history.slice(0, 10).map((r, i) => {
@@ -292,12 +297,14 @@ export default function EmpAttendance() {
                   })}
                 </div>
               )}
-              <button
-                onClick={() => setIsSummaryOpen(false)}
-                className="mt-6 w-full py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold"
-              >
-                Close
-              </button>
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setIsSummaryOpen(false)}
+                  className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         )}

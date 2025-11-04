@@ -1,9 +1,10 @@
 
 // App.jsx
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useEffect } from "react";
+import { Routes, Route } from "react-router-dom";
+import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { setDarkMode } from "./features/auth/settingsSlice";
+import { setDarkMode } from "./features/auth/settingsSlice"; // This seems to be for UI, which is fine.
+import { verifyUser } from "./features/auth/authSlice"; // 👈 **यह इम्पोर्ट जोड़ें**
 import ProtectedRoute from "./components/ProtectedRoute";
 
 // Admin pages
@@ -22,6 +23,7 @@ import SalaryManagement from "./pages/AdminPage/SalaryManagement";
 import AdminSettings from "./pages/AdminPage/AdminSettings";
 import Notification from "./pages/AdminPage/Notification";
 import AdminEmployeeProfile from "./pages/AdminPage/AdminEmployeeProfile";
+import SubAdminAttendance from "./pages/AdminPage/SubAdminAttendance"; // 👈 नया पेज इम्पोर्ट करें
 import AdminForgotPassword from "./pages/AdminForgotPassword";
 
 // Employee pages
@@ -37,16 +39,29 @@ import EmployeeSettings from "./pages/employeePage/EmpSetting";
 
 function App() {
   const dispatch = useDispatch();
-  const isDarkMode = useSelector((state) => state.settings.isDarkMode);
+  const { isDarkMode } = useSelector((state) => state.settings);
+  const { loading } = useSelector((state) => state.auth); // 👈 **लोडिंग स्टेट प्राप्त करें**
 
   useEffect(() => {
     const savedMode = localStorage.getItem("isDarkMode");
     if (savedMode !== null) dispatch(setDarkMode(savedMode === "true"));
+
+    // 👈 **ऐप लोड होने पर उपयोगकर्ता को सत्यापित करें**
+    dispatch(verifyUser());
   }, [dispatch]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDarkMode);
   }, [isDarkMode]);
+
+  // 👈 **जब तक प्रमाणीकरण की जांच चल रही है, लोडिंग स्क्रीन दिखाएं**
+  if (loading) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-white dark:bg-gray-900 z-50">
+        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen">
@@ -73,6 +88,14 @@ function App() {
           <Route path="reports" element={<AdminEmpReports />} />
 
           {/* Task Page - HR Blocked */}
+          <Route
+            path="sub-attendance"
+            element={
+              <ProtectedRoute role={["admin"]}>
+                <SubAdminAttendance />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="task"
             element={

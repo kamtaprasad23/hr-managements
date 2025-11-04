@@ -1,114 +1,144 @@
 
 //new update
-// controllers/adminController.js
+// server/controllers/adminController.js
 import Admin from "../models/adminModel.js";
 import Employee from "../models/employeeModel.js";
-import Task from "../models/taskModel.js";
-import Notification from "../models/notificationModel.js";
 import Attendance from "../models/attendanceModel.js";
-import Leave from "../models/leaveModel.js";
-import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { jwtSecret } from "../config/config.js";
-import dayjs from "dayjs";
+import jwt from "jsonwebtoken";
+import { jwtSecret } from "../config/config.js"; // Assuming you have this file
 
-// REGISTER MAIN ADMIN
+/**
+ * ✅ Register Main Admin
+ */
 export const registerAdmin = async (req, res) => {
   try {
     const { name, email, password } = req.body;
-    const existing = await Admin.findOne({ email: email.toLowerCase() });
+    const existing = await Admin.findOne({ email });
     if (existing) return res.status(400).json({ message: "Admin already exists" });
 
-    const isFirstAdmin = (await Admin.countDocuments()) === 0;
-
-    const newAdmin = new Admin({
+    const admin = await Admin.create({
       name,
-      email: email.toLowerCase(),
-      password: password, // Pass plain password, model will hash it
-      role: "admin",
-      isMainAdmin: isFirstAdmin,
+      email,
+      password: password, // Pass plain password, the model will hash it
+      role: "admin", // The role for the main admin
+      isMainAdmin: true, // First admin is main admin
     });
-    await newAdmin.save();
 
-    res.status(201).json({ message: "Admin registered successfully" });
+    res.status(201).json({ message: "Main admin registered", admin });
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
-// LOGIN
+/**
+ * ✅ Admin Login
+ */
 export const loginAdmin = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const user = await Admin.findOne({ email: email.toLowerCase() });
-    if (!user) return res.status(400).json({ message: "User not found" });
+    const admin = await Admin.findOne({ email });
+    if (!admin) return res.status(404).json({ message: "User not found" });
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: "Invalid password" });
+    const match = await bcrypt.compare(password, admin.password);
+    if (!match) return res.status(401).json({ message: "Invalid credentials" });
 
-    const tokenPayload = {
-      id: user._id,
-      role: user.role,
-      isMainAdmin: user.isMainAdmin,
-    };
+    const token = jwt.sign(
+      {
+        id: admin._id,
+        role: admin.role,
+        isMainAdmin: admin.isMainAdmin,
+        createdBy: admin.createdBy, // Important for sub-admins
+      },
+      jwtSecret,
+      { expiresIn: "1d" }
+    );
 
-    if (!user.isMainAdmin && user.createdBy) {
-      tokenPayload.createdBy = user.createdBy;
-    }
-
-    const token = jwt.sign(tokenPayload, jwtSecret, { expiresIn: "7d" });
     res.json({
-      message: "Login successful",
       token,
-      role: user.role.toLowerCase(),
-      name: user.name,
+      role: admin.role,
+      name: admin.name,
+      isMainAdmin: admin.isMainAdmin,
     });
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Login error", error: error.message });
   }
 };
 
-// CREATE HR/MANAGER
-export const createHRorManager = async (req, res) => {
-  try {
-    const { name, email, password, role } = req.body;
-    const existing = await Admin.findOne({ email: email.toLowerCase() });
-    if (existing) return res.status(400).json({ message: "Email already exists" });
-
-    const newAdmin = new Admin({
-      name,
-      email: email.toLowerCase(),
-      password: password, // Pass plain password, model will hash it
-      role: role.toLowerCase(),
-      createdBy: req.user.id,
-    });
-
-    await newAdmin.save();
-
-    res.status(201).json({ message: `${role.toUpperCase()} created successfully` });
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-// GET PROFILE
+/**
+ * ✅ Get Admin Profile
+ */
 export const getAdminProfile = async (req, res) => {
   try {
     const admin = await Admin.findById(req.user.id).select("-password");
     res.json(admin);
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Error fetching profile", error: error.message });
   }
 };
 
-// CREATE EMPLOYEE
+/**
+ * ✅ Update Admin Profile
+ */
+export const updateAdminProfile = async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+    const admin = await Admin.findById(req.user.id);
+
+    if (!admin) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (name) admin.name = name;
+    if (email) admin.email = email; // Note: You might want to restrict email changes for non-main-admins
+    if (password) admin.password = password; // Pass the plain password
+
+    const updatedAdmin = await admin.save();
+    res.json(updatedAdmin);
+  } catch (error) {
+    res.status(500).json({ message: "Update failed", error: error.message });
+  }
+};
+
+/**
+ * ✅ Create HR or Manager
+ */
+export const createHRorManager = async (req, res) => {
+  try {
+    const { name, email, password, role } = req.body;
+    if (!["hr", "manager"].includes(role))
+      return res.status(400).json({ message: "Invalid role" });
+
+    const existing = await Admin.findOne({ email });
+    if (existing) return res.status(400).json({ message: "User already exists" });
+
+    const newUser = await Admin.create({
+      name,
+      email,
+      password: password, // Pass the plain password, the model will hash it. This is correct.
+      role,
+      isMainAdmin: false,
+      createdBy: req.user.id,
+    });
+
+    res.status(201).json({ message: `${role} created successfully`, newUser });
+  } catch (error) {
+    res.status(500).json({ message: "Creation failed", error: error.message });
+  }
+};
+
+/**
+ * ✅ Create Employee
+ */
 export const createEmployee = async (req, res) => {
   try {
     const { name, email, password, ...rest } = req.body;
-    if (!name || !email || !password) return res.status(400).json({ message: "Name, email, password required" });
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "Name, email, and password are required" });
+    }
 
     const exists = await Employee.findOne({ email: email.toLowerCase() });
-    if (exists) return res.status(400).json({ message: "Employee already exists" });
+    if (exists) return res.status(400).json({ message: "Employee with this email already exists" });
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -118,234 +148,184 @@ export const createEmployee = async (req, res) => {
       email: email.toLowerCase(),
       password: hashedPassword,
       ...rest,
-      createdBy: req.user.id,
-      adminId: req.user.id,
+      createdBy: req.user.id, // The admin creating this employee
     });
 
     await employee.save();
-    res.status(201).json({ message: "Employee created", employee });
+    res.status(201).json({ message: "Employee created successfully", employee });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+/**
+ * ✅ Get All HR/Managers (For Main Admin)
+ */
+export const getAllSubAdmins = async (req, res) => {
+  try {
+    // Only show sub-admins created by the current main admin
+    const subAdmins = await Admin.find({
+      role: { $in: ["hr", "manager"] },
+      createdBy: req.user.id,
+    }).select("-password");
+    res.json(subAdmins);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching sub admins", error: error.message });
   }
 };
 
-// DASHBOARD DATA
+/**
+ * ✅ Delete Sub Admin
+ */
+export const deleteSubAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Admin.findByIdAndDelete(id);
+    res.json({ message: "Sub-admin deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting sub admin", error: error.message });
+  }
+};
+
+/**
+ * ✅ Update Sub Admin (HR/Manager)
+ */
+export const updateSubAdmin = async (req, res) => {
+  try {
+    // Ensure the user is a main admin
+    if (!req.user.isMainAdmin) {
+      return res.status(403).json({ message: "Access Denied. Only main admin can update users." });
+    }
+
+    const { id } = req.params;
+    const { name, email, password, role } = req.body;
+
+    // Find the sub-admin by ID. The adminOnly middleware already protects this route.
+    // The check for createdBy in getAllSubAdmins ensures they can only see their own sub-admins.
+    const subAdmin = await Admin.findById(id);
+    if (!subAdmin) return res.status(404).json({ message: "User not found." });
+
+    // Update fields
+    subAdmin.name = name || subAdmin.name;
+    subAdmin.email = email || subAdmin.email;
+    subAdmin.role = role || subAdmin.role;
+    if (password) subAdmin.password = password; // Pass plain password, model will hash it
+
+    await subAdmin.save();
+
+    res.json({ message: "User updated successfully", user: subAdmin });
+  } catch (error) {
+    res.status(500).json({ message: "Server error during update.", error: error.message });
+  }
+};
+/**
+ * ✅ Get Admin Dashboard Data (for admin/hr/manager)
+ */
 export const getAdminDashboardData = async (req, res) => {
   try {
-    const { id: userId, role, isMainAdmin } = req.user;
-    const today = dayjs().startOf("day").toDate();
-    const tomorrow = dayjs(today).add(1, "day").toDate();
+    const { id: userId, role, isMainAdmin, createdBy } = req.user;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
 
-    let empQuery;
+    let empQuery = {};
+    // Define the scope of employees to query based on the user's role
     if (isMainAdmin) {
       const subAdmins = await Admin.find({ createdBy: userId }).select("_id");
       const adminIds = [userId, ...subAdmins.map(a => a._id)];
       empQuery = { createdBy: { $in: adminIds } };
     } else if (["hr", "manager"].includes(role)) {
-      const creatorAdmin = await Admin.findById(req.user.createdBy);
-      const orgAdminIds = await Admin.find({ createdBy: creatorAdmin._id }).select("_id");
-      const allTeamIds = [creatorAdmin._id, ...orgAdminIds.map(a => a._id)];
+      const mainAdminId = createdBy; // Get the main admin who created this HR/Manager
+      const orgAdminIds = await Admin.find({ createdBy: mainAdminId }).select("_id");
+      const allTeamIds = [mainAdminId, ...orgAdminIds.map(a => a._id)];
       empQuery = { createdBy: { $in: allTeamIds } };
     } else {
-      empQuery = { createdBy: userId };
+      // Fallback for any other case, though should be covered by middleware
+      return res.status(403).json({ message: "Access denied." });
     }
 
-    const totalEmployees = await Employee.countDocuments(empQuery);
+    const employeesInScope = await Employee.find(empQuery).select("_id");
+    const employeeIdsInScope = employeesInScope.map(e => e._id);
+
+    const totalEmployees = employeeIdsInScope.length;
+
     const todayAttendance = await Attendance.find({
+      user: { $in: employeeIdsInScope },
       date: { $gte: today, $lt: tomorrow },
-      user: { $in: await Employee.find(empQuery).select("_id").lean() },
-    });
-    const pendingLeaves = await Leave.countDocuments({
-      status: "Pending",
-      employeeId: { $in: await Employee.find(empQuery).select("_id").lean() },
     });
 
     const onTime = todayAttendance.filter(a => a.status === "Present").length;
-    const late = todayAttendance.filter(a => a.status === "Late").length;
+    const late = todayAttendance.filter(a => a.status === "Late" || a.status === "Late Login").length;
     const absent = totalEmployees - todayAttendance.length;
 
-    const data = {
+    res.json({
       totalEmployees,
       attendance: { total: totalEmployees, onTime, late, absent },
-      leaves: { pending: pendingLeaves },
-    };
-
-    if (role === "hr") data.restricted = { task: "hidden" };
-    if (role === "manager") data.restricted = { salary: "hidden" };
-
-    res.json(data);
+      // You can add leave reports here if needed in the future
+      // leaves: { pending: pendingLeaves },
+    });
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Error fetching dashboard data", error: error.message });
   }
 };
 
-// BIRTHDAYS
+/**
+ * ✅ Get Birthdays
+ */
 export const getBirthdays = async (req, res) => {
   try {
-    const { id: userId, role, isMainAdmin } = req.user;
-    const todayMonth = dayjs().month() + 1;
-    const todayDate = dayjs().date();
+    const today = new Date();
+    const employees = await Employee.find();
 
-    let empQuery;
-    if (isMainAdmin) {
-      const subAdmins = await Admin.find({ createdBy: userId }).select("_id");
-      const adminIds = [userId, ...subAdmins.map(a => a._id)];
-      empQuery = { createdBy: { $in: adminIds } };
-    } else if (["hr", "manager"].includes(role)) {
-      const creatorAdmin = await Admin.findById(req.user.createdBy);
-      const orgAdminIds = await Admin.find({ createdBy: creatorAdmin._id }).select("_id");
-      const allTeamIds = [creatorAdmin._id, ...orgAdminIds.map(a => a._id)];
-      empQuery = { createdBy: { $in: allTeamIds } };
-    } else {
-      empQuery = { createdBy: userId };
-    }
+    const birthdays = employees.filter((emp) => {
+      const dob = new Date(emp.dob);
+      return dob.getDate() === today.getDate() && dob.getMonth() === today.getMonth();
+    });
 
-    const employees = await Employee.find(empQuery)
-      .where('$expr').equals({
-        $and: [
-          { $eq: [{ $month: "$birthday" }, todayMonth] },
-          { $eq: [{ $dayOfMonth: "$birthday" }, todayDate] },
-        ],
-      }).select("name birthday image");
-
-    res.json(employees.map(emp => ({
-      _id: emp._id,
-      name: emp.name,
-      date: dayjs(emp.birthday).format("MMMM D"),
-      image: emp.image || "https://i.pravatar.cc/150",
-    })));
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    res.json(birthdays);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching birthdays", error: error.message });
   }
 };
 
-// SEND BIRTHDAY WISH
+/**
+ * ✅ Send Birthday Wish (Dummy)
+ */
 export const sendBirthdayWish = async (req, res) => {
   try {
-    const { employeeId } = req.params;
-    const { id: userId, role, isMainAdmin } = req.user;
-
-    let empQuery;
-    if (isMainAdmin) {
-      const subAdmins = await Admin.find({ createdBy: userId }).select("_id");
-      const adminIds = [userId, ...subAdmins.map(a => a._id)];
-      empQuery = { _id: employeeId, createdBy: { $in: adminIds } };
-    } else if (["hr", "manager"].includes(role)) {
-      const creatorAdmin = await Admin.findById(req.user.createdBy);
-      const orgAdminIds = await Admin.find({ createdBy: creatorAdmin._id }).select("_id");
-      const allTeamIds = [creatorAdmin._id, ...orgAdminIds.map(a => a._id)];
-      empQuery = { _id: employeeId, createdBy: { $in: allTeamIds } };
-    } else {
-      empQuery = { _id: employeeId, createdBy: userId };
-    }
-
-    const employee = await Employee.findOne(empQuery);
-    if (!employee) return res.status(404).json({ message: "Employee not found" });
-
-    const notification = new Notification({
-      title: "Happy Birthday!",
-      message: `Team wishes you a happy birthday, ${employee.name}!`,
-      type: "employee",
-      userId: employeeId,
-      createdBy: userId,
-    });
-    await notification.save();
-
-    res.json({ message: "Wish sent" });
+    res.json({ message: "Birthday wish sent successfully!" });
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Error sending wish", error: error.message });
   }
 };
 
-// UPDATE PROFILE
-export const updateAdminProfile = async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
-    const current = await Admin.findById(req.user.id);
-
-    if (current.role !== "admin" && (email || password)) {
-      return res.status(403).json({ message: "Only main admin can change email/password" });
-    }
-
-    const update = {};
-    if (name) update.name = name;
-    if (email) update.email = email.toLowerCase();
-    if (password) {
-      const salt = await bcrypt.genSalt(10);
-      update.password = await bcrypt.hash(password, salt);
-    }
-
-    const updated = await Admin.findByIdAndUpdate(req.user.id, update, { new: true }).select("-password");
-    res.json({ message: "Profile updated", admin: updated });
-  } catch (error) {
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-// APPROVE / REJECT EMPLOYEE UPDATE
+/**
+ * ✅ Approve / Reject Employee Updates
+ */
 export const approveEmployeeUpdate = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { id: userId, role, isMainAdmin } = req.user;
+    const employee = await Employee.findById(req.params.id);
+    if (!employee) return res.status(404).json({ message: "Employee not found" });
 
-    let empQuery;
-    if (isMainAdmin) {
-      const subAdmins = await Admin.find({ createdBy: userId }).select("_id");
-      const adminIds = [userId, ...subAdmins.map(a => a._id)];
-      empQuery = { _id: id, createdBy: { $in: adminIds } };
-    } else if (["hr", "manager"].includes(role)) {
-      const creatorAdmin = await Admin.findById(req.user.createdBy);
-      const orgAdminIds = await Admin.find({ createdBy: creatorAdmin._id }).select("_id");
-      const allTeamIds = [creatorAdmin._id, ...orgAdminIds.map(a => a._id)];
-      empQuery = { _id: id, createdBy: { $in: allTeamIds } };
-    } else {
-      empQuery = { _id: id, createdBy: userId };
-    }
+    employee.isApproved = true;
+    await employee.save();
 
-    const employee = await Employee.findOne(empQuery);
-    if (!employee) return res.status(404).json({ message: "Not found" });
-
-    if (employee.pendingUpdates && Object.keys(employee.pendingUpdates).length > 0) {
-      Object.assign(employee, employee.pendingUpdates);
-      employee.pendingUpdates = {};
-      employee.status = "Verified";
-      await employee.save();
-      res.json({ message: "Approved" });
-    } else {
-      res.status(400).json({ message: "No pending update" });
-    }
+    res.json({ message: "Employee update approved" });
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Approval error", error: error.message });
   }
 };
 
 export const rejectEmployeeUpdate = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { id: userId, role, isMainAdmin } = req.user;
+    const employee = await Employee.findById(req.params.id);
+    if (!employee) return res.status(404).json({ message: "Employee not found" });
 
-    let empQuery;
-    if (isMainAdmin) {
-      const subAdmins = await Admin.find({ createdBy: userId }).select("_id");
-      const adminIds = [userId, ...subAdmins.map(a => a._id)];
-      empQuery = { _id: id, createdBy: { $in: adminIds } };
-    } else if (["hr", "manager"].includes(role)) {
-      const creatorAdmin = await Admin.findById(req.user.createdBy);
-      const orgAdminIds = await Admin.find({ createdBy: creatorAdmin._id }).select("_id");
-      const allTeamIds = [creatorAdmin._id, ...orgAdminIds.map(a => a._id)];
-      empQuery = { _id: id, createdBy: { $in: allTeamIds } };
-    } else {
-      empQuery = { _id: id, createdBy: userId };
-    }
-
-    const employee = await Employee.findOne(empQuery);
-    if (!employee) return res.status(404).json({ message: "Not found" });
-
-    employee.pendingUpdates = {};
-    employee.status = "Verified";
+    employee.isApproved = false;
     await employee.save();
-    res.json({ message: "Rejected" });
+
+    res.json({ message: "Employee update rejected" });
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Rejection error", error: error.message });
   }
 };

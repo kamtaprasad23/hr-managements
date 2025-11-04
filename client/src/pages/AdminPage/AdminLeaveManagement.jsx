@@ -83,13 +83,13 @@ export default function AdminLeaveManagement() {
 
       {/* Leave Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="px-4 py-2 text-green-800 bg-green-100 rounded shadow dark:bg-gray-700 dark:text-green-300">
+        <div className="px-4 py-2 text-green-800 bg-green-100 rounded shadow  dark:text-green-800">
           Approved: {summary.Approved}
         </div>
-        <div className="px-4 py-2 text-red-800 bg-red-100 rounded shadow dark:bg-gray-700 dark:text-red-300">
+        <div className="px-4 py-2 text-red-800 bg-red-100 rounded shadow  dark:text-red-800">
           Rejected: {summary.Rejected}
         </div>
-        <div className="px-4 py-2 text-yellow-800 bg-yellow-100 rounded shadow dark:bg-gray-700 dark:text-yellow-300">
+        <div className="px-4 py-2 text-yellow-800 bg-yellow-100 rounded shadow  dark:text-yellow-800">
           Pending: {summary.Pending}
         </div>
       </div>
@@ -139,20 +139,25 @@ export default function AdminLeaveManagement() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white text-black  rounded-lg shadow-xl p-6 w-96">
-            <h3 className="text-lg font-semibold mb-4">Confirm Deletion</h3>
-            <p className=" mb-6">Are you sure you want to delete this leave request? This action cannot be undone.</p>
+        <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50 p-4 bg-black/50">
+          <div className="rounded-lg p-6 max-w-md w-full bg-white text-black dark:bg-gray-800 dark:text-white">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Confirm Deletion</h2>
+              <button onClick={() => setShowDeleteModal(false)} className="hover:text-gray-700">
+                <X size={20} />
+              </button>
+            </div>
+            <p className="mb-6">Are you sure you want to delete this leave request? This action cannot be undone.</p>
             <div className="flex justify-end space-x-4">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 bg-gray-400 dark:bg-gray-600 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition"
+                className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteLeave}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
               >
                 Yes, Delete
               </button>
