@@ -28,6 +28,7 @@ app.use(
     origin: [
       "http://localhost:5173", // Local frontend
       "https://samprakshiinfinitysolution-hr-management.onrender.com", 
+      "https://hr.samprakshiinfinitysolution.com/",
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
