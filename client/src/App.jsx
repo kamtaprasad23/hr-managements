@@ -1,9 +1,8 @@
-// App.jsx
 import { Routes, Route } from "react-router-dom";
 import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { setDarkMode } from "./features/auth/settingsSlice"; // This seems to be for UI, which is fine.
-import { verifyUser } from "./features/auth/authSlice"; // 
+import { setDarkMode } from "./features/auth/settingsSlice";
+import { verifyUser } from "./features/auth/authSlice";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 // Admin pages
@@ -22,11 +21,9 @@ import SalaryManagement from "./pages/AdminPage/SalaryManagement";
 import AdminSettings from "./pages/AdminPage/AdminSettings";
 import Notification from "./pages/AdminPage/Notification";
 import AdminEmployeeProfile from "./pages/AdminPage/AdminEmployeeProfile";
-import SubAdminAttendance from "./pages/AdminPage/SubAdminAttendance"; // 👈 
+import SubAdminAttendance from "./pages/AdminPage/SubAdminAttendance";
 import AdminForgotPassword from "./pages/AdminForgotPassword";
 import AdminChat from "./pages/AdminPage/AdminChat";
-
-
 
 // Employee pages
 import EmployeeLayout from "./Layout/EmployeeLayout";
@@ -38,12 +35,11 @@ import EmpProfile from "./pages/employeePage/EmpProfile";
 import EmpSalaryslip from "./pages/employeePage/EmpSalaryslip";
 import EmployeeSettings from "./pages/employeePage/EmpSetting";
 import EmployeeChat from "./pages/employeePage/EmployeeChat";
-// ... all imports
 
 function App() {
   const dispatch = useDispatch();
   const { isDarkMode } = useSelector((state) => state.settings);
-  const { loading } = useSelector((state) => state.auth); // 
+  const { loading, isAuthenticated } = useSelector((state) => state.auth);
 
   useEffect(() => {
     const savedMode = localStorage.getItem("isDarkMode");
@@ -53,15 +49,13 @@ function App() {
     if (token) {
       dispatch(verifyUser());
     }
-    // if no token, do not call verifyUser (avoids immediate rejection)
   }, [dispatch]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDarkMode);
   }, [isDarkMode]);
 
- 
-  if (loading) {
+  if (loading && isAuthenticated === false) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-white dark:bg-gray-900 z-50">
         <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
@@ -77,8 +71,6 @@ function App() {
         <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/admin-register" element={<AdminRegister />} />
         <Route path="/employee-login" element={<EmployeeLogin />} />
-        
-        
         <Route path="/admin/forgot-password" element={<AdminForgotPassword />} />
 
         {/* Admin Dashboard */}
@@ -93,10 +85,7 @@ function App() {
           <Route index element={<AdminHome />} />
           <Route path="emp-management" element={<AdminEmpManagement />} />
           <Route path="employee/:id" element={<AdminEmployeeProfile />} />
-          
           <Route path="reports" element={<AdminEmpReports />} />
-
-          {/* Task Page - HR Blocked */}
           <Route
             path="sub-attendance"
             element={
@@ -108,32 +97,27 @@ function App() {
           <Route
             path="task"
             element={
-              <ProtectedRoute role={["admin", "manager"]} feature="task">
+              <ProtectedRoute role={["admin", "manager"]}>
                 <AdminTask />
               </ProtectedRoute>
             }
           />
-
-          {/* Salary Page - Manager Blocked */}
           <Route
             path="salary"
             element={
-              <ProtectedRoute role={["admin", "hr"]} feature="salary">
+              <ProtectedRoute role={["admin", "hr"]}>
                 <SalaryManagement />
               </ProtectedRoute>
             }
           />
-
           <Route path="leave" element={<AdminLeaveManagement />} />
           <Route path="attendance" element={<AttendanceTracker />} />
           <Route path="chat" element={<AdminChat />} />
           <Route path="notification" element={<Notification />} />
-
-          {/* Settings - All can access */}
           <Route path="settings" element={<AdminSettings />} />
         </Route>
 
-        {/* Employee Routes */}
+        {/* Employee */}
         <Route
           path="/employee"
           element={
