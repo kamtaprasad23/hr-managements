@@ -1,10 +1,9 @@
-
 // App.jsx
 import { Routes, Route } from "react-router-dom";
 import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { setDarkMode } from "./features/auth/settingsSlice"; // This seems to be for UI, which is fine.
-import { verifyUser } from "./features/auth/authSlice"; // 👈 **यह इम्पोर्ट जोड़ें**
+import { verifyUser } from "./features/auth/authSlice"; // 
 import ProtectedRoute from "./components/ProtectedRoute";
 
 // Admin pages
@@ -23,7 +22,7 @@ import SalaryManagement from "./pages/AdminPage/SalaryManagement";
 import AdminSettings from "./pages/AdminPage/AdminSettings";
 import Notification from "./pages/AdminPage/Notification";
 import AdminEmployeeProfile from "./pages/AdminPage/AdminEmployeeProfile";
-import SubAdminAttendance from "./pages/AdminPage/SubAdminAttendance"; // 👈 नया पेज इम्पोर्ट करें
+import SubAdminAttendance from "./pages/AdminPage/SubAdminAttendance"; // 👈 
 import AdminForgotPassword from "./pages/AdminForgotPassword";
 import AdminChat from "./pages/AdminPage/AdminChat";
 
@@ -44,21 +43,24 @@ import EmployeeChat from "./pages/employeePage/EmployeeChat";
 function App() {
   const dispatch = useDispatch();
   const { isDarkMode } = useSelector((state) => state.settings);
-  const { loading } = useSelector((state) => state.auth); // 👈 **लोडिंग स्टेट प्राप्त करें**
+  const { loading } = useSelector((state) => state.auth); // 
 
   useEffect(() => {
     const savedMode = localStorage.getItem("isDarkMode");
     if (savedMode !== null) dispatch(setDarkMode(savedMode === "true"));
 
-    // 👈 **ऐप लोड होने पर उपयोगकर्ता को सत्यापित करें**
-    dispatch(verifyUser());
+    const token = localStorage.getItem("token");
+    if (token) {
+      dispatch(verifyUser());
+    }
+    // if no token, do not call verifyUser (avoids immediate rejection)
   }, [dispatch]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDarkMode);
   }, [isDarkMode]);
 
-  // 👈 **जब तक प्रमाणीकरण की जांच चल रही है, लोडिंग स्क्रीन दिखाएं**
+ 
   if (loading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-white dark:bg-gray-900 z-50">

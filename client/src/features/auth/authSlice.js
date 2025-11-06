@@ -17,18 +17,27 @@ export const verifyUser = createAsyncThunk(
       return rejectWithValue("No token found");
     }
 
-    try {
-      const response = await API.get("/admin/me");
-      if (!response.data || !response.data.role) {
-        throw new Error("Invalid user data");
+    // Try multiple endpoints to detect user type
+    const endpoints = ["/profile", "/admin/profile", "/admin/me", "/auth/me"];
+    for (const ep of endpoints) {
+      try {
+        const response = await API.get(ep);
+        if (response.data && response.data.role) {
+          return {
+            ...response.data,
+            role: localStorage.getItem("role") || response.data.role,
+          };
+        }
+      } catch {
+        continue;
       }
-      return response.data;
-    } catch (error) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("role");
-      localStorage.removeItem("user");
-      return rejectWithValue("Token is invalid or expired");
     }
+
+    // All attempts failed → clear stored data
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("user");
+    return rejectWithValue("Token invalid or endpoints missing");
   }
 );
 
@@ -42,25 +51,24 @@ const authSlice = createSlice({
     error: null,
   },
   reducers: {
-   loginSuccess: (state, action) => {
-  const payloadUser = action.payload?.user || {};
-  const token = action.payload?.token;
+    loginSuccess: (state, action) => {
+      const payloadUser = action.payload?.user || {};
+      const token = action.payload?.token;
 
-  const user = {
-    ...payloadUser,
-    id: payloadUser.id || payloadUser._id, // store the ID properly
-  };
+      const user = {
+        ...payloadUser,
+        id: payloadUser.id || payloadUser._id,
+      };
 
-  state.user = user;
-  state.isAuthenticated = !!user;
-  state.role = user?.role || null;
-  state.loading = false;
+      state.user = user;
+      state.isAuthenticated = !!user;
+      state.role = user?.role || null;
+      state.loading = false;
 
-  localStorage.setItem("user", JSON.stringify(user));
-  localStorage.setItem("role", user?.role || "");
-  if (token) localStorage.setItem("token", token);
-}
-,
+      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("role", user?.role || "");
+      if (token) localStorage.setItem("token", token);
+    },
     logout: (state) => {
       state.user = null;
       state.isAuthenticated = false;
@@ -97,4 +105,3 @@ const authSlice = createSlice({
 
 export const { loginSuccess, logout } = authSlice.actions;
 export default authSlice.reducer;
- 

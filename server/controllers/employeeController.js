@@ -1,4 +1,3 @@
-
 import Employee from "../models/employeeModel.js";
 import Admin from "../models/adminModel.js";
 import bcrypt from "bcryptjs";
@@ -81,6 +80,35 @@ export const updateProfile = async (req, res) => {
     res.json({ message: "Update request sent", employee });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+// CHANGE PASSWORD (Employee)
+export const changeEmployeePassword = async (req, res) => {
+  try {
+    const { password, confirmPassword } = req.body;
+    if (!password || password.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters long." });
+    }
+    if (confirmPassword && password !== confirmPassword) {
+      return res.status(400).json({ message: "Password and confirm password do not match." });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashed = await bcrypt.hash(password, salt);
+
+    const updated = await Employee.findByIdAndUpdate(
+      req.user.id,
+      { password: hashed },
+      { new: true }
+    );
+
+    if (!updated) return res.status(404).json({ message: "Employee not found." });
+
+    return res.json({ message: "Password updated successfully." });
+  } catch (error) {
+    console.error("changeEmployeePassword error:", error);
+    res.status(500).json({ message: "Server error while updating password." });
   }
 };
 

@@ -22,14 +22,39 @@ import uploadRoutes from "./routes/uploadRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
 
 dotenv.config();
+
 const app = express();
 const httpServer = createServer(app);
+
+// ✅ Fix for __dirname (needed in ESM)
+const __filename = fileURLToPath(import.meta.url);
+
+// ✅ Express middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// ✅ CORS setup (merged both versions)
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173", // Local frontend
+      "https://samprakshiinfinitysolution-hr-management.onrender.com",
+      "https://hr.samprakshiinfinitysolution.com/",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
 
 // ✅ Socket.IO with proper CORS + transports fallback
 const io = new Server(httpServer, {
   cors: {
-    origin: ["http://localhost:5173"], // frontend
-    methods: ["GET", "POST"],
+    origin: [
+      "http://localhost:5173",
+      "https://samprakshiinfinitysolution-hr-management.onrender.com",
+      "https://hr.samprakshiinfinitysolution.com/",
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   },
   transports: ["websocket", "polling"], // allow fallback
@@ -37,20 +62,6 @@ const io = new Server(httpServer, {
 
 // ✅ Initialize chat socket
 chatSocket(io);
-
-// ✅ Fix for __dirname
-const __filename = fileURLToPath(import.meta.url);
-
-// ✅ Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(
-  cors({
-    origin: ["http://localhost:5173"],
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-  })
-);
 
 // ✅ MongoDB connection
 mongoose

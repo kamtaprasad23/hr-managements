@@ -27,9 +27,8 @@ function AdminLogin() {
 
     try {
       const res = await API.post("/admin/login", form);
-      const { token, role, name, id } = res.data; // ✅ destructure after response
+      const { token, role, name, id } = res.data;
 
-      // ✅ Save in Redux
       dispatch(
         loginSuccess({
           user: { email: form.email, role, name, id },
@@ -37,7 +36,6 @@ function AdminLogin() {
         })
       );
 
-      // ✅ Save in localStorage
       localStorage.setItem("token", token);
       localStorage.setItem("role", role.toLowerCase());
       localStorage.setItem("name", name);
@@ -45,12 +43,10 @@ function AdminLogin() {
         "admin",
         JSON.stringify({ email: form.email, role, name, id })
       );
-      console.log(localStorage.getItem("admin"));
 
       setSuccess(res.data.message);
       setError("");
 
-      // Redirect by role
       setTimeout(() => {
         if (["admin", "hr", "manager"].includes(role.toLowerCase())) {
           navigate("/admin/dashboard");

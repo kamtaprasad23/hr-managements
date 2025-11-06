@@ -1,4 +1,3 @@
-
 import express from "express";
 import {
   getProfile,
@@ -7,8 +6,11 @@ import {
   loginEmployee,
   getEmployeeProfile,
   getEmployeeDashboard,
- getAllAdminsForChat,
-  getAllEmployeesForChat,} from "../controllers/employeeController.js";
+  changeEmployeePassword,        // from main
+  getAllAdminsForChat,           // from your version
+  getAllEmployeesForChat,        // from your version
+} from "../controllers/employeeController.js";
+
 import {
   verifyToken,
   employeeOnly,
@@ -23,8 +25,10 @@ router.post("/login", loginEmployee);
 router.get("/dashboard", verifyToken, employeeOnly, getEmployeeDashboard);
 router.get("/profile", verifyToken, employeeOnly, getProfile);
 router.put("/profile", verifyToken, employeeOnly, updateProfile);
+router.put("/profile/change-password", verifyToken, employeeOnly, changeEmployeePassword);
 router.delete("/profile-img", verifyToken, employeeOnly, deleteProfileImg);
 router.get("/profile/:id", verifyToken, employeeOnly, getEmployeeProfile);
+
 // 🟢 Chat endpoints for employee
 router.get("/admins", verifyToken, employeeOnly, getAllAdminsForChat);
 router.get("/employees", verifyToken, employeeOnly, getAllEmployeesForChat);
