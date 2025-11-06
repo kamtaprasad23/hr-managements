@@ -13,6 +13,8 @@ export default function EmpNavbar({ toggleSidebar }) {
   const notificationRef = useRef(null);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const token = localStorage.getItem("token");
+
 
   const isDarkMode = useSelector((state) => state.settings.isDarkMode);
 
@@ -35,7 +37,7 @@ export default function EmpNavbar({ toggleSidebar }) {
 
   const fetchUser = async () => {
     try {
-      const res = await API.get("/profile");
+      const res = await API.get("/profile", { headers: { Authorization: `Bearer ${token}` } });
       setUser(res.data);
     } catch (err) {
       console.error("Error fetching user:", err);

@@ -1,5 +1,3 @@
-
-//new update code
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
@@ -26,32 +24,40 @@ function AdminLogin() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
+
     try {
       const res = await API.post("/admin/login", form);
-      const { token, role, name } = res.data;
+      const { token, role, name, id } = res.data; // ✅ destructure after response
 
+      // ✅ Save in Redux
       dispatch(
         loginSuccess({
-          user: { email: form.email, role, name },
+          user: { email: form.email, role, name, id },
           token,
         })
       );
 
+      // ✅ Save in localStorage
       localStorage.setItem("token", token);
       localStorage.setItem("role", role.toLowerCase());
       localStorage.setItem("name", name);
+      localStorage.setItem(
+        "admin",
+        JSON.stringify({ email: form.email, role, name, id })
+      );
+      console.log(localStorage.getItem("admin"));
 
       setSuccess(res.data.message);
       setError("");
 
       // Redirect by role
-     setTimeout(() => {
-  if (["admin", "hr", "manager"].includes(role.toLowerCase())) {
-    navigate("/admin/dashboard");
-  } else {
-    navigate("/");
-  }
-}, 100);
+      setTimeout(() => {
+        if (["admin", "hr", "manager"].includes(role.toLowerCase())) {
+          navigate("/admin/dashboard");
+        } else {
+          navigate("/");
+        }
+      }, 100);
     } catch (err) {
       setError(err.response?.data?.message || "Login failed. Please try again.");
       setSuccess("");
@@ -84,7 +90,9 @@ function AdminLogin() {
           </p>
 
           {error && (
-            <p className="text-red-500 text-center mb-4 bg-red-100 dark:bg-red-900/30 p-3 rounded-lg">{error}</p>
+            <p className="text-red-500 text-center mb-4 bg-red-100 dark:bg-red-900/30 p-3 rounded-lg">
+              {error}
+            </p>
           )}
           {success && (
             <p className="text-green-500 text-center mb-4 bg-green-100 dark:bg-green-900/30 p-3 rounded-lg">
@@ -93,7 +101,10 @@ function AdminLogin() {
           )}
 
           <div className="mb-4 relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <Mail
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+              size={20}
+            />
             <input
               type="email"
               name="email"
@@ -107,7 +118,10 @@ function AdminLogin() {
           </div>
 
           <div className="mb-4 relative">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <Lock
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+              size={20}
+            />
             <input
               type={showPassword ? "text" : "password"}
               name="password"
@@ -128,7 +142,10 @@ function AdminLogin() {
           </div>
 
           <div className="text-right mb-6">
-            <Link to="/admin/forgot-password" className="text-sm text-blue-600 hover:underline">
+            <Link
+              to="/admin/forgot-password"
+              className="text-sm text-blue-600 hover:underline"
+            >
               Forgot Password?
             </Link>
           </div>
@@ -143,7 +160,10 @@ function AdminLogin() {
 
           <p className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
             Don’t have an account?{" "}
-            <Link to="/admin-register" className="font-semibold text-blue-600 hover:underline">
+            <Link
+              to="/admin-register"
+              className="font-semibold text-blue-600 hover:underline"
+            >
               Register
             </Link>
           </p>

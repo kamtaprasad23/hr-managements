@@ -7,6 +7,7 @@ import {
   ClipboardList,
   FileText,
   Calendar,
+  MessageSquare,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -101,6 +102,13 @@ export default function EmployeeDashboard() {
           title="Salary Slips"
           text="View salary details"
           path="/employee/salary-slip"
+        />
+         <Card
+          icon={<MessageSquare />}
+          color="blue"
+          title="Chat"
+          text="Chat with your team"
+          path="/employee/chat"
         />
       </div>
     </div>

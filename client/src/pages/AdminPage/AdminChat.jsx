@@ -4,8 +4,9 @@ import API from "../../utils/api";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import { Trash2 } from "lucide-react";
+import { socket } from "../../socket/socket.js";
 
-const socket = io("http://localhost:5002", { transports: ["websocket"] });
+
 
 export default function AdminChat() {
   const [users, setUsers] = useState([]);
@@ -20,11 +21,10 @@ export default function AdminChat() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const user = useSelector((state) => state.auth?.user);
-
   const chatBoxRef = useRef(null);
   const inputRef = useRef(null);
 
-  // ✅ Load admin ID
+  // ✅ Load Admin ID
   useEffect(() => {
     const storedRaw = localStorage.getItem("admin");
     const stored = storedRaw ? JSON.parse(storedRaw) : null;
@@ -49,9 +49,7 @@ export default function AdminChat() {
     API.get(endpoint)
       .then((res) => {
         let data = res.data;
-        if (adminId) {
-          data = res.data.filter((u) => u._id !== adminId);
-        }
+        if (adminId) data = res.data.filter((u) => u._id !== adminId);
         setUsers(data);
       })
       .catch(() => toast.error(`Failed to load ${chatType}s`));
@@ -62,7 +60,12 @@ export default function AdminChat() {
     if (!selectedUser || !adminId) return;
 
     const roomId = [selectedUser._id, adminId].sort().join("_");
+    console.log("Joining room:", roomId);
     socket.emit("joinRoom", roomId);
+    socket.on("connect", () => console.log("✅ Socket connected:", socket.id));
+socket.on("connect_error", (err) => console.error("❌ Socket connect error:", err.message));
+socket.on("disconnect", (reason) => console.warn("🔴 Socket disconnected:", reason));
+
 
     API.get(`/chat/${selectedUser._id}/${adminId}`)
       .then((res) => {
@@ -73,29 +76,29 @@ export default function AdminChat() {
       })
       .catch(() => toast.error("Failed to load messages"));
 
-   socket.on("receiveMessage", (msg) => {
-  const validMsg =
-    (msg.senderId === selectedUser._id && msg.receiverId === adminId) ||
-    (msg.senderId === adminId && msg.receiverId === selectedUser._id);
+    socket.on("receiveMessage", (msg) => {
+      const validMsg =
+        (msg.senderId === selectedUser._id && msg.receiverId === adminId) ||
+        (msg.senderId === adminId && msg.receiverId === selectedUser._id);
 
-  if (!validMsg) return;
+      if (!validMsg) return;
 
-  setMessages((prev) => {
-    // Avoid duplicates
-    const exists = prev.some(
-      (m) =>
-        m._id === msg._id ||
-        (m.message === msg.message &&
-          m.senderId === msg.senderId &&
-          Math.abs(new Date(m.createdAt) - new Date(msg.createdAt)) < 1000)
-    );
-    if (exists) return prev;
-
-    return [...prev, msg].sort(
-      (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
-    );
-  });
-});
+      setMessages((prev) => {
+        const exists = prev.some(
+          (m) =>
+            m._id === msg._id ||
+            (m.message === msg.message &&
+              m.senderId === msg.senderId &&
+              Math.abs(new Date(m.createdAt) - new Date(msg.createdAt)) < 1000)
+        );
+        if (exists) return prev;
+        return [...prev, msg].sort(
+          (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+        );
+      });
+    }
+  
+  );
 
     return () => {
       socket.emit("leaveRoom", roomId);
@@ -103,26 +106,14 @@ export default function AdminChat() {
     };
   }, [selectedUser, adminId]);
 
-  // ✅ Auto-scroll to bottom safely (handles mobile + resize)
+  // ✅ Auto-scroll on new messages
   useEffect(() => {
     const el = chatBoxRef.current;
     if (!el) return;
-
-    const scrollToBottom = () => {
-      el.scrollTop = el.scrollHeight;
-    };
-
-    // Scroll on new messages or user change
-    scrollToBottom();
-
-    // Handle window resize (mobile keyboard open/close)
-    const resizeHandler = () => setTimeout(scrollToBottom, 150);
-    window.addEventListener("resize", resizeHandler);
-
-    return () => window.removeEventListener("resize", resizeHandler);
+    el.scrollTop = el.scrollHeight;
   }, [messages, selectedUser]);
 
-  // ✅ Send message
+  // ✅ Send text message
   const sendMessage = () => {
     if (!message.trim() || !selectedUser || !adminId) return;
 
@@ -132,32 +123,79 @@ export default function AdminChat() {
       senderId: adminId,
       receiverId: selectedUser._id,
       message,
+      type: "text",
       createdAt: new Date().toISOString(),
     };
 
     socket.emit("sendMessage", msgData);
-    setMessages((prev) =>
-      [...prev, msgData].sort(
-        (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
-      )
-    );
+    setMessages((prev) => [...prev, msgData]);
     setMessage("");
-
-    setTimeout(() => {
-      const el = chatBoxRef.current;
-      if (el) el.scrollTop = el.scrollHeight;
-    }, 50);
   };
 
-  // ✅ Delete logic
+  // ✅ File upload handler
+ const handleFileChange = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  try {
+    toast.loading("Uploading file...", { id: "upload" });
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const token = localStorage.getItem("token");
+
+    const res = await API.post("/chat/upload", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    toast.dismiss("upload");
+
+    if (res.data.success) {
+      const fileUrl = res.data.file.url;
+
+      // Determine file type
+      const fileType = fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+        ? "image"
+        : "file";
+
+      const msgData = {
+        senderId: adminId,
+        receiverId: selectedUser._id,
+        type: fileType,
+        message: fileUrl, // ✅ use URL directly
+        createdAt: new Date().toISOString(),
+      };
+
+      socket.emit("sendMessage", msgData);
+      setMessages((prev) => [...prev, msgData]);
+      toast.success("File sent");
+    } else {
+      toast.error("Upload failed");
+    }
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to upload file");
+  } finally {
+    e.target.value = "";
+  }
+};
+
+
+  // ✅ Delete chat or message
   const confirmDeleteMessage = (msgId) => {
     setDeleteTarget({ type: "message", id: msgId });
     setShowDeleteModal(true);
   };
+
   const confirmDeleteChat = () => {
     setDeleteTarget({ type: "chat" });
     setShowDeleteModal(true);
   };
+
   const handleDelete = async () => {
     if (!deleteTarget) return;
     setIsDeleting(true);
@@ -180,7 +218,14 @@ export default function AdminChat() {
     }
   };
 
-  // ✅ Format date header
+  // ✅ Group messages by date
+  const groupedMessages = messages.reduce((groups, msg) => {
+    const key = new Date(msg.createdAt).toDateString();
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(msg);
+    return groups;
+  }, {});
+
   const getDateLabel = (dateString) => {
     const date = new Date(dateString);
     const today = new Date();
@@ -194,33 +239,25 @@ export default function AdminChat() {
     });
   };
 
-  // ✅ Group messages by date
-  const groupedMessages = messages.reduce((groups, msg) => {
-    const key = new Date(msg.createdAt).toDateString();
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(msg);
-    return groups;
-  }, {});
-
   return (
-    <div className="flex flex-col md:flex-row h-[85vh] border rounded-xl overflow-hidden shadow-md bg-white dark:bg-gray-900 transition-colors duration-300 max-w-full">
+    <div className="flex flex-col md:flex-row h-[85vh] border rounded-xl overflow-hidden shadow-md transition-colors duration-300 max-w-full">
       {/* SIDEBAR */}
       <div
-        className={`w-full md:w-1/3 lg:w-1/4 border-r dark:border-gray-700 p-4 overflow-y-auto overflow-x-hidden bg-gray-50 dark:bg-gray-800 
+        className={`w-full md:w-1/3 lg:w-1/4 border-r dark:border-gray-700 p-4 overflow-y-auto
         ${selectedUser ? "hidden md:block" : "block"}`}
       >
         <h2 className="font-semibold text-lg mb-4 text-blue-600 text-center md:text-left">
           Chat With
         </h2>
 
-        {/* Toggle */}
-        <div className="flex justify-center md:justify-start mb-5 gap-2 flex-wrap overflow-x-hidden">
+        {/* Toggle Buttons */}
+        <div className="flex justify-center md:justify-start mb-5 gap-2 flex-wrap">
           <button
             onClick={() => setChatType("employee")}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
               chatType === "employee"
-                ? "bg-blue-600 text-white shadow-sm"
-                : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
+                ? "bg-blue-600 text-white"
+                : "border hover:bg-gray-200 hover:text-black cursor-pointer"
             }`}
           >
             Employees
@@ -229,8 +266,8 @@ export default function AdminChat() {
             onClick={() => setChatType("admin")}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
               chatType === "admin"
-                ? "bg-blue-600 text-white shadow-sm"
-                : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
+                ? "bg-blue-600 text-white"
+                : "border hover:bg-gray-200 hover:text-black cursor-pointer"
             }`}
           >
             Admins
@@ -246,8 +283,8 @@ export default function AdminChat() {
                 onClick={() => setSelectedUser(u)}
                 className={`p-3 cursor-pointer rounded-lg text-center md:text-left text-sm font-medium transition ${
                   selectedUser?._id === u._id
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200"
+                    ? "bg-blue-600 text-white"
+                    : "border hover:bg-gray-200 hover:text-black"
                 }`}
               >
                 {u.name}
@@ -263,14 +300,14 @@ export default function AdminChat() {
 
       {/* CHAT AREA */}
       <div
-        className={`flex-1 flex flex-col relative bg-gray-100 dark:bg-gray-900 w-full overflow-hidden
+        className={`flex-1 flex flex-col relative w-full overflow-hidden
         ${!selectedUser ? "hidden md:flex" : "flex"}`}
       >
         {selectedUser ? (
           <>
             {/* Header */}
-            <div className="p-4 border-b dark:border-gray-700 font-semibold text-blue-600 flex justify-between items-center bg-white dark:bg-gray-800 sticky top-0 z-10">
-              <span className="truncate">Chat with {selectedUser.name}</span>
+            <div className="p-4 border-b dark:border-gray-700 font-semibold text-blue-600 flex justify-between items-center sticky top-0 z-10">
+              <span>Chat with {selectedUser.name}</span>
               <button
                 onClick={confirmDeleteChat}
                 className="text-red-600 hover:text-red-800 flex items-center gap-1 text-sm"
@@ -280,10 +317,7 @@ export default function AdminChat() {
             </div>
 
             {/* Messages */}
-            <div
-              ref={chatBoxRef}
-              className="flex-1 p-4 overflow-y-auto chat-box space-y-4"
-            >
+            <div ref={chatBoxRef} className="flex-1 p-4 overflow-y-auto space-y-4">
               {Object.keys(groupedMessages).map((dateKey) => (
                 <div key={dateKey}>
                   <div className="text-center text-gray-500 text-xs my-3">
@@ -299,9 +333,30 @@ export default function AdminChat() {
                             : "bg-gray-200 text-black dark:bg-blue-900 dark:text-white self-start rounded-bl-sm"
                         }`}
                       >
-                        <p className="whitespace-pre-wrap break-words leading-snug pr-8">
-                          {m.message}
-                        </p>
+                      {m.type === "file" || m.type === "image" ? (
+  m.message.match(/\.(jpg|jpeg|png|webp|gif)$/i) ? (
+    <img
+      src={m.message}
+      alt="attachment"
+      className="max-w-[200px] rounded-lg cursor-pointer hover:opacity-90 transition"
+      onClick={() => window.open(m.message, "_blank")}
+    />
+  ) : (
+    <a
+      href={m.message}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="underline text-sm text-blue-200 hover:text-blue-100 break-all"
+    >
+      📎 {m.message.split("/").pop()}
+    </a>
+  )
+) : (
+  <p className="whitespace-pre-wrap break-words leading-snug pr-8">
+    {m.message}
+  </p>
+)}
+
                         <span className="absolute bottom-1 right-2 text-[10px] opacity-75">
                           {new Date(m.createdAt).toLocaleTimeString([], {
                             hour: "2-digit",
@@ -323,8 +378,10 @@ export default function AdminChat() {
               ))}
             </div>
 
-            {/* Input */}
-            <div className="p-3 flex gap-2 border-t dark:border-gray-700 bg-white dark:bg-gray-800 sticky bottom-0 z-20">
+            {/* Input Section */}
+            <div className="p-3 flex items-center gap-2 border-t dark:border-gray-700 sticky bottom-0 z-20">
+            
+              {/* Text Input */}
               <input
                 ref={inputRef}
                 value={message}
@@ -335,9 +392,11 @@ export default function AdminChat() {
                     sendMessage();
                   }
                 }}
-                className="flex-1 border border-gray-300 dark:border-gray-700 p-2 rounded-lg bg-gray-50 dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 border border-gray-300 dark:border-gray-700 p-2 rounded-lg text-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Type a message..."
               />
+
+              {/* Send */}
               <button
                 onClick={sendMessage}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium transition"
@@ -383,3 +442,32 @@ export default function AdminChat() {
     </div>
   );
 }
+
+{/* EOF */ }
+
+  // {/* File Upload */}
+  //             <div className="relative">
+  //               <button
+  //                 onClick={() => document.getElementById("fileInput").click()}
+  //                 className="p-2 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+  //                 title="Attach file"
+  //               >
+  //                 <svg
+  //                   xmlns="http://www.w3.org/2000/svg"
+  //                   fill="none"
+  //                   viewBox="0 0 24 24"
+  //                   strokeWidth={1.8}
+  //                   stroke="currentColor"
+  //                   className="w-5 h-5 text-gray-700 dark:text-gray-300"
+  //                 >
+  //                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+  //                 </svg>
+  //               </button>
+  //               <input
+  //                 id="fileInput"
+  //                 type="file"
+  //                 accept="image/*,.pdf,.docx,.xlsx"
+  //                 onChange={handleFileChange}
+  //                 className="hidden"
+  //               />
+  //             </div>

@@ -25,6 +25,9 @@ import Notification from "./pages/AdminPage/Notification";
 import AdminEmployeeProfile from "./pages/AdminPage/AdminEmployeeProfile";
 import SubAdminAttendance from "./pages/AdminPage/SubAdminAttendance"; // 👈 नया पेज इम्पोर्ट करें
 import AdminForgotPassword from "./pages/AdminForgotPassword";
+import AdminChat from "./pages/AdminPage/AdminChat";
+
+
 
 // Employee pages
 import EmployeeLayout from "./Layout/EmployeeLayout";
@@ -35,6 +38,7 @@ import EmpLeave from "./pages/employeePage/EmpLeave";
 import EmpProfile from "./pages/employeePage/EmpProfile";
 import EmpSalaryslip from "./pages/employeePage/EmpSalaryslip";
 import EmployeeSettings from "./pages/employeePage/EmpSetting";
+import EmployeeChat from "./pages/employeePage/EmployeeChat";
 // ... all imports
 
 function App() {
@@ -71,6 +75,8 @@ function App() {
         <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/admin-register" element={<AdminRegister />} />
         <Route path="/employee-login" element={<EmployeeLogin />} />
+        
+        
         <Route path="/admin/forgot-password" element={<AdminForgotPassword />} />
 
         {/* Admin Dashboard */}
@@ -85,6 +91,7 @@ function App() {
           <Route index element={<AdminHome />} />
           <Route path="emp-management" element={<AdminEmpManagement />} />
           <Route path="employee/:id" element={<AdminEmployeeProfile />} />
+          
           <Route path="reports" element={<AdminEmpReports />} />
 
           {/* Task Page - HR Blocked */}
@@ -117,6 +124,7 @@ function App() {
 
           <Route path="leave" element={<AdminLeaveManagement />} />
           <Route path="attendance" element={<AttendanceTracker />} />
+          <Route path="chat" element={<AdminChat />} />
           <Route path="notification" element={<Notification />} />
 
           {/* Settings - All can access */}
@@ -137,6 +145,7 @@ function App() {
           <Route path="tasks" element={<EmpTask />} />
           <Route path="leave" element={<EmpLeave />} />
           <Route path="profile" element={<EmpProfile />} />
+          <Route path="chat" element={<EmployeeChat />} />
           <Route path="salary-slip" element={<EmpSalaryslip />} />
           <Route path="setting" element={<EmployeeSettings />} />
         </Route>

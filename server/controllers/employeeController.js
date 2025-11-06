@@ -23,7 +23,7 @@ export const loginEmployee = async (req, res) => {
 
     res.json({
       token,
-      employee: { id: employee._id, name: employee.name, email, adminId: employee.adminId },
+      employee: { _id: employee._id, name: employee.name, email, adminId: employee.adminId },
     });
   } catch (error) {
     res.status(500).json({ message: "Server error" });
@@ -307,3 +307,33 @@ export const getEmployeeDashboard = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// get asdmin list for employee chat user list
+// 🟢 Get all admins (Admin, HR, Manager) for employee chat
+export const getAllAdminsForChat = async (req, res) => {
+  try {
+    const admins = await Admin.find({
+      role: { $in: ["admin", "hr", "manager"] },
+    }).select("-password");
+
+    res.json(admins);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch admins", error: error.message });
+  }
+};
+
+//get employee list for chat
+
+// 🟢 Get all employees for chat (excluding the logged-in one)
+export const getAllEmployeesForChat = async (req, res) => {
+  try {
+    const employees = await Employee.find({
+      _id: { $ne: req.user.id }, // exclude self
+    }).select("-password");
+
+    res.json(employees);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch employees", error: error.message });
+  }
+};
+

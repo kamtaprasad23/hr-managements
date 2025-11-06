@@ -77,6 +77,7 @@ import {
   getBirthdays,
   sendBirthdayWish,
   getAdminProfile,
+  getAllAdmins,
   approveEmployeeUpdate,
   rejectEmployeeUpdate,
   updateAdminProfile,
@@ -117,6 +118,9 @@ router.get("/dashboard", verifyToken, allowAdminHrManager, getAdminDashboardData
 router.get("/employees", verifyToken, allowAdminHrManager, getEmployees);
 router.get("/birthdays", verifyToken, allowAdminHrManager, getBirthdays);
 router.post("/birthday-wish/:employeeId", verifyToken, allowAdminHrManager, sendBirthdayWish);
+
+// 🧩 Admins
+router.get("/getAdmins", verifyToken, adminOnly, getAllAdmins);
 
 // 🧩 Profile Update
 router.put("/profile", verifyToken, allowAdminHrManager, updateAdminProfile);

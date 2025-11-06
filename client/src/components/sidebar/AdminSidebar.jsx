@@ -26,6 +26,7 @@ export default function AdminSidebar() {
     { name: "Attendance", icon: <AccessTimeIcon style={{ fontSize: 20 }} />, path: "/admin/dashboard/attendance" },
     { name: "Leave", icon: <FaCalendarAlt size={20} />, path: "/admin/dashboard/leave" },
     { name: "Task", icon: <MdTaskAlt size={20} />, path: "/admin/dashboard/task" },
+    { name:"Chat", icon:<FaUsers size={20} />, path:"/admin/dashboard/chat" },
     { name: "Salary", icon: <AttachMoneyIcon style={{ fontSize: 20 }} />, path: "/admin/dashboard/salary" },
     { name: "Reports", icon: <FaChartBar size={20} />, path: "/admin/dashboard/reports" },
     { name: "Settings", icon: <MdSettings size={20} />, path: "/admin/dashboard/settings" },

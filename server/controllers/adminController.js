@@ -58,6 +58,8 @@ export const loginAdmin = async (req, res) => {
       token,
       role: admin.role,
       name: admin.name,
+        id: admin.id,  // ✅ add this
+
       isMainAdmin: admin.isMainAdmin,
     });
   } catch (error) {
@@ -266,6 +268,16 @@ export const getAdminDashboardData = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: "Error fetching dashboard data", error: error.message });
+  }
+};
+
+//✅ Get All Admins (HR/Managers) - For Employee Chat User List
+export const getAllAdmins = async (req, res) => {
+  try {
+    const admins = await Admin.find().select("-password"); // exclude passwords
+    res.json(admins);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch admins" });
   }
 };
 

@@ -2,14 +2,42 @@ import mongoose from "mongoose";
 
 const chatSchema = new mongoose.Schema(
   {
-    senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    receiverId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    message: { type: String, required: true },
+    senderId: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: "User", 
+      required: true 
+    },
+    receiverId: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: "User", 
+      required: true 
+    },
+    
+    // For text or file message content
+    message: { type: String },
+
+    // To identify message type (helps frontend render properly)
+    type: { 
+      type: String, 
+      enum: ["text", "image", "file"], 
+      default: "text" 
+    },
+
+    // Optional: store file metadata (for downloads or previews)
+    fileInfo: {
+      url: String,
+      originalname: String,
+      mimetype: String,
+      size: Number,
+    },
+
+    // Optional: read/unread tracking
+    isRead: { type: Boolean, default: false },
   },
-  { timestamps: true } // ✅ correct spelling
+  { timestamps: true }
 );
 
-// ✅ Index for faster chat lookup and sorting
+// ✅ Index for faster lookup & sorting
 chatSchema.index({ senderId: 1, receiverId: 1, createdAt: 1 });
 
 export default mongoose.model("Chat", chatSchema);

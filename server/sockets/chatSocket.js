@@ -4,65 +4,57 @@ export default function chatSocket(io) {
   io.on("connection", (socket) => {
     console.log("🟢 User connected:", socket.id);
 
-    // ✅ Join chat room
+    // ✅ Join a room
     socket.on("joinRoom", (roomId) => {
       socket.join(roomId);
-      console.log(`📥 Joined room: ${roomId}`);
+      console.log(`📥 User joined room: ${roomId}`);
     });
 
-    // ✅ Handle sending messages
+    // ✅ Leave a room
+    socket.on("leaveRoom", (roomId) => {
+      socket.leave(roomId);
+      console.log(`📤 User left room: ${roomId}`);
+    });
+
+    // ✅ Send a message
     socket.on("sendMessage", async (data) => {
-      const { senderId, receiverId, message, room } = data;
+      const { senderId, receiverId, message, room, type = "text" } = data;
+      if (!message || !senderId || !receiverId || !room) return;
 
       try {
-        // Save message to MongoDB (room is optional)
-        const newMessage = new Chat({ senderId, receiverId, message, room });
+        const newMessage = new Chat({ senderId, receiverId, message, type, room });
         await newMessage.save();
 
-        // Fetch again to include timestamps
-        let savedMessage = await Chat.findById(newMessage._id).lean();
+        const savedMessage = await Chat.findById(newMessage._id).lean();
+        savedMessage.createdAt = savedMessage.createdAt || new Date();
 
-        // ✅ Fallback: ensure createdAt always exists
-        if (!savedMessage.createdAt) {
-          savedMessage.createdAt = new Date();
-        }
-
-        // Send message only to that specific room
+        // Emit to all in room
         io.to(room).emit("receiveMessage", savedMessage);
-
-        console.log(
-          `💬 Message saved & sent in ${room}: ${message} at ${savedMessage.createdAt}`
-        );
+        console.log(`💬 Message sent in ${room}: ${message}`);
       } catch (err) {
         console.error("❌ Error saving message:", err);
       }
     });
 
-    // ✅ Load chat history (always sorted)
+    // ✅ Load chat history
     socket.on("loadMessages", async ({ user1, user2 }) => {
+      if (!user1 || !user2) return;
       try {
         const messages = await Chat.find({
           $or: [
             { senderId: user1, receiverId: user2 },
             { senderId: user2, receiverId: user1 },
           ],
-        }).sort({ createdAt: 1 }); // ascending
-
+        }).sort({ createdAt: 1 });
         socket.emit("chatHistory", messages);
       } catch (err) {
         console.error("❌ Error loading chat history:", err);
       }
     });
 
-    // ✅ Leave room
-    socket.on("leaveRoom", (roomId) => {
-      socket.leave(roomId);
-      console.log(`📤 Left room: ${roomId}`);
-    });
-
-    // ✅ Disconnect cleanup
-    socket.on("disconnect", () => {
-      console.log("🔴 User disconnected:", socket.id);
+    // ✅ Disconnect
+    socket.on("disconnect", (reason) => {
+      console.log("🔴 User disconnected:", socket.id, reason);
     });
   });
 }

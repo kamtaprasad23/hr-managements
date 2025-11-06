@@ -6,6 +6,7 @@ import {
   BedSingle,
   User,
   IndianRupee,
+  MessageSquare,
   Settings,
 } from "lucide-react";
 
@@ -15,6 +16,7 @@ export default function EmpSidebar({ isOpen }) {
     { name: "Attendance", icon: <Briefcase size={20} />, path: "/employee/attendance" },
     { name: "Tasks", icon: <FileText size={20} />, path: "/employee/tasks" },
     { name: "Leave", icon: <BedSingle size={20} />, path: "/employee/leave" },
+    { name: "Chat", icon: <MessageSquare size={20} />, path: "/employee/chat" },
     { name: "Profile", icon: <User size={20} />, path: "/employee/profile" },
     { name: "Salary Slip", icon: <IndianRupee size={20} />, path: "/employee/salary-slip" }, // Corrected path
     { name: "Settings", icon: <Settings size={20} />, path: "/employee/setting" },

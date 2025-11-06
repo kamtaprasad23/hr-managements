@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import io from "socket.io-client";
 import API from "../../utils/api";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import { Trash2 } from "lucide-react";
+import { socket } from "../../socket/socket.js";
 
-const socket = io("http://localhost:5002", { transports: ["websocket"] });
 
 export default function EmployeeChat() {
   const [users, setUsers] = useState([]);
@@ -20,25 +20,25 @@ export default function EmployeeChat() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const user = useSelector((state) => state.auth?.user);
+  const chatBoxRef = useRef(null);
+  const inputRef = useRef(null);
 
-  // ✅ Load employee ID
+  // Load employee ID from user or localStorage
   useEffect(() => {
     const storedRaw = localStorage.getItem("employee");
     const stored = storedRaw ? JSON.parse(storedRaw) : null;
 
-    if (user?.id) {
-      setEmployeeId(user.id);
+    if (user?._id) {
+      setEmployeeId(user._id);
       localStorage.setItem("employee", JSON.stringify(user));
-    } else if (stored?.id) {
-      setEmployeeId(stored.id);
-    } else {
-      console.warn("⚠️ No employee found (Redux + LocalStorage both empty)");
+    } else if (stored?._id) {
+      setEmployeeId(stored._id);
     }
   }, [user]);
 
-  // ✅ Fetch user list (admins or employees)
+  // Load users list
   useEffect(() => {
-    const endpoint = chatType === "admin" ? "/admins" : "/getallEmployees";
+    const endpoint = chatType === "admin" ? "/admins" : "/employees";
     setUsers([]);
     setSelectedUser(null);
 
@@ -47,12 +47,18 @@ export default function EmployeeChat() {
       .catch(() => toast.error(`Failed to load ${chatType}s`));
   }, [chatType]);
 
-  // ✅ Join room & load messages
+  // Join chat room and receive messages
   useEffect(() => {
     if (!selectedUser || !employeeId) return;
 
     const roomId = [selectedUser._id, employeeId].sort().join("_");
+        console.log("Joining room:", roomId);
+
     socket.emit("joinRoom", roomId);
+    socket.on("connect", () => console.log("✅ Socket connected:", socket.id));
+socket.on("connect_error", (err) => console.error("❌ Socket connect error:", err.message));
+socket.on("disconnect", (reason) => console.warn("🔴 Socket disconnected:", reason));
+
 
     API.get(`/chat/${selectedUser._id}/${employeeId}`)
       .then((res) => {
@@ -64,18 +70,25 @@ export default function EmployeeChat() {
       .catch(() => toast.error("Failed to load messages"));
 
     socket.on("receiveMessage", (msg) => {
-      if (msg.senderId === employeeId) return;
-
       const validMsg =
         (msg.senderId === selectedUser._id && msg.receiverId === employeeId) ||
         (msg.senderId === employeeId && msg.receiverId === selectedUser._id);
 
-      if (validMsg)
-        setMessages((prev) =>
-          [...prev, msg].sort(
-            (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
-          )
+      if (!validMsg) return;
+
+      setMessages((prev) => {
+        const exists = prev.some(
+          (m) =>
+            m._id === msg._id ||
+            (m.message === msg.message &&
+              m.senderId === msg.senderId &&
+              Math.abs(new Date(m.createdAt) - new Date(msg.createdAt)) < 1000)
         );
+        if (exists) return prev;
+        return [...prev, msg].sort(
+          (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+        );
+      });
     });
 
     return () => {
@@ -84,13 +97,13 @@ export default function EmployeeChat() {
     };
   }, [selectedUser, employeeId]);
 
-  // ✅ Scroll to bottom
+  // Scroll chat to bottom
   useEffect(() => {
-    const chatBox = document.querySelector(".chat-box");
-    if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+    const el = chatBoxRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [messages]);
 
-  // ✅ Send message
+  // Send text message
   const sendMessage = () => {
     if (!message.trim() || !selectedUser || !employeeId) return;
 
@@ -100,19 +113,66 @@ export default function EmployeeChat() {
       senderId: employeeId,
       receiverId: selectedUser._id,
       message,
+      type: "text",
       createdAt: new Date().toISOString(),
     };
 
     socket.emit("sendMessage", msgData);
-    setMessages((prev) =>
-      [...prev, msgData].sort(
-        (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
-      )
-    );
+    setMessages((prev) => [...prev, msgData]);
     setMessage("");
   };
 
-  // ✅ Confirm delete
+  // Send file
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      toast.loading("Uploading file...", { id: "upload" });
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const token = localStorage.getItem("token");
+
+      const res = await API.post("/chat/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      toast.dismiss("upload");
+
+      if (res.data.success) {
+        const fileUrl = res.data.file.url;
+        const fileType = fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+          ? "image"
+          : "file";
+
+        const msgData = {
+          senderId: employeeId,
+          receiverId: selectedUser._id,
+          type: fileType,
+          message: fileUrl,
+          createdAt: new Date().toISOString(),
+        };
+
+        socket.emit("sendMessage", msgData);
+        setMessages((prev) => [...prev, msgData]);
+        toast.success("File sent");
+      } else {
+        toast.error("Upload failed");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to upload file");
+    } finally {
+      e.target.value = "";
+    }
+  };
+
+  // Delete message or chat
   const confirmDeleteMessage = (msgId) => {
     setDeleteTarget({ type: "message", id: msgId });
     setShowDeleteModal(true);
@@ -123,7 +183,6 @@ export default function EmployeeChat() {
     setShowDeleteModal(true);
   };
 
-  // ✅ Handle delete
   const handleDelete = async () => {
     if (!deleteTarget) return;
     setIsDeleting(true);
@@ -140,28 +199,26 @@ export default function EmployeeChat() {
       }
       setShowDeleteModal(false);
     } catch (err) {
-      console.error("Delete failed:", err);
       toast.error("Failed to delete");
     } finally {
       setIsDeleting(false);
     }
   };
 
-  // ✅ Format time
-  const formatTime = (isoString) => {
-    const date = new Date(isoString);
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  };
+  // Group messages by date
+  const groupedMessages = messages.reduce((groups, msg) => {
+    const key = new Date(msg.createdAt).toDateString();
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(msg);
+    return groups;
+  }, {});
 
-  // ✅ Helper: format date label like WhatsApp
   const getDateLabel = (dateString) => {
     const date = new Date(dateString);
     const today = new Date();
-    const diffTime = today - date;
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return "Today";
-    if (diffDays === 1) return "Yesterday";
+    const diff = Math.floor((today - date) / (1000 * 60 * 60 * 24));
+    if (diff === 0) return "Today";
+    if (diff === 1) return "Yesterday";
     return date.toLocaleDateString([], {
       day: "2-digit",
       month: "short",
@@ -169,53 +226,46 @@ export default function EmployeeChat() {
     });
   };
 
-  // ✅ Group messages by date
-  const groupedMessages = messages.reduce((groups, msg) => {
-    const dateKey = new Date(msg.createdAt).toDateString();
-    if (!groups[dateKey]) groups[dateKey] = [];
-    groups[dateKey].push(msg);
-    return groups;
-  }, {});
+  const formatTime = (isoString) =>
+    new Date(isoString).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
 
   return (
-    <div
-      className={`flex h-[85vh] border rounded-xl overflow-hidden shadow-md transition-colors duration-300 
-      ${selectedUser ? "flex-col md:flex-row" : "flex-col"}`}
-    >
-      {/* SIDEBAR */}
+    <div className="flex flex-col md:flex-row h-[85vh] border rounded-xl overflow-hidden shadow-md transition-colors duration-300 max-w-full">
       <div
-        className={`w-full md:w-1/3 lg:w-1/4 border-r dark:border-gray-700 p-4 overflow-y-auto bg-gray-50 dark:bg-gray-800 
-        ${selectedUser ? "hidden md:block" : "block"}`}
+        className={`w-full md:w-1/3 lg:w-1/4 border-r dark:border-gray-700 p-4 overflow-y-auto ${
+          selectedUser ? "hidden md:block" : "block"
+        }`}
       >
         <h2 className="font-semibold text-lg mb-4 text-blue-600 text-center md:text-left">
           Chat With
         </h2>
 
-        {/* Toggle buttons */}
-       <div className="flex justify-center md:justify-start mb-5 gap-2 flex-wrap overflow-x-hidden">
-  <button
-    onClick={() => setChatType("admin")}
-    className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-      chatType === "admin"
-        ? "bg-blue-600 text-white shadow-sm"
-        : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
-    }`}
-  >
-    Admins
-  </button>
-  <button
-    onClick={() => setChatType("employee")}
-    className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-      chatType === "employee"
-        ? "bg-blue-600 text-white shadow-sm"
-        : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
-    }`}
-  >
-    Employees
-  </button>
-</div>
+        <div className="flex justify-center md:justify-start mb-5 gap-2 flex-wrap">
+          <button
+            onClick={() => setChatType("admin")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+              chatType === "admin"
+                ? "bg-blue-600 text-white"
+                : "border hover:bg-gray-200 hover:text-black cursor-pointer"
+            }`}
+          >
+            Admins
+          </button>
+          <button
+            onClick={() => setChatType("employee")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+              chatType === "employee"
+                ? "bg-blue-600 text-white"
+                : "border hover:bg-gray-200 hover:text-black cursor-pointer"
+            }`}
+          >
+            Employees
+          </button>
+        </div>
 
-        {/* User list */}
         {users.length > 0 ? (
           <div className="space-y-2">
             {users.map((u) => (
@@ -224,8 +274,8 @@ export default function EmployeeChat() {
                 onClick={() => setSelectedUser(u)}
                 className={`p-3 cursor-pointer rounded-lg text-center md:text-left text-sm font-medium transition ${
                   selectedUser?._id === u._id
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200"
+                    ? "bg-blue-600 text-white"
+                    : "border hover:bg-gray-200 hover:text-black"
                 }`}
               >
                 {u.name}
@@ -239,16 +289,15 @@ export default function EmployeeChat() {
         )}
       </div>
 
-      {/* CHAT AREA */}
       <div
-        className={`flex-1 flex flex-col relative bg-gray-100 dark:bg-gray-900 overflow-y-auto 
-        ${!selectedUser ? "hidden md:flex" : "flex"}`}
+        className={`flex-1 flex flex-col relative w-full overflow-hidden ${
+          !selectedUser ? "hidden md:flex" : "flex"
+        }`}
       >
         {selectedUser ? (
           <>
-            {/* Header */}
-            <div className="p-4 border-b dark:border-gray-700 font-semibold text-blue-600 flex justify-between items-center bg-white dark:bg-gray-800 sticky top-0 z-10">
-              <span className="truncate">Chat with {selectedUser.name}</span>
+            <div className="p-4 border-b dark:border-gray-700 font-semibold text-blue-600 flex justify-between items-center sticky top-0 z-10">
+              <span>Chat with {selectedUser.name}</span>
               <button
                 onClick={confirmDeleteChat}
                 className="text-red-600 hover:text-red-800 flex items-center gap-1 text-sm"
@@ -257,8 +306,7 @@ export default function EmployeeChat() {
               </button>
             </div>
 
-            {/* Messages */}
-            <div className="flex-1 p-4 overflow-y-auto chat-box space-y-4 ">
+            <div ref={chatBoxRef} className="flex-1 p-4 overflow-y-auto space-y-4">
               {Object.keys(groupedMessages).map((dateKey) => (
                 <div key={dateKey}>
                   <div className="text-center text-gray-500 text-xs my-3">
@@ -274,9 +322,30 @@ export default function EmployeeChat() {
                             : "bg-gray-200 text-black dark:bg-blue-900 dark:text-white self-start rounded-bl-sm"
                         }`}
                       >
-                        <p className="whitespace-pre-wrap break-words leading-snug pr-8">
-                          {m.message}
-                        </p>
+                        {m.type === "file" || m.type === "image" ? (
+                          m.message.match(/\.(jpg|jpeg|png|webp|gif)$/i) ? (
+                            <img
+                              src={m.message}
+                              alt="attachment"
+                              className="max-w-[200px] rounded-lg cursor-pointer hover:opacity-90 transition"
+                              onClick={() => window.open(m.message, "_blank")}
+                            />
+                          ) : (
+                            <a
+                              href={m.message}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="underline text-sm text-blue-200 hover:text-blue-100 break-all"
+                            >
+                              {m.message.split("/").pop()}
+                            </a>
+                          )
+                        ) : (
+                          <p className="whitespace-pre-wrap break-words leading-snug pr-8">
+                            {m.message}
+                          </p>
+                        )}
+
                         <span className="absolute bottom-1 right-2 text-[10px] opacity-75">
                           {formatTime(m.createdAt)}
                         </span>
@@ -295,14 +364,22 @@ export default function EmployeeChat() {
               ))}
             </div>
 
-            {/* Input */}
-            <div className="p-3 flex gap-2 border-t dark:border-gray-700 bg-white dark:bg-gray-800 sticky bottom-0">
+            <div className="p-3 flex items-center gap-2 border-t dark:border-gray-700 sticky bottom-0 z-20">
+            
               <input
+                ref={inputRef}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                className="flex-1 text-white border border-gray-300 dark:border-gray-700 p-2 rounded-lg bg-gray-50 dark:bg-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
+                className="flex-1 border border-gray-300 dark:border-gray-700 p-2 rounded-lg text-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Type a message..."
               />
+
               <button
                 onClick={sendMessage}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium transition"
@@ -317,7 +394,6 @@ export default function EmployeeChat() {
           </div>
         )}
 
-        {/* Delete Modal */}
         {showDeleteModal && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
             <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-xl w-full max-w-sm text-center">
