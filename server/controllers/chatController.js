@@ -27,30 +27,36 @@ export const sendMessage = async (req, res) => {
   try {
     const { senderId, receiverId, message, type } = req.body;
 
-    // ✅ Determine message type automatically if not provided
+    // ✅ If a file is uploaded, get its Cloudinary URL
+    let fileUrl = req.file ? req.file.path : null;
+
+    // ✅ Validate input
+    if (!senderId || !receiverId || (!message && !fileUrl)) {
+      return res.status(400).json({
+        message: "senderId, receiverId and either message or file are required",
+      });
+    }
+
+    // ✅ Determine message type
     let messageType = type || "text";
 
-    if (!message || !senderId || !receiverId) {
-      return res
-        .status(400)
-        .json({ message: "senderId, receiverId and message are required" });
-    }
-
-    // Auto-detect type from content
-    if (!type && typeof message === "string") {
-      if (message.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+    if (fileUrl) {
+      // If file is present → detect based on MIME type
+      if (req.file.mimetype.startsWith("image/")) {
         messageType = "image";
-      } else if (message.startsWith("https://res.cloudinary.com/")) {
-        messageType = "file"; // fallback for any uploaded file
       } else {
-        messageType = "text";
+        messageType = "file";
       }
+    } else if (message && typeof message === "string") {
+      // Plain text case
+      messageType = "text";
     }
 
+    // ✅ Save to DB
     const newMsg = await Chat.create({
       senderId,
       receiverId,
-      message,
+      message: fileUrl || message,
       type: messageType,
     });
 

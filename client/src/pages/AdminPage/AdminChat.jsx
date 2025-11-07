@@ -3,7 +3,7 @@ import io from "socket.io-client";
 import API from "../../utils/api";
 import { useSelector } from "react-redux";
 import toast from "react-hot-toast";
-import { Trash2 } from "lucide-react";
+import { Trash2,FileText  } from "lucide-react";
 import { socket } from "../../socket/socket.js";
 
 
@@ -23,6 +23,8 @@ export default function AdminChat() {
   const user = useSelector((state) => state.auth?.user);
   const chatBoxRef = useRef(null);
   const inputRef = useRef(null);
+  const [onlineUsers, setOnlineUsers] = useState([]);
+
 
   // ✅ Load Admin ID
   useEffect(() => {
@@ -54,6 +56,23 @@ export default function AdminChat() {
       })
       .catch(() => toast.error(`Failed to load ${chatType}s`));
   }, [chatType, adminId]);
+
+  // who is online and not
+useEffect(() => {
+  socket.on("onlineUsers", (users) => {
+    setOnlineUsers(users); // users = array of user IDs
+  });
+
+  return () => socket.off("onlineUsers");
+}, []);
+
+//For input autofocus
+useEffect(() => {
+  if (inputRef.current) {
+    inputRef.current.focus();
+  }
+}, [selectedUser]);
+
 
   // ✅ Join room & listen for messages
   useEffect(() => {
@@ -133,7 +152,7 @@ socket.on("disconnect", (reason) => console.warn("🔴 Socket disconnected:", re
   };
 
   // ✅ File upload handler
- const handleFileChange = async (e) => {
+const handleFileChange = async (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
@@ -142,10 +161,12 @@ socket.on("disconnect", (reason) => console.warn("🔴 Socket disconnected:", re
 
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("senderId", adminId);
+    formData.append("receiverId", selectedUser._id);
 
     const token = localStorage.getItem("token");
 
-    const res = await API.post("/chat/upload", formData, {
+    const res = await API.post("/chat", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
         Authorization: `Bearer ${token}`,
@@ -154,35 +175,23 @@ socket.on("disconnect", (reason) => console.warn("🔴 Socket disconnected:", re
 
     toast.dismiss("upload");
 
-    if (res.data.success) {
-      const fileUrl = res.data.file.url;
-
-      // Determine file type
-      const fileType = fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i)
-        ? "image"
-        : "file";
-
-      const msgData = {
-        senderId: adminId,
-        receiverId: selectedUser._id,
-        type: fileType,
-        message: fileUrl, // ✅ use URL directly
-        createdAt: new Date().toISOString(),
-      };
-
-      socket.emit("sendMessage", msgData);
-      setMessages((prev) => [...prev, msgData]);
+    if (res.status === 201) {
+      const newMsg = res.data;
+      socket.emit("sendMessage", newMsg);
+      setMessages((prev) => [...prev, newMsg]);
       toast.success("File sent");
     } else {
-      toast.error("Upload failed");
+      toast.error("Failed to upload file");
     }
   } catch (err) {
     console.error(err);
-    toast.error("Failed to upload file");
+    toast.dismiss("upload");
+    toast.error("Upload failed");
   } finally {
     e.target.value = "";
   }
 };
+
 
 
   // ✅ Delete chat or message
@@ -276,21 +285,31 @@ socket.on("disconnect", (reason) => console.warn("🔴 Socket disconnected:", re
 
         {/* User List */}
         {users.length > 0 ? (
-          <div className="space-y-2">
-            {users.map((u) => (
-              <div
-                key={u._id}
-                onClick={() => setSelectedUser(u)}
-                className={`p-3 cursor-pointer rounded-lg text-center md:text-left text-sm font-medium transition ${
-                  selectedUser?._id === u._id
-                    ? "bg-blue-600 text-white"
-                    : "border hover:bg-gray-200 hover:text-black"
-                }`}
-              >
-                {u.name}
-              </div>
-            ))}
-          </div>
+        <div className="space-y-2">
+  {users.map((u) => (
+    <div
+      key={u._id}
+      onClick={() => setSelectedUser(u)}
+      className={`p-3 cursor-pointer rounded-lg text-center md:text-left text-sm font-medium transition flex items-center gap-2 ${
+        selectedUser?._id === u._id
+          ? "bg-blue-600 text-white"
+          : "border hover:bg-gray-200 hover:text-black"
+      }`}
+    >
+      {/* Online/Offline Dot */}
+      <span
+        className={`w-2 h-2 rounded-full flex-shrink-0 ${
+          onlineUsers.includes(u._id) ? "bg-green-500" : "bg-red-500"
+        }`}
+        title={onlineUsers.includes(u._id) ? "Online" : "Offline"}
+      ></span>
+
+      {/* User Name */}
+      <span>{u.name}</span>
+    </div>
+  ))}
+</div>
+
         ) : (
           <p className="text-gray-500 text-sm text-center">
             No {chatType}s available
@@ -348,7 +367,11 @@ socket.on("disconnect", (reason) => console.warn("🔴 Socket disconnected:", re
       rel="noopener noreferrer"
       className="underline text-sm text-blue-200 hover:text-blue-100 break-all"
     >
-      📎 {m.message.split("/").pop()}
+
+<span className="truncate max-w-[calc(100%-2rem)] inline-block text-red-600">
+  
+ { decodeURIComponent(m.message.split("/").pop())}
+</span>
     </a>
   )
 ) : (
@@ -379,31 +402,58 @@ socket.on("disconnect", (reason) => console.warn("🔴 Socket disconnected:", re
             </div>
 
             {/* Input Section */}
-            <div className="p-3 flex items-center gap-2 border-t dark:border-gray-700 sticky bottom-0 z-20">
-            
-              {/* Text Input */}
-              <input
-                ref={inputRef}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                  }
-                }}
-                className="flex-1 border border-gray-300 dark:border-gray-700 p-2 rounded-lg text-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Type a message..."
-              />
+           <div className="p-2 sm:p-3 flex items-center gap-2 border-t dark:border-gray-700 sticky bottom-0 z-20 bg-white dark:bg-gray-800">
+  {/* File Upload */}
+  <div className="relative flex-shrink-0">
+    <button
+      onClick={() => document.getElementById("fileInput").click()}
+      className="p-2 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+      title="Attach file"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        strokeWidth={1.8}
+        stroke="currentColor"
+        className="w-5 h-5 text-gray-700 dark:text-gray-300"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+      </svg>
+    </button>
+    <input
+      id="fileInput"
+      type="file"
+      accept="image/*,.pdf,.docx,.xlsx"
+      onChange={handleFileChange}
+      className="hidden"
+    />
+  </div>
 
-              {/* Send */}
-              <button
-                onClick={sendMessage}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-medium transition"
-              >
-                Send
-              </button>
-            </div>
+  {/* Text Input */}
+  <input
+    ref={inputRef}
+    value={message}
+    onChange={(e) => setMessage(e.target.value)}
+    onKeyDown={(e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    }}
+    className="flex-1 min-w-0 border border-gray-300 dark:border-gray-700 p-2 rounded-lg text-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+    placeholder="Type a message..."
+  />
+
+  {/* Send */}
+  <button
+    onClick={sendMessage}
+    className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-5 py-2 rounded-lg text-sm font-medium transition"
+  >
+    Send
+  </button>
+</div>
+
           </>
         ) : (
           <div className="flex items-center justify-center h-full text-gray-500 text-center p-5 text-sm">
@@ -445,29 +495,29 @@ socket.on("disconnect", (reason) => console.warn("🔴 Socket disconnected:", re
 
 {/* EOF */ }
 
-  // {/* File Upload */}
-  //             <div className="relative">
-  //               <button
-  //                 onClick={() => document.getElementById("fileInput").click()}
-  //                 className="p-2 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition"
-  //                 title="Attach file"
-  //               >
-  //                 <svg
-  //                   xmlns="http://www.w3.org/2000/svg"
-  //                   fill="none"
-  //                   viewBox="0 0 24 24"
-  //                   strokeWidth={1.8}
-  //                   stroke="currentColor"
-  //                   className="w-5 h-5 text-gray-700 dark:text-gray-300"
-  //                 >
-  //                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-  //                 </svg>
-  //               </button>
-  //               <input
-  //                 id="fileInput"
-  //                 type="file"
-  //                 accept="image/*,.pdf,.docx,.xlsx"
-  //                 onChange={handleFileChange}
-  //                 className="hidden"
-  //               />
-  //             </div>
+  {/* File Upload */}
+              // <div className="relative">
+              //   <button
+              //     onClick={() => document.getElementById("fileInput").click()}
+              //     className="p-2 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+              //     title="Attach file"
+              //   >
+              //     <svg
+              //       xmlns="http://www.w3.org/2000/svg"
+              //       fill="none"
+              //       viewBox="0 0 24 24"
+              //       strokeWidth={1.8}
+              //       stroke="currentColor"
+              //       className="w-5 h-5 text-gray-700 dark:text-gray-300"
+              //     >
+              //       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              //     </svg>
+              //   </button>
+              //   <input
+              //     id="fileInput"
+              //     type="file"
+              //     accept="image/*,.pdf,.docx,.xlsx"
+              //     onChange={handleFileChange}
+              //     className="hidden"
+              //   />
+              // </div>

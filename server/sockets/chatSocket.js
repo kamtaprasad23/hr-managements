@@ -1,8 +1,18 @@
+// 
 import Chat from "../models/chatModel.js";
 
 export default function chatSocket(io) {
+  let onlineUsers = []; // Track online users
+
   io.on("connection", (socket) => {
     console.log("🟢 User connected:", socket.id);
+
+    // ✅ Identify user from handshake (or token)
+    const { userId } = socket.handshake.auth;
+    if (userId && !onlineUsers.includes(userId)) {
+      onlineUsers.push(userId);
+      io.emit("onlineUsers", onlineUsers); // notify all clients
+    }
 
     // ✅ Join a room
     socket.on("joinRoom", (roomId) => {
@@ -28,7 +38,6 @@ export default function chatSocket(io) {
         const savedMessage = await Chat.findById(newMessage._id).lean();
         savedMessage.createdAt = savedMessage.createdAt || new Date();
 
-        // Emit to all in room
         io.to(room).emit("receiveMessage", savedMessage);
         console.log(`💬 Message sent in ${room}: ${message}`);
       } catch (err) {
@@ -55,6 +64,10 @@ export default function chatSocket(io) {
     // ✅ Disconnect
     socket.on("disconnect", (reason) => {
       console.log("🔴 User disconnected:", socket.id, reason);
+      if (userId) {
+        onlineUsers = onlineUsers.filter((id) => id !== userId);
+        io.emit("onlineUsers", onlineUsers); // update clients
+      }
     });
   });
 }
