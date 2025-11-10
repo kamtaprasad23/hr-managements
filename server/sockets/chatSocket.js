@@ -1,4 +1,3 @@
-// 
 import Chat from "../models/chatModel.js";
 
 export default function chatSocket(io) {
@@ -6,12 +5,14 @@ export default function chatSocket(io) {
 
   io.on("connection", (socket) => {
     console.log("🟢 User connected:", socket.id);
+      console.log("🧠 Auth data from frontend:", socket.handshake.auth);
+
 
     // ✅ Identify user from handshake (or token)
     const { userId } = socket.handshake.auth;
     if (userId && !onlineUsers.includes(userId)) {
       onlineUsers.push(userId);
-      io.emit("onlineUsers", onlineUsers); // notify all clients
+      io.emit("onlineUsers", onlineUsers);
     }
 
     // ✅ Join a room
@@ -32,7 +33,15 @@ export default function chatSocket(io) {
       if (!message || !senderId || !receiverId || !room) return;
 
       try {
-        const newMessage = new Chat({ senderId, receiverId, message, type, room });
+        const newMessage = new Chat({
+          senderId,
+          receiverId,
+          message,
+          type,
+          room,
+          isDelivered: false, // added field
+          isRead: false,      // added field
+        });
         await newMessage.save();
 
         const savedMessage = await Chat.findById(newMessage._id).lean();
@@ -61,12 +70,55 @@ export default function chatSocket(io) {
       }
     });
 
+    // ✅ Confirm message delivered (single tick)
+socket.on("confirmDelivered", async ({ messageId, room }) => {
+  console.log("📩 confirmDelivered received:", { messageId, room });
+
+
+      try {
+        const msg = await Chat.findById(messageId);
+        if (msg && !msg.isDelivered) {
+          msg.isDelivered = true;
+          msg.deliveredAt = new Date();
+          await msg.save();
+
+          io.to(room).emit("messageDelivered", {
+            messageId,
+            deliveredAt: msg.deliveredAt,
+          });
+        }
+      } catch (err) {
+        console.error("❌ Error confirming delivery:", err);
+      }
+    });
+
+    // ✅ Confirm message read (double tick)
+    socket.on("confirmRead", async ({ messageIds = [], room }) => {
+        console.log("📘 confirmRead received:", { messageIds, room });
+
+      try {
+        if (!Array.isArray(messageIds) || messageIds.length === 0) return;
+
+        await Chat.updateMany(
+          { _id: { $in: messageIds } },
+          { $set: { isRead: true, readAt: new Date() } }
+        );
+
+        io.to(room).emit("messageRead", {
+          messageIds,
+          readAt: new Date(),
+        });
+      } catch (err) {
+        console.error("❌ Error confirming read:", err);
+      }
+    });
+
     // ✅ Disconnect
     socket.on("disconnect", (reason) => {
       console.log("🔴 User disconnected:", socket.id, reason);
       if (userId) {
         onlineUsers = onlineUsers.filter((id) => id !== userId);
-        io.emit("onlineUsers", onlineUsers); // update clients
+        io.emit("onlineUsers", onlineUsers);
       }
     });
   });

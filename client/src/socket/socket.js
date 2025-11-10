@@ -10,11 +10,26 @@ if (BASE_URL.endsWith("/api")) {
 
 console.log("Connecting socket to:", BASE_URL);
 
+// ✅ Load user/admin info from localStorage
+let userData =
+  JSON.parse(localStorage.getItem("employee")) ||
+  JSON.parse(localStorage.getItem("admin")) ||
+  null;
+
 export const socket = io(BASE_URL, {
   transports: ["websocket", "polling"],
   withCredentials: true,
+  auth: {
+    userId: userData?.id || userData?._id || null, // 👈 Pass userId to server
+  },
 });
 
-socket.on("connect", () => console.log("✅ Connected to socket:", socket.id));
-socket.on("connect_error", (err) => console.error("❌ Connection error:", err.message));
-socket.on("disconnect", (reason) => console.warn("🔴 Disconnected from socket:", reason));
+socket.on("connect", () =>
+  console.log("✅ Connected to socket:", socket.id)
+);
+socket.on("connect_error", (err) =>
+  console.error("❌ Connection error:", err.message)
+);
+socket.on("disconnect", (reason) =>
+  console.warn("🔴 Disconnected from socket:", reason)
+);

@@ -12,18 +12,18 @@ const chatSchema = new mongoose.Schema(
       ref: "User", 
       required: true 
     },
-    
-    // For text or file message content
+
+    // message body (text or file URL)
     message: { type: String },
 
-    // To identify message type (helps frontend render properly)
+    // text / image / file
     type: { 
       type: String, 
       enum: ["text", "image", "file"], 
       default: "text" 
     },
 
-    // Optional: store file metadata (for downloads or previews)
+    // file metadata (optional)
     fileInfo: {
       url: String,
       originalname: String,
@@ -31,13 +31,17 @@ const chatSchema = new mongoose.Schema(
       size: Number,
     },
 
-    // Optional: read/unread tracking
-    isRead: { type: Boolean, default: false },
+    // ✅ Message delivery states
+    isDelivered: { type: Boolean, default: false }, // single tick
+    deliveredAt: { type: Date },
+
+    isRead: { type: Boolean, default: false },      // double tick
+    readAt: { type: Date },
   },
   { timestamps: true }
 );
 
-// ✅ Index for faster lookup & sorting
+// index for efficient queries
 chatSchema.index({ senderId: 1, receiverId: 1, createdAt: 1 });
 
 export default mongoose.model("Chat", chatSchema);
