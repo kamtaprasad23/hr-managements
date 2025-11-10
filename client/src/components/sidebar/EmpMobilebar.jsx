@@ -7,6 +7,7 @@ import {
   User,
   IndianRupee,
   Settings,
+  Clock,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -17,6 +18,7 @@ export default function EmpMobileBar() {
     { name: "Home", icon: <Home size={22} />, path: "/employee" },
     { name: "Attendance", icon: <Briefcase size={22} />, path: "/employee/attendance" },
     { name: "Tasks", icon: <FileText size={22} />, path: "/employee/tasks" },
+    { name: "EOD Report", icon: <Clock size={20} />, path: "/employee/eod-reports" },
     { name: "Leave", icon: <BedSingle size={22} />, path: "/employee/leave" },
     { name: "Profile", icon: <User size={22} />, path: "/employee/profile" },
     { name: "Salary", icon: <IndianRupee size={22} />, path: "/employee/salary-slip" },

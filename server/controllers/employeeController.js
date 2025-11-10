@@ -339,29 +339,36 @@ export const getEmployeeDashboard = async (req, res) => {
 // get asdmin list for employee chat user list
 // 🟢 Get all admins (Admin, HR, Manager) for employee chat
 export const getAllAdminsForChat = async (req, res) => {
+  console.log("✅ getAllAdminsForChat hit by:", req.user?.id);
   try {
-    const admins = await Admin.find({
-      role: { $in: ["admin", "hr", "manager"] },
-    }).select("-password");
-
+    const admins = await Admin.find().select("_id name email role");
+    console.log("✅ Admin count:", admins.length);
     res.json(admins);
   } catch (error) {
-    res.status(500).json({ message: "Failed to fetch admins", error: error.message });
+    console.error("❌ Error fetching admins for chat:", error);
+    res.status(500).json({ message: "Failed to load admins" });
   }
 };
 
-//get employee list for chat
-
-// 🟢 Get all employees for chat (excluding the logged-in one)
+// ✅ Employees list for EmployeeChat
 export const getAllEmployeesForChat = async (req, res) => {
+  console.log("✅ getAllEmployeesForChat hit by:", req.user?.id);
   try {
-    const employees = await Employee.find({
-      _id: { $ne: req.user.id }, // exclude self
-    }).select("-password");
-
+    const employees = await Employee.find().select("_id name email role");
+    console.log("✅ Employee count:", employees.length);
     res.json(employees);
   } catch (error) {
-    res.status(500).json({ message: "Failed to fetch employees", error: error.message });
+    console.error("❌ Error fetching employees for chat:", error);
+    res.status(500).json({ message: "Failed to load employees" });
+  }
+};
+export const getAllEmployeesPublic = async (req, res) => {
+  try {
+    const employees = await Employee.find().select("_id name email role");
+    res.json(employees);
+  } catch (error) {
+    console.error("Error fetching employees:", error);
+    res.status(500).json({ message: "Failed to load employees" });
   }
 };
 

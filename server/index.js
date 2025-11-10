@@ -20,7 +20,8 @@ import taskRoutes from "./routes/taskRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
-
+import policyRoutes from "./routes/policyRoutes.js";
+import eodRoutes from "./routes/eodRoutes.js";
 dotenv.config();
 
 const app = express();
@@ -71,7 +72,6 @@ mongoose
 
 // ✅ API routes
 app.use("/api/admin", adminRoutes);
-app.use("/api", employeeRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/leave", leaveRoutes);
@@ -80,7 +80,9 @@ app.use("/api/task", taskRoutes);
 app.use("/api/auth", userRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/chat", chatRoutes);
-
+app.use("/api/policies", policyRoutes);
+app.use("/api", employeeRoutes); 
+app.use("/api/eod", eodRoutes);
 // ✅ Health check
 app.get("/", (req, res) => {
   res.send("✅ HR Management Backend Running Successfully!");

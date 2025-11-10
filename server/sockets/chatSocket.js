@@ -5,58 +5,51 @@ export default function chatSocket(io) {
 
   io.on("connection", (socket) => {
     console.log("🟢 User connected:", socket.id);
-      console.log("🧠 Auth data from frontend:", socket.handshake.auth);
+    console.log("🧠 Auth data from frontend:", socket.handshake.auth);
 
-
-    // ✅ Identify user from handshake (or token)
+    // ✅ Identify user from handshake
     const { userId } = socket.handshake.auth;
     if (userId && !onlineUsers.includes(userId)) {
       onlineUsers.push(userId);
       io.emit("onlineUsers", onlineUsers);
     }
 
-    // ✅ Join a room
+    // ✅ Join/leave room
     socket.on("joinRoom", (roomId) => {
       socket.join(roomId);
-      console.log(`📥 User joined room: ${roomId}`);
+      console.log(`📥 Joined room: ${roomId}`);
     });
 
-    // ✅ Leave a room
     socket.on("leaveRoom", (roomId) => {
       socket.leave(roomId);
-      console.log(`📤 User left room: ${roomId}`);
+      console.log(`📤 Left room: ${roomId}`);
     });
 
-    // ✅ Send a message
+    // ✅ Send message
     socket.on("sendMessage", async (data) => {
-      const { senderId, receiverId, message, room, type = "text" } = data;
-      if (!message || !senderId || !receiverId || !room) return;
-
       try {
-        const newMessage = new Chat({
+        const { senderId, receiverId, message, room, type = "text" } = data;
+        if (!message || !senderId || !receiverId || !room) return;
+
+        const newMessage = await Chat.create({
           senderId,
           receiverId,
           message,
           type,
           room,
-          isDelivered: false, // added field
-          isRead: false,      // added field
+          isDelivered: false, // single tick
+          isRead: false,      // double tick
         });
-        await newMessage.save();
 
-        const savedMessage = await Chat.findById(newMessage._id).lean();
-        savedMessage.createdAt = savedMessage.createdAt || new Date();
-
-        io.to(room).emit("receiveMessage", savedMessage);
-        console.log(`💬 Message sent in ${room}: ${message}`);
+        io.to(room).emit("receiveMessage", newMessage);
+        console.log(`💬 [${room}] ${senderId} → ${receiverId}: ${message}`);
       } catch (err) {
-        console.error("❌ Error saving message:", err);
+        console.error("❌ Socket sendMessage error:", err);
       }
     });
 
     // ✅ Load chat history
     socket.on("loadMessages", async ({ user1, user2 }) => {
-      if (!user1 || !user2) return;
       try {
         const messages = await Chat.find({
           $or: [
@@ -66,15 +59,13 @@ export default function chatSocket(io) {
         }).sort({ createdAt: 1 });
         socket.emit("chatHistory", messages);
       } catch (err) {
-        console.error("❌ Error loading chat history:", err);
+        console.error("❌ loadMessages error:", err);
       }
     });
 
     // ✅ Confirm message delivered (single tick)
-socket.on("confirmDelivered", async ({ messageId, room }) => {
-  console.log("📩 confirmDelivered received:", { messageId, room });
-
-
+    socket.on("confirmDelivered", async ({ messageId, room }) => {
+      console.log("📩 confirmDelivered:", { messageId, room });
       try {
         const msg = await Chat.findById(messageId);
         if (msg && !msg.isDelivered) {
@@ -94,8 +85,7 @@ socket.on("confirmDelivered", async ({ messageId, room }) => {
 
     // ✅ Confirm message read (double tick)
     socket.on("confirmRead", async ({ messageIds = [], room }) => {
-        console.log("📘 confirmRead received:", { messageIds, room });
-
+      console.log("📘 confirmRead:", { messageIds, room });
       try {
         if (!Array.isArray(messageIds) || messageIds.length === 0) return;
 

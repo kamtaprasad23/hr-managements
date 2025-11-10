@@ -5,6 +5,7 @@ import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { loginSuccess } from "../features/auth/authSlice";
 import API from "../utils/api";
 import Loader from "../components/Laoder";
+import adminLoginImage from "../assets/admin_login.png";
 
 function AdminLogin() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -70,7 +71,9 @@ function AdminLogin() {
         <p className="text-lg text-gray-300">
           Streamlining your workforce management.
         </p>
-        <div className="mt-8 w-full max-w-xs h-64 bg-gray-700 rounded-lg"></div>
+        <div className="mt-8 w-full max-w-xs h-74 bg-gray-700 rounded-lg">
+          <img src={adminLoginImage} alt="Admin login" className="w-full h-full object-cover rounded-lg" />
+        </div>
       </div>
 
       <div className="flex items-center justify-center p-6 sm:p-12 bg-gray-100 dark:bg-gray-900">

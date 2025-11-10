@@ -4,6 +4,7 @@
 import Admin from "../models/adminModel.js";
 import Employee from "../models/employeeModel.js";
 import Attendance from "../models/attendanceModel.js";
+import Leave from "../models/leaveModel.js"; // Import the Leave model
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { jwtSecret } from "../config/config.js"; // Assuming you have this file
@@ -73,9 +74,10 @@ export const loginAdmin = async (req, res) => {
 export const getAdminProfile = async (req, res) => {
   try {
     const admin = await Admin.findById(req.user.id).select("-password");
-    res.json(admin);
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching profile", error: error.message });
+    if (!admin) return res.status(404).json({ message: "Admin not found" });
+    return res.json({ ...admin.toObject(), role: admin.role });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
   }
 };
 
@@ -142,13 +144,10 @@ export const createEmployee = async (req, res) => {
     const exists = await Employee.findOne({ email: email.toLowerCase() });
     if (exists) return res.status(400).json({ message: "Employee with this email already exists" });
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
     const employee = new Employee({
       name,
       email: email.toLowerCase(),
-      password: hashedPassword,
+      password: password, // Pass plain password, the model will hash it
       ...rest,
       createdBy: req.user.id, // The admin creating this employee
     });
@@ -260,27 +259,45 @@ export const getAdminDashboardData = async (req, res) => {
     const late = todayAttendance.filter(a => a.status === "Late" || a.status === "Late Login").length;
     const absent = totalEmployees - todayAttendance.length;
 
+    // Count pending leaves for employees in scope
+    const pendingLeaveCount = await Leave.countDocuments({
+      employeeId: { $in: employeeIdsInScope },
+      status: "Pending",
+    });
+
     res.json({
       totalEmployees,
       attendance: { total: totalEmployees, onTime, late, absent },
-      // You can add leave reports here if needed in the future
-      // leaves: { pending: pendingLeaves },
+      pendingLeaveCount, // Add pending leave count to the response
     });
   } catch (error) {
     res.status(500).json({ message: "Error fetching dashboard data", error: error.message });
   }
 };
 
-//✅ Get All Admins (HR/Managers) - For Employee Chat User List
 export const getAllAdmins = async (req, res) => {
   try {
-    const admins = await Admin.find().select("-password"); // exclude passwords
+    const { createdBy } = req.query;
+
+    // If the requesting user is main admin (isMainAdmin) show all admins
+    const isMainAdmin = req.user?.isMainAdmin || false;
+
+    let query = {};
+    if (!isMainAdmin && createdBy) {
+      // only show admins created by the given admin (HR/Manager's created sub-admins)
+      query = { createdBy };
+    } else if (!isMainAdmin && !createdBy) {
+      // fallback: if not main admin and no createdBy provided, restrict to createdBy = req.user.id
+      query = { createdBy: req.user.id };
+    } // if main admin, query stays empty => fetch all
+
+    const admins = await Admin.find(query).select("_id name email role createdBy");
     res.json(admins);
   } catch (err) {
+    console.error("Failed to fetch admins:", err);
     res.status(500).json({ message: "Failed to fetch admins" });
   }
 };
-
 /**
  * ✅ Get Birthdays
  */
@@ -339,5 +356,125 @@ export const rejectEmployeeUpdate = async (req, res) => {
     res.json({ message: "Employee update rejected" });
   } catch (error) {
     res.status(500).json({ message: "Rejection error", error: error.message });
+  }
+};
+
+/**
+ * ✅ Update Admin Settings
+ */
+export const updateAdminSettings = async (req, res) => {
+  try {
+    // ✅ Only main admin can change org-wide attendance settings
+    if (!req.user?.isMainAdmin) {
+      return res
+        .status(403)
+        .json({ message: "Access denied. Only main admin can update settings." });
+    }
+
+    const {
+      officeStartTime,
+      lateGraceMinutes,
+      halfDayCutoff,
+      officeEndTime,
+      halfDayCheckoutCutoff,
+      autoCheckoutTime,
+      ...rest
+    } = req.body;
+
+    const admin = await Admin.findById(req.user.id);
+    if (!admin) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+
+    // ✅ Merge provided fields into admin.attendanceSettings
+    admin.attendanceSettings = {
+      ...(admin.attendanceSettings?.toObject?.() ??
+        admin.attendanceSettings ??
+        {}),
+      ...(officeStartTime !== undefined && { officeStartTime }),
+      ...(lateGraceMinutes !== undefined && { lateGraceMinutes }),
+      ...(halfDayCutoff !== undefined && { halfDayCutoff }),
+      ...(officeEndTime !== undefined && { officeEndTime }),
+      ...(halfDayCheckoutCutoff !== undefined && { halfDayCheckoutCutoff }),
+      ...(autoCheckoutTime !== undefined && { autoCheckoutTime }),
+      ...rest,
+    };
+
+    await admin.save();
+
+    return res.json({
+      message: "Attendance settings updated successfully",
+      attendanceSettings: admin.attendanceSettings,
+    });
+  } catch (error) {
+    console.error("Error updating admin settings:", error);
+    return res.status(500).json({
+      message: "Failed to update settings",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * @desc    Get all users (Admins and Employees) for chat lists
+ * @route   GET /api/admin/chat-users
+ * @access  Private (Admins and Employees)
+ */
+export const getAllUsersForChat = async (req, res) => {
+  try {
+    const currentUserId = req.user.id;
+
+    // Fetch all admins and employees, excluding the current user
+    const admins = await Admin.find({ _id: { $ne: currentUserId } }).select("_id name email role").lean();
+    const employees = await Employee.find({ _id: { $ne: currentUserId } }).select("_id name email position").lean();
+
+    // Combine and format the user lists
+    const users = [
+      ...admins.map(u => ({ ...u, userType: 'admin' })),
+      ...employees.map(u => ({ ...u, role: u.position, userType: 'employee' }))
+    ];
+
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to load users for chat", error: error.message });
+  }
+};
+
+/**
+ * @desc    Get all admins for an employee to chat with
+ * @route   GET /api/admin/chat-admins-for-employee
+ * @access  Private (Employees)
+ */
+export const getAdminsForEmployeeChat = async (req, res) => {
+  try {
+    const admins = await Admin.find().select("_id name email role").lean();
+    res.json(admins.map(u => ({ ...u, userType: 'admin' })));
+  } catch (error) {
+    res.status(500).json({ message: "Failed to load admins for chat", error: error.message });
+  }
+};
+
+/**
+ * ✅ Get Admin Settings
+ */
+export const getAdminSettings = async (req, res) => {
+  try {
+    const admin = await Admin.findById(req.user.id).select("attendanceSettings");
+
+    if (!admin) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+
+    // Return attendance settings
+    return res.json({
+      message: "Admin settings fetched successfully",
+      attendanceSettings: admin.attendanceSettings || {},
+    });
+  } catch (error) {
+    console.error("Error fetching admin settings:", error);
+    return res.status(500).json({
+      message: "Failed to fetch admin settings",
+      error: error.message,
+    });
   }
 };

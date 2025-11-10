@@ -184,7 +184,7 @@ export default function EmpAttendance() {
         <div className="flex flex-col items-center mb-6">
           <UserStar className="text-green-500 w-12 h-12 mb-2" />
           <h1 className="text-3xl font-bold text-center">Attendance Tracker</h1>
-          <p className="text-gray-600 dark:text-gray-300 text-sm text-center mt-1">
+          <p className=" text-sm text-center mt-1">
             Mark your login & checkout time every day.
           </p>
         </div>

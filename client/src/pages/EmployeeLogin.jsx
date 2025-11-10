@@ -1,10 +1,12 @@
+
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { loginSuccess } from "../features/auth/authSlice";
 import API from "../utils/api";
-import Loader from "../components/Laoder";
+import Loader from "../components/Laoder"
+import employeeLoginImage from "../assets/employee_login.png";
 
 function EmployeeLogin() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -12,7 +14,6 @@ function EmployeeLogin() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -32,24 +33,15 @@ function EmployeeLogin() {
       const res = await API.post("/login", form);
       const { token, employee } = res.data;
 
-      // Save employee info including id
       dispatch(
         loginSuccess({
-          user: {
-            id: employee.id, // <-- use id
-            name: employee.name,
-            email: employee.email,
-            role: "employee",
-          },
+          user: { name: employee.name, email: employee.email, role: "employee" },
           token,
         })
       );
 
-      // Save token and employee info for chat
       localStorage.setItem("token", token);
       localStorage.setItem("role", "employee");
-      localStorage.setItem("employee", JSON.stringify(employee)); // contains id
-
       setSuccess("Login successful");
 
       setTimeout(() => {
@@ -71,7 +63,9 @@ function EmployeeLogin() {
         <p className="text-lg text-gray-300">
           Access your dashboard, tasks, and attendance records.
         </p>
-        <div className="mt-8 w-full max-w-xs h-64 bg-gray-700 rounded-lg"></div>
+        <div className="mt-8 w-full max-w-xs h-74 bg-gray-700 rounded-lg">
+          <img src={employeeLoginImage} alt="Employee login illustration" className="w-full h-full object-cover rounded-lg" />
+        </div>
       </div>
 
       <div className="flex items-center justify-center p-6 sm:p-12 bg-gray-100 dark:bg-gray-900">
@@ -153,4 +147,3 @@ function EmployeeLogin() {
 }
 
 export default EmployeeLogin;
-

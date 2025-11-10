@@ -8,6 +8,7 @@ import {
   FileText,
   Calendar,
   MessageSquare,
+  Clock,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -90,6 +91,13 @@ export default function EmployeeDashboard() {
           path="/employee/tasks"
         />
         <Card
+          icon={<Clock/>}
+          color="indigo"
+          title="EOD Reports"
+          text="View and manage your Eod"
+          path="/employee/eod-reports"
+        />
+        <Card
           icon={<Calendar />}
           color="purple"
           title="Leave"
@@ -123,6 +131,7 @@ function Card({ icon, color, title, text, path }) {
     red: "border-red-500 text-red-600",
     purple: "border-purple-500 text-purple-600",
     yellow: "border-yellow-500 text-yellow-600",
+    indigo: "border-indigo-500 text-indigo-800 hover:bg-indigo-50 hover:shadow-md",
   };
 
   return (

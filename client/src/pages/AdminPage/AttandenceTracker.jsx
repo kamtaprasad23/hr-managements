@@ -31,8 +31,8 @@ const AttendanceTable = ({ records, loading, userType, onRowClick }) => {
           {records.map((record) => (
             <tr key={record.id} className="hover:bg-gray-300 hover:text-black dark:hover:bg-gray-300 dark:hover:text-black">
               <td className="px-6 py-4 whitespace-nowrap">
-                <div className="text-sm font-medium">{record.name}</div>
-                <div className="text-sm text-gray-500">{record.role}</div>
+                <div className="text-sm font-medium">{record.name || record.user?.name}</div>
+                <div className="text-sm text-gray-500">{record.email || record.user?.email}</div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm">{userType === 'employee' ? record.Department : record.role.toUpperCase()}</td>
               <td className="px-6 py-4 whitespace-nowrap">
@@ -119,30 +119,32 @@ const AttendanceTracker = () => {
       }
     };
 
-    const fetchAdminAttendance = async () => {
+    const fetchAdminAttendance = async (date) => {
       setLoading(true);
       try {
-        // 1. Fetch all sub-admins
+        // 1. Fetch all sub-admins (HRs/Managers)
         const subAdminsRes = await API.get("/admin/sub-admins");
         const allSubAdmins = subAdminsRes.data;
 
         // 2. Fetch all admin attendance records for the day
-        const formattedDate = dayjs(selectedDate).format("YYYY-MM-DD");
+        const formattedDate = dayjs(date).format("YYYY-MM-DD");
         const attendanceRes = await API.get(`/attendance/admin/all?date=${formattedDate}`);
         const attendanceMap = new Map(attendanceRes.data.map(att => [att.user?._id, att]));
 
         // 3. Merge the two lists
         const mergedRecords = allSubAdmins.map(admin => {
           const attendance = attendanceMap.get(admin._id);
-          return {
-            id: admin._id,
-            name: admin.name,
-            role: admin.role || "-",
-            email: admin.email,
-            avgCheckIn: attendance ? (attendance.checkIn ? dayjs(attendance.checkIn).format("HH:mm") : "-") : "-",
-            avgCheckOut: attendance ? (attendance.checkOut ? dayjs(attendance.checkOut).format("HH:mm") : "-") : "-",
-            status: attendance ? (attendance.status || "Present") : "Absent",
-          };
+          if (attendance) {
+            return {
+              ...admin,
+              id: admin._id,
+              avgCheckIn: attendance.checkIn ? dayjs(attendance.checkIn).format("HH:mm") : "-",
+              avgCheckOut: attendance.checkOut ? dayjs(attendance.checkOut).format("HH:mm") : "-",
+              status: attendance.status || "Present",
+            };
+          } else {
+            return { ...admin, id: admin._id, status: "Absent", avgCheckIn: "-", avgCheckOut: "-" };
+          }
         });
         setAdminRecords(mergedRecords);
         setError("");
@@ -157,12 +159,12 @@ const AttendanceTracker = () => {
     if (activeTab === 'employees') {
       fetchEmployeeAttendance(selectedDate);
     } else {
-      fetchAdminAttendance(selectedDate);
+      fetchAdminAttendance(selectedDate); // Pass selectedDate as an argument
     }
   }, [selectedDate, activeTab]);
 
   const handleDateChange = (e) => {
-    setSelectedDate(new Date(e.target.value));
+    setSelectedDate(dayjs(e.target.value).toDate());
   };
 
   const currentRecords = activeTab === 'employees' ? employeeRecords : adminRecords;

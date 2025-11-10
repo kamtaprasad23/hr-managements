@@ -8,6 +8,7 @@ import {
   IndianRupee,
   MessageSquare,
   Settings,
+  Clock,
 } from "lucide-react";
 
 export default function EmpSidebar({ isOpen }) {
@@ -15,6 +16,7 @@ export default function EmpSidebar({ isOpen }) {
     { name: "Home", icon: <HomeIcon size={20} />, path: "/employee" },
     { name: "Attendance", icon: <Briefcase size={20} />, path: "/employee/attendance" },
     { name: "Tasks", icon: <FileText size={20} />, path: "/employee/tasks" },
+    { name: "EOD Report", icon: <Clock size={20} />, path: "/employee/eod-reports" },
     { name: "Leave", icon: <BedSingle size={20} />, path: "/employee/leave" },
     { name: "Chat", icon: <MessageSquare size={20} />, path: "/employee/chat" },
     { name: "Profile", icon: <User size={20} />, path: "/employee/profile" },
