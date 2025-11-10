@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import API from "../utils/api";
 import { User, Mail, Lock } from "lucide-react";
+import adminRegisterImage from "../assets/admin_register.png";
 
 function AdminRegister() {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
@@ -31,7 +32,9 @@ function AdminRegister() {
         <p className="text-lg text-gray-300">
           Register as a new administrator to get started.
         </p>
-        <div className="mt-8 w-full max-w-xs h-64 bg-gray-700 rounded-lg"></div>
+        <div className="mt-8 w-full max-w-xs h-74 bg-gray-700 rounded-lg">
+          <img src={adminRegisterImage} alt="Admin registration" className="w-full h-full object-cover rounded-lg" />
+        </div>
       </div>
 
       <div className="flex items-center justify-center p-6 sm:p-12 bg-gray-100 dark:bg-gray-900">
@@ -111,4 +114,3 @@ function AdminRegister() {
 }
 
 export default AdminRegister;
-

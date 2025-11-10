@@ -6,6 +6,7 @@ import API from "../../utils/api";
 
 export default function LeaveCalendar() {
   const today = new Date();
+  today.setHours(0, 0, 0, 0); // Set time to midnight for accurate date comparison
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth());
   const [selectedDate, setSelectedDate] = useState("");
@@ -21,6 +22,14 @@ export default function LeaveCalendar() {
     rejected: 0,
     pending: 0,
   });
+
+  // Helper to get date as YYYY-MM-DD string to avoid timezone issues
+  const getLocalDateString = (date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
 
   const monthName = new Date(year, month).toLocaleString("default", {
     month: "long",
@@ -64,7 +73,8 @@ export default function LeaveCalendar() {
 
   const handleDayClick = (day) => {
     const date = new Date(year, month, day);
-    const dateString = date.toISOString().split("T")[0];
+    const dateString = getLocalDateString(date);
+
     const isSunday = date.getDay() === 0;
 
     if (date < today) {
@@ -135,7 +145,11 @@ export default function LeaveCalendar() {
       } else {
         const day = i - firstDayOfMonth + 1;
         const date = new Date(year, month, day);
-        const dateString = date.toISOString().split("T")[0];
+        // Use local date string for comparison to avoid timezone issues
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, "0");
+        const d = String(date.getDate()).padStart(2, "0");
+        const dateString = `${y}-${m}-${d}`;
         const isSunday = date.getDay() === 0;
         const leave = leaves.find((l) => l.date === dateString);
 
@@ -143,11 +157,13 @@ export default function LeaveCalendar() {
           <div
             key={day}
             onClick={() => handleDayClick(day)}
-            className={`border dark:border-gray-700 rounded-xl aspect-square flex flex-col items-center justify-center cursor-pointer hover:shadow-lg dark:hover:bg-gray-800 transition p-1`}
+            className={`border dark:border-gray-700 rounded-xl aspect-square flex flex-col items-center justify-center cursor-pointer hover:shadow-lg dark:hover:bg-gray-800 transition p-1 ${
+              isSunday ? "bg-red-50 dark:bg-red-900/20" : leave ? "" : "bg-blue-50 dark:bg-blue-900/20"
+            }`}
           >
             <span className="font-semibold text-sm sm:text-base">{day}</span>
             {isSunday ? (
-              <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              <span className="mt-1 text-xs text-red-500 dark:text-red-400 font-semibold">
                 <span className="hidden sm:inline">WEEK </span>OFF
               </span>
             ) : leave ? (
@@ -159,7 +175,7 @@ export default function LeaveCalendar() {
                 {leave.status.toUpperCase()}
               </span>
             ) : (
-              <span className="mt-1 text-xs text-gray-500 dark:text-gray-400">WORK</span>
+              <span className="mt-1 text-xs text-blue-500 dark:text-blue-400">WORK</span>
             )}
           </div>
         );
@@ -178,25 +194,11 @@ export default function LeaveCalendar() {
       </h1>
       <p className="text-gray-600 dark:text-gray-400 mb-6">Tap a date to apply or view leave</p>
 
-      {/* Weekdays */}
-      <div className="grid grid-cols-7 text-center font-semibold mb-2 ">
-        <div className="hidden sm:block">Sunday</div><div className="sm:hidden">Sun</div>
-        <div className="hidden sm:block">Monday</div><div className="sm:hidden">Mon</div>
-        <div className="hidden sm:block">Tuesday</div><div className="sm:hidden">Tue</div>
-        <div className="hidden sm:block">Wednesday</div><div className="sm:hidden">Wed</div>
-        <div className="hidden sm:block">Thursday</div><div className="sm:hidden">Thu</div>
-        <div className="hidden sm:block">Friday</div><div className="sm:hidden">Fri</div>
-        <div className="hidden sm:block">Saturday</div><div className="sm:hidden">Sat</div>
-      </div>
-
-      {/* Calendar */}
-      <div className="grid grid-cols-7 gap-1 sm:gap-2">{renderCalendarDays()}</div>
-
       {/* Action Buttons */}
-      <div className="flex gap-4 mt-6 flex-wrap">
+      <div className="flex gap-4 mb-6 flex-wrap">
         <button
           onClick={() => {
-            setForm({ date: today.toISOString().split("T")[0], reason: "" });
+            setForm({ date: getLocalDateString(today), reason: "" });
             setIsApplyModalOpen(true);
           }}
           className="flex items-center gap-2 bg-[#007fff] hover:bg-[#006ae0] text-white rounded-xl shadow-lg px-4 py-2 cursor-pointer transition-all text-sm sm:text-base"
@@ -211,6 +213,20 @@ export default function LeaveCalendar() {
           <Check /> Leave Summary
         </button>
       </div>
+
+      {/* Weekdays */}
+      <div className="grid grid-cols-7 text-center font-semibold mb-2 ">
+        <div className="hidden sm:block">Sunday</div><div className="sm:hidden">Sun</div>
+        <div className="hidden sm:block">Monday</div><div className="sm:hidden">Mon</div>
+        <div className="hidden sm:block">Tuesday</div><div className="sm:hidden">Tue</div>
+        <div className="hidden sm:block">Wednesday</div><div className="sm:hidden">Wed</div>
+        <div className="hidden sm:block">Thursday</div><div className="sm:hidden">Thu</div>
+        <div className="hidden sm:block">Friday</div><div className="sm:hidden">Fri</div>
+        <div className="hidden sm:block">Saturday</div><div className="sm:hidden">Sat</div>
+      </div>
+
+      {/* Calendar */}
+      <div className="grid grid-cols-7 gap-1 sm:gap-2">{renderCalendarDays()}</div>
 
       {/* Apply Leave Modal */}
       {isApplyModalOpen && (
@@ -233,7 +249,7 @@ export default function LeaveCalendar() {
                   value={form.date}
                   onChange={handleChange}
                   className="border dark:border-gray-600 bg-transparent rounded px-3 py-2 mt-1 w-full"
-                  min={today.toISOString().split("T")[0]}
+                  min={getLocalDateString(today)}
                   required
                 />
               </label>
@@ -281,30 +297,47 @@ export default function LeaveCalendar() {
             </button>
 
             <h2 className="text-2xl font-bold mb-4">Leave Summary</h2>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span>Total Leaves:</span>
-                <span className="font-semibold text-blue-700">
-                  {summary.totalLeaves}
-                </span>
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+              {/* Counts */}
+              <div className="grid grid-cols-2 gap-2 text-center">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/50 rounded-lg">
+                  <div className="font-bold text-xl text-blue-600 dark:text-blue-400">{summary.totalLeaves}</div>
+                  <div className="text-xs">Total</div>
+                </div>
+                <div className="p-2 bg-green-100 dark:bg-green-900/50 rounded-lg">
+                  <div className="font-bold text-xl text-green-600 dark:text-green-400">{summary.approved}</div>
+                  <div className="text-xs">Approved</div>
+                </div>
+                <div className="p-2 bg-red-100 dark:bg-red-900/50 rounded-lg">
+                  <div className="font-bold text-xl text-red-600 dark:text-red-400">{summary.rejected}</div>
+                  <div className="text-xs">Rejected</div>
+                </div>
+                <div className="p-2 bg-yellow-100 dark:bg-yellow-900/50 rounded-lg">
+                  <div className="font-bold text-xl text-yellow-500 dark:text-yellow-400">{summary.pending}</div>
+                  <div className="text-xs">Pending</div>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span>Approved:</span>
-                <span className="font-semibold text-green-600">
-                  {summary.approved}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Rejected:</span>
-                <span className="font-semibold text-red-600">
-                  {summary.rejected}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Pending:</span>
-                <span className="font-semibold text-yellow-600">
-                  {summary.pending}
-                </span>
+
+              {/* Leave List */}
+              <div className="space-y-3">
+                <h3 className="font-semibold pt-2 border-t dark:border-gray-700">All Leaves</h3>
+                {leaves.length > 0 ? (
+                  leaves
+                    .sort((a, b) => new Date(b.date) - new Date(a.date))
+                    .map((leave) => (
+                      <div key={leave._id} className="p-3 border dark:border-gray-700 rounded-lg text-sm">
+                        <div className="flex justify-between items-start">
+                          <span className="font-semibold">{new Date(leave.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getBadgeClasses(leave.status)}`}>
+                            {leave.status}
+                          </span>
+                        </div>
+                        <p className="text-gray-600 dark:text-gray-400 mt-1">Reason: {leave.reason}</p>
+                      </div>
+                    ))
+                ) : (
+                  <p className="text-center text-gray-500 py-4">No leaves applied yet.</p>
+                )}
               </div>
             </div>
           </div>

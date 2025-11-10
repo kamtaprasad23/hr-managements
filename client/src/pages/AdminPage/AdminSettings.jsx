@@ -7,8 +7,8 @@ import {
   toggleDarkMode,
   toggleEmailNotifications,
 } from "../../features/auth/settingsSlice";
-import API from "../../utils/api";
-import { Trash2,Pencil } from "lucide-react";
+import API from "../../utils/api"; 
+import { Trash2, Pencil, Save, ShieldCheck } from "lucide-react";
 
 
 export default function AdminSettings() {
@@ -51,8 +51,31 @@ export default function AdminSettings() {
   const [editAdminName, setEditAdminName] = useState("");
   const [editAdminEmail, setEditAdminEmail] = useState("");
   const [editAdminPassword, setEditAdminPassword] = useState("");
+  const [editAdminRole, setEditAdminRole] = useState(""); // New state for editing role
   const [loadingEditAdmin, setLoadingEditAdmin] = useState(false);
-  const [showEditPassword, setShowEditPassword] = useState(false);
+  const [showEditPassword, setShowEditPassword] = useState(false); // Missing state variable
+
+  //default time
+  const [defaultSettings, setdefaultSettings] = useState({
+    officeStartTime: "10:00",
+    lateGraceMinutes: 15,
+    halfDayCutoff: "11:00",
+    officeEndTime: "18:00",
+    earlyCheckoutGraceMinutes: 0,
+    halfDayCheckoutCutoff: "17:00",
+    autoCheckoutTime: "18:00",
+  });
+  // Office Time Settings
+ const [officeSettings, setOfficeSettings] = useState({
+   officeStartTime: " ",
+    lateGraceMinutes: " ",
+    halfDayCutoff: " ",
+    officeEndTime: " ",
+    earlyCheckoutGraceMinutes: 0,
+    halfDayCheckoutCutoff: " ",
+    autoCheckoutTime: "",
+});
+  const [loadingOfficeSettings, setLoadingOfficeSettings] = useState(true);
   // Load data
   useEffect(() => {
     const fetchProfile = async () => {
@@ -88,9 +111,36 @@ export default function AdminSettings() {
       }
     };
 
+    const fetchOfficeSettings = async () => {
+  if (!isAdmin) return;
+
+  setLoadingOfficeSettings(true);
+  try {
+    const { data } = await API.get("/admin/settings");
+
+    if (data && data.attendanceSettings) {
+      // ✅ Load saved data from DB
+      setOfficeSettings((prev) => ({
+        ...prev,
+        ...data.attendanceSettings,
+      }));
+    } else {
+      // ✅ If DB has nothing yet, fall back to defaults
+      setOfficeSettings(defaultSettings);
+    }
+  } catch (error) {
+    console.error("Failed to fetch office settings:", error);
+    toast.error("Could not fetch office time settings.");
+  } finally {
+    setLoadingOfficeSettings(false);
+  }
+};
+
+
     fetchProfile();
     fetchEmployees();
     fetchSubAdmins();
+    fetchOfficeSettings();
   }, []);
 
   // Prefill employee
@@ -113,6 +163,7 @@ export default function AdminSettings() {
       setEditAdminName(adminToEdit.name || "");
       setEditAdminEmail(adminToEdit.email || "");
       // Clear password field for security
+      setEditAdminRole(adminToEdit.role || "hr"); // Set initial role
       setEditAdminPassword("");
     }
   }, [adminToEdit]);
@@ -127,6 +178,37 @@ export default function AdminSettings() {
     dispatch(toggleEmailNotifications());
     toast.success(emailNotifications ? "Notifications off" : "Notifications on");
   };
+
+  // Office Settings Handlers
+  const handleOfficeSettingsChange = (e) => {
+    const { name, value, type } = e.target;
+    setOfficeSettings((prev) => ({
+      ...prev,
+      [name]: type === "number" ? parseInt(value, 10) : value,
+    }));
+  };
+
+ const handleOfficeSettingsSave = async (e) => {
+  e.preventDefault();
+
+  toast.promise(API.put("/admin/settings", officeSettings), {
+    loading: "Saving office settings...",
+    success: async (res) => {
+      if (res.data?.attendanceSettings) {
+        setOfficeSettings(res.data.attendanceSettings);
+      }
+
+      // ✅ Immediately fetch fresh data from DB to ensure state matches saved values
+      const { data } = await API.get("/admin/settings");
+      if (data?.attendanceSettings) {
+        setOfficeSettings(data.attendanceSettings);
+      }
+
+      return "Office settings updated successfully!";
+    },
+    error: "Failed to update office settings.",
+  });
+};
 
   // Profile update
   const handleProfileUpdate = async () => {
@@ -203,18 +285,20 @@ export default function AdminSettings() {
         name: editAdminName,
         email: editAdminEmail,
         password: editAdminPassword,
+        role: editAdminRole, // Include role in the payload
       });
       toast.success(`${adminToEdit.role.toUpperCase()} updated successfully`);
       setSubAdmins((prev) =>
         prev.map((a) =>
           a._id === adminToEdit._id
-            ? { ...a, name: editAdminName || a.name, email: editAdminEmail || a.email }
+            ? { ...a, name: editAdminName || a.name, email: editAdminEmail || a.email, role: editAdminRole || a.role }
             : a
         )
       );
       setAdminToEdit(null);
       setEditAdminName("");
       setEditAdminEmail("");
+      setEditAdminRole(""); // Clear role state
       setEditAdminPassword("");
     } catch (err) {
       toast.error(err.response?.data?.message || "Update failed");
@@ -262,6 +346,65 @@ export default function AdminSettings() {
       {/* ADMIN ONLY SECTIONS */}
       {isAdmin && (
         <>
+          {/* Office Time Settings */}
+          <div className="p-4 rounded-xl space-y-3 border">
+            <h2 className="font-semibold text-lg flex items-center gap-2">
+              <ShieldCheck size={20} className="text-blue-500" />
+              Attendance & Office Timings
+            </h2>
+            {loadingOfficeSettings ? <p>Loading office settings...</p> : (
+              <form onSubmit={handleOfficeSettingsSave} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <SettingInput
+                    label="Office Start Time"
+                    name="officeStartTime"
+                    type="time"
+                    value={officeSettings.officeStartTime}
+                    onChange={handleOfficeSettingsChange}
+                  />
+                  <SettingInput
+                    label="Late Grace Period (minutes)"
+                    name="lateGraceMinutes"
+                    type="number"
+                    value={officeSettings.lateGraceMinutes}
+                    onChange={handleOfficeSettingsChange}
+                  />
+                  <SettingInput
+                    label="Half-day Login Cutoff"
+                    name="halfDayCutoff"
+                    type="time"
+                    value={officeSettings.halfDayCutoff}
+                    onChange={handleOfficeSettingsChange}
+                  />
+                  <SettingInput
+                    label="Office End Time"
+                    name="officeEndTime"
+                    type="time"
+                    value={officeSettings.officeEndTime}
+                    onChange={handleOfficeSettingsChange}
+                  />
+                  <SettingInput
+                    label="Half-day Checkout Cutoff"
+                    name="halfDayCheckoutCutoff"
+                    type="time"
+                    value={officeSettings.halfDayCheckoutCutoff}
+                    onChange={handleOfficeSettingsChange}
+                  />
+                  <SettingInput
+                    label="Auto-Checkout Time"
+                    name="autoCheckoutTime"
+                    type="time"
+                    value={officeSettings.autoCheckoutTime}
+                    onChange={handleOfficeSettingsChange}
+                  />
+                </div>
+                <button type="submit" className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center justify-center gap-2">
+                  <Save size={16} /> Save Office Settings
+                </button>
+              </form>
+            )}
+          </div>
+
           {/* Profile */}
           <div className="p-4  rounded-xl space-y-3">
             <h2 className="font-semibold text-lg">Admin Profile</h2>
@@ -418,6 +561,20 @@ export default function AdminSettings() {
                   {showEditPassword ? <EyeOff /> : <Eye />}
                 </button>
               </div>
+              {/* Role Selection */}
+              <select
+                value={editAdminRole}
+                onChange={(e) => setEditAdminRole(e.target.value)}
+                className="w-full p-2 rounded border"
+                disabled={loadingEditAdmin}
+              >
+                <option value="hr" className="text-gray-950">
+                  HR
+                </option>
+                <option value="manager" className="text-gray-950">
+                  Manager
+                </option>
+              </select>
             </div>
 
             <div className="flex justify-end space-x-4 mt-6">
@@ -469,3 +626,19 @@ export default function AdminSettings() {
     </div>
   );
 }
+
+const SettingInput = ({ label, name, type, value, onChange }) => (
+  <div>
+    <label htmlFor={name} className="block text-sm font-medium mb-1">
+      {label}
+    </label>
+    <input
+      id={name}
+      name={name}
+      type={type}
+      value={value}
+      onChange={onChange}
+      className="w-full p-2 border rounded-md bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600"
+    />
+  </div>
+);

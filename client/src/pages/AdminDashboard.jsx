@@ -100,7 +100,7 @@ export default function AdminHome() {
         setDashboard({
           totalEmployees: data.totalEmployees || 0,
           attendance: data.attendance || { total: 0, onTime: 0, absent: 0, late: 0 },
-          leaveReports: data.leaves?.pending || 0,
+          leaveReports: data.pendingLeaveCount || 0,
         });
         setError("");
       } catch (err) {

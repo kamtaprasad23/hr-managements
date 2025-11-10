@@ -25,7 +25,8 @@ import AdminEmployeeProfile from "./pages/AdminPage/AdminEmployeeProfile";
 import SubAdminAttendance from "./pages/AdminPage/SubAdminAttendance"; // 👈 
 import AdminForgotPassword from "./pages/AdminForgotPassword";
 import AdminChat from "./pages/AdminPage/AdminChat";
-
+import AdminPolicy from "./pages/AdminPage/AdminPolicy";
+import AdminEodReports from "./pages/AdminPage/AdminEodReports";
 
 
 // Employee pages
@@ -38,6 +39,7 @@ import EmpProfile from "./pages/employeePage/EmpProfile";
 import EmpSalaryslip from "./pages/employeePage/EmpSalaryslip";
 import EmployeeSettings from "./pages/employeePage/EmpSetting";
 import EmployeeChat from "./pages/employeePage/EmployeeChat";
+import EmpEodReports from "./pages/employeePage/EmpEodReports";
 // ... all imports
 
 function App() {
@@ -127,7 +129,9 @@ function App() {
           <Route path="leave" element={<AdminLeaveManagement />} />
           <Route path="attendance" element={<AttendanceTracker />} />
           <Route path="chat" element={<AdminChat />} />
+          <Route path="policy" element={<AdminPolicy />} />
           <Route path="notification" element={<Notification />} />
+          <Route path="eod-reports" element={<AdminEodReports/>} />
 
           {/* Settings - All can access */}
           <Route path="settings" element={<AdminSettings />} />
@@ -145,6 +149,7 @@ function App() {
           <Route index element={<EmployeeDashboard />} />
           <Route path="attendance" element={<EmpAttendance />} />
           <Route path="tasks" element={<EmpTask />} />
+          <Route path="eod-reports" element={<EmpEodReports />} />
           <Route path="leave" element={<EmpLeave />} />
           <Route path="profile" element={<EmpProfile />} />
           <Route path="chat" element={<EmployeeChat />} />

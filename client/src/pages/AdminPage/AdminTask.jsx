@@ -135,7 +135,12 @@ export default function AdminTask() {
           <p className="text-red-600 dark:text-red-300 font-medium">{error}</p>
         </div>
       )}
-
+      <button
+        onClick={() => navigate("../eod-reports")}
+        className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-all duration-200"
+      >
+        EOD Report
+      </button>
       {showForm && (
         <div className="shadow-lg rounded-lg p-6 mb-6  border border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-semibold mb-4 ">
@@ -256,8 +261,8 @@ export default function AdminTask() {
                 {tasks.map((task) => (
                   <tr
                     key={task._id}
-                 
-                  className="bg-gray-300 text-black sticky top-0 z-10"
+
+                    className="bg-gray-300 text-black sticky top-0 z-10"
                   >
                     <td className="p-4 sm:px-6 sm:py-4">
                       <div className="font-medium">{task.title}</div>

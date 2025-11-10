@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Mail } from "lucide-react";
+import forgote_password from "../assets/forgote_password.png";
 
 function AdminForgotPassword() {
   const [email, setEmail] = useState("");
@@ -21,7 +22,9 @@ function AdminForgotPassword() {
         <p className="text-lg text-gray-300">
           Enter your email address to reset your password.
         </p>
-        <div className="mt-8 w-full max-w-xs h-64 bg-gray-700 rounded-lg"></div>
+        <div className="mt-8 w-full max-w-xs h-74 bg-gray-700 rounded-lg">
+         <img src={forgote_password} alt="Admin registration" className="w-full h-full object-cover rounded-lg" />
+        </div>
       </div>
 
       <div className="flex items-center justify-center p-6 sm:p-12 bg-gray-100 dark:bg-gray-900">

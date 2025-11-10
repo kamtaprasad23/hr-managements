@@ -1,14 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import API from "../../utils/api";
 
-// ✅ Restore auth from localStorage
-const storedUser = localStorage.getItem("user")
-  ? JSON.parse(localStorage.getItem("user"))
-  : null;
-const storedToken = localStorage.getItem("token") || null;
-const storedRole = localStorage.getItem("role") || storedUser?.role || null;
-
-// ✅ Async thunk: verify user
 export const verifyUser = createAsyncThunk(
   "auth/verifyUser",
   async (_, { rejectWithValue }) => {
@@ -17,26 +9,22 @@ export const verifyUser = createAsyncThunk(
       return rejectWithValue("No token found");
     }
 
-    // Try multiple endpoints to detect user type
+    // try several endpoints that might return logged-in user
     const endpoints = ["/profile", "/admin/profile", "/admin/me", "/auth/me"];
     for (const ep of endpoints) {
       try {
         const response = await API.get(ep);
-        if (response.data && response.data.role) {
-          return {
-            ...response.data,
-            role: localStorage.getItem("role") || response.data.role,
-          };
-        }
-      } catch {
+        // return user data + role (prefer stored role if present)
+        return { ...response.data, role: localStorage.getItem("role") || response.data.role };
+      } catch (err) {
+        // try next endpoint
         continue;
       }
     }
 
-    // All attempts failed → clear stored data
+    // all attempts failed -> clear token and reject
     localStorage.removeItem("token");
     localStorage.removeItem("role");
-    localStorage.removeItem("user");
     return rejectWithValue("Token invalid or endpoints missing");
   }
 );
@@ -44,30 +32,18 @@ export const verifyUser = createAsyncThunk(
 const authSlice = createSlice({
   name: "auth",
   initialState: {
-    user: storedUser,
-    isAuthenticated: !!storedToken,
-    role: storedRole,
-    loading: false,
+    user: null,
+    isAuthenticated: false,
+    role: null,
+    loading: false, // <- set false initially
     error: null,
   },
   reducers: {
     loginSuccess: (state, action) => {
-      const payloadUser = action.payload?.user || {};
-      const token = action.payload?.token;
-
-      const user = {
-        ...payloadUser,
-        id: payloadUser.id || payloadUser._id,
-      };
-
-      state.user = user;
-      state.isAuthenticated = !!user;
-      state.role = user?.role || null;
+      state.user = action.payload.user;
+      state.isAuthenticated = true;
+      state.role = action.payload.user.role;
       state.loading = false;
-
-      localStorage.setItem("user", JSON.stringify(user));
-      localStorage.setItem("role", user?.role || "");
-      if (token) localStorage.setItem("token", token);
     },
     logout: (state) => {
       state.user = null;
@@ -76,7 +52,6 @@ const authSlice = createSlice({
       state.loading = false;
       localStorage.removeItem("token");
       localStorage.removeItem("role");
-      localStorage.removeItem("user");
       localStorage.removeItem("name");
     },
   },
@@ -86,13 +61,10 @@ const authSlice = createSlice({
         state.loading = true;
       })
       .addCase(verifyUser.fulfilled, (state, action) => {
-        const user = action.payload || null;
-        state.isAuthenticated = !!user;
-        state.user = user;
-        state.role = user?.role || null;
+        state.isAuthenticated = true;
+        state.user = action.payload;
+        state.role = action.payload.role || localStorage.getItem("role");
         state.loading = false;
-        localStorage.setItem("user", JSON.stringify(user));
-        localStorage.setItem("role", user?.role || "");
       })
       .addCase(verifyUser.rejected, (state) => {
         state.isAuthenticated = false;
