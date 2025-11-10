@@ -1,13 +1,20 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import API from "../../utils/api";
 
+// Read stored auth info from localStorage
+const storedToken = localStorage.getItem("token");
+const storedUser = localStorage.getItem("user")
+  ? JSON.parse(localStorage.getItem("user"))
+  : null;
+const storedRole = localStorage.getItem("role") || null;
+
+// Async thunk to verify user using multiple endpoints
 export const verifyUser = createAsyncThunk(
   "auth/verifyUser",
   async (_, { rejectWithValue }) => {
     const token = localStorage.getItem("token");
     if (!token) return rejectWithValue("No token found");
 
-    // Try several endpoints that might return logged-in user
     const endpoints = ["/profile", "/admin/profile", "/admin/me", "/auth/me"];
     for (const ep of endpoints) {
       try {
@@ -19,15 +26,15 @@ export const verifyUser = createAsyncThunk(
             role: localStorage.getItem("role") || data.role,
           };
         }
-      } catch (err) {
-        // try next endpoint
-        continue;
+      } catch {
+        continue; // try next endpoint
       }
     }
 
-    // All attempts failed -> clear token and role
+    // No valid endpoint worked → clear stored data
     localStorage.removeItem("token");
     localStorage.removeItem("role");
+    localStorage.removeItem("user");
     return rejectWithValue("Token invalid or endpoints missing");
   }
 );
@@ -35,15 +42,16 @@ export const verifyUser = createAsyncThunk(
 const authSlice = createSlice({
   name: "auth",
   initialState: {
-    user: null,
-    isAuthenticated: false,
-    role: null,
+    user: storedUser,
+    isAuthenticated: !!storedToken,
+    role: storedRole,
     loading: false,
     error: null,
   },
   reducers: {
     loginSuccess: (state, action) => {
       const payloadUser = action.payload?.user || {};
+      const token = action.payload?.token;
       const user = {
         ...payloadUser,
         id: payloadUser.id || payloadUser._id,
@@ -53,21 +61,29 @@ const authSlice = createSlice({
       state.isAuthenticated = true;
       state.role = user?.role || null;
       state.loading = false;
+      state.error = null;
+
+      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("role", user?.role || "");
+      if (token) localStorage.setItem("token", token);
     },
     logout: (state) => {
       state.user = null;
       state.isAuthenticated = false;
       state.role = null;
       state.loading = false;
+      state.error = null;
+
       localStorage.removeItem("token");
       localStorage.removeItem("role");
-      localStorage.removeItem("user"); // keep your original removal
+      localStorage.removeItem("user");
     },
   },
   extraReducers: (builder) => {
     builder
       .addCase(verifyUser.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(verifyUser.fulfilled, (state, action) => {
         const user = action.payload;
@@ -75,9 +91,16 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.role = user?.role || null;
         state.loading = false;
+        state.error = null;
+
+        localStorage.setItem("user", JSON.stringify(user));
+        localStorage.setItem("role", user?.role || "");
       })
       .addCase(verifyUser.rejected, (state, action) => {
         state.loading = false;
+        state.isAuthenticated = false;
+        state.user = null;
+        state.role = null;
         state.error = action.payload || "Verification failed";
       });
   },

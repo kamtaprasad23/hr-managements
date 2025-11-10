@@ -1,3 +1,4 @@
+// App.jsx
 import { Routes, Route } from "react-router-dom";
 import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
@@ -49,16 +50,14 @@ function App() {
     if (savedMode !== null) dispatch(setDarkMode(savedMode === "true"));
 
     const token = localStorage.getItem("token");
-    if (token) {
-      dispatch(verifyUser());
-    }
+    if (token) dispatch(verifyUser());
   }, [dispatch]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDarkMode);
   }, [isDarkMode]);
 
-  if (loading && isAuthenticated === false) {
+  if (loading && !isAuthenticated) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-white dark:bg-gray-900 z-50">
         <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
@@ -116,8 +115,8 @@ function App() {
           <Route path="leave" element={<AdminLeaveManagement />} />
           <Route path="attendance" element={<AttendanceTracker />} />
           <Route path="chat" element={<AdminChat />} />
-          <Route path="policy" element={<AdminPolicy />} />
           <Route path="notification" element={<Notification />} />
+          <Route path="policy" element={<AdminPolicy />} />
           <Route path="eod-reports" element={<AdminEodReports />} />
           <Route path="settings" element={<AdminSettings />} />
         </Route>
